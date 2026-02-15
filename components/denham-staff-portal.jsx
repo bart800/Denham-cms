@@ -284,9 +284,9 @@ setAiLoading(true);setAiDraft("");
 try{
 const selectedObjs=item.objections.map(oId=>OBJ_TEMPLATES.find(t=>t.id===oId)).filter(Boolean);
 const prompt=`You are a litigation attorney at a plaintiff-side insurance law firm. Draft a response to the following discovery request in a first-party property insurance case.\n\nCase: ${c.client} v. ${c.insurer}\nJurisdiction: ${c.juris}\nCase Type: ${c.type}\nCause of Loss: ${c.cd.causeOfLoss}\n\nDiscovery Request #${item.num}:\n"${item.text}"\n\n${selectedObjs.length>0?`Apply these objections first:\n${selectedObjs.map(o=>"- "+o.text).join("\n")}\n\nThen provide a substantive response after the objections.`:"Provide a direct substantive response."}\n\nFormat: Start with any objections, then "Subject to and without waiving the foregoing objections, Plaintiff responds as follows:" followed by the substantive response. Be thorough but concise. Use proper legal formatting.`;
-const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+const resp=await fetch("/api/discovery",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
 const data=await resp.json();
-const text=data.content?.map(b=>b.text||"").join("\n")||"Error generating response.";
+const text=data.text||"Error generating response.";
 setAiDraft(text);
 updateResponse(item.id,text);
 updateStatus(item.id,"drafted");
