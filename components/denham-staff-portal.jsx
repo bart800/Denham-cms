@@ -432,3 +432,4 @@ return(<div style={{display:"flex",minHeight:"100vh",background:B.bg}}>
 {page==="tasks"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Tasks</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global tasks view — coming soon</div></div></div>}
 {page==="docs"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Documents</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global documents view — coming soon</div></div></div>}
 </div></div>);}
+
