@@ -230,9 +230,159 @@ return(<div>
 {pl.map((p,i)=>(<tr key={i}><td style={{...S.td,...S.mono,fontSize:12}}>{fmtD(p.date)}</td><td style={{...S.td,fontSize:13,fontWeight:500}}>{p.type}</td><td style={S.td}><span style={{...S.badge,background:p.filedBy==="Plaintiff"?B.greenBg:"rgba(91,141,239,0.12)",color:p.filedBy==="Plaintiff"?B.green:"#5b8def"}}>{p.filedBy}</span></td><td style={S.td}><span style={{...S.badge,background:p.status==="Granted"?B.greenBg:p.status==="Denied"?B.dangerBg:B.goldBg,color:p.status==="Granted"?B.green:p.status==="Denied"?B.danger:B.gold}}>{p.status}</span></td><td style={{...S.td,fontSize:12,color:B.txtM}}>{p.notes||"\u2014"}</td><td style={S.td}>{p.docUrl?<span style={{fontSize:12,color:B.gold,cursor:"pointer"}}>{"\ud83d\udcce"} View</span>:<span style={{fontSize:12,color:B.txtD}}>{"\u2014"}</span>}</td></tr>))}
 </tbody></table></div></div>);}
 
+const DISC_TYPES=["Interrogatories","Requests for Production","Requests for Admission"];
+const OBJ_TEMPLATES=[
+{id:"overly_broad",name:"Overly Broad",text:"Defendant objects to this request as overly broad, unduly burdensome, and not reasonably calculated to lead to the discovery of admissible evidence."},
+{id:"vague",name:"Vague & Ambiguous",text:"Defendant objects to this request as vague and ambiguous, rendering it impossible to determine with reasonable certainty what information is sought."},
+{id:"attorney_client",name:"Attorney-Client Privilege",text:"Defendant objects to this request to the extent it seeks information protected by the attorney-client privilege and/or work product doctrine."},
+{id:"not_relevant",name:"Not Relevant",text:"Defendant objects to this request on the grounds that it seeks information that is neither relevant to any party's claim or defense nor proportional to the needs of the case."},
+{id:"unduly_burden",name:"Unduly Burdensome",text:"Defendant objects to this request as unduly burdensome and oppressive in that compliance would require unreasonable expense and effort disproportionate to any benefit."},
+{id:"already_provided",name:"Already Provided",text:"Defendant objects to this request as duplicative of prior discovery requests to which responses have already been provided."},
+{id:"premature",name:"Premature",text:"Defendant objects to this request as premature given the current stage of litigation."},
+{id:"trade_secret",name:"Trade Secret/Proprietary",text:"Defendant objects to this request to the extent it seeks trade secrets, proprietary, or confidential business information."},
+{id:"calls_for_legal",name:"Calls for Legal Conclusion",text:"Defendant objects to this request to the extent it calls for a legal conclusion."},
+{id:"compound",name:"Compound",text:"Defendant objects to this request as compound, containing multiple discrete sub-parts that should be propounded as separate requests."}
+];
+
+function Discovery({c}){
+const[requests,setRequests]=useState(()=>{
+const r=[];const rng=sr(c.id*7);const pk=a=>a[Math.floor(rng()*a.length)];const ri=(a,b)=>Math.floor(rng()*(b-a+1))+a;
+const isLit=c.status.startsWith("Litigation");
+if(!isLit)return r;
+const numSets=ri(1,3);
+for(let s=0;s<numSets;s++){
+const dtype=pk(DISC_TYPES);const numReqs=dtype==="Requests for Admission"?ri(5,20):ri(8,25);
+const servedDate=new Date(new Date(c.dop).getTime()+ri(60,200)*86400000).toISOString().split("T")[0];
+const dueDate=new Date(new Date(servedDate).getTime()+30*86400000).toISOString().split("T")[0];
+const items=[];
+for(let q=0;q<numReqs;q++){
+const qText=dtype==="Interrogatories"?pk(["State the full name, address, and telephone number of each person with knowledge of the facts of this case.","Describe in detail the damages you claim to have suffered as a result of the incident.","Identify all documents that support your claim for damages.","State whether you have given any written or recorded statements regarding this matter.","Describe the factual basis for each affirmative defense raised in your Answer.","Identify each expert witness you intend to call at trial and state the subject matter of their testimony.","State the amount of insurance coverage available to satisfy a judgment in this case.","Describe all communications between you and any insurance adjuster regarding this claim.","Identify all persons who participated in the investigation of this claim.","State whether you contend that any of the claimed damages were pre-existing.","Describe the methodology used to calculate the estimated damages.","Identify all contractors or vendors who provided estimates for repairs.","State whether any payments have been made on this claim and the amounts thereof.","Describe any inspections conducted of the subject property and identify all persons who conducted them.","State whether surveillance was conducted on the plaintiff and produce any resulting materials."]):
+dtype==="Requests for Production"?pk(["Produce all documents relating to the investigation of the claim at issue.","Produce the complete claim file maintained by the insurer for this loss.","Produce all correspondence between the insurer and any contractor or vendor regarding this claim.","Produce all photographs or videos taken of the subject property.","Produce all internal memoranda, emails, or communications regarding this claim.","Produce the insurance policy in effect at the time of the loss, including all endorsements.","Produce all expert reports obtained in connection with this claim.","Produce all training materials provided to adjusters regarding claims of this type.","Produce all documents reflecting the basis for any denial or partial denial of coverage.","Produce the insurer's underwriting file for this policy.","Produce all reserve information and documents related to this claim.","Produce any surveillance materials obtained regarding the plaintiff."]):
+pk(["Admit that the insurance policy at issue was in full force and effect on the date of loss.","Admit that the subject property sustained damage as a result of the claimed cause of loss.","Admit that the insurer received timely notice of the claim.","Admit that the insurer assigned an adjuster to investigate the claim.","Admit that the insurer's estimate did not include all damaged items.","Admit that the insurer failed to pay the full amount of covered damages.","Admit that no exclusion in the policy applies to bar coverage for this loss.","Admit that the plaintiff complied with all conditions precedent under the policy.","Admit that the insurer did not inspect the property within a reasonable time.","Admit that the cause of loss is a covered peril under the policy."]);
+items.push({id:`disc-${c.id}-${s}-${q}`,num:q+1,text:qText,status:pk(["pending","drafted","reviewed","final","objection_only"]),objections:rng()>0.4?[pk(OBJ_TEMPLATES).id]:[],response:rng()>0.5?pk(["See documents produced herewith.","Subject to and without waiving said objections, Plaintiff responds as follows:","Admitted.","Denied.","Plaintiff is without sufficient knowledge to admit or deny and therefore denies.",""]):"",aiDraft:null,dueDate});}
+r.push({id:`dset-${c.id}-${s}`,type:dtype,setNum:s+1,servedDate,dueDate,from:c.ld?c.ld.oppCounsel:"Unknown",status:pk(["pending","in_progress","completed","overdue"]),items});}
+return r;});
+
+const[selSet,setSelSet]=useState(null);
+const[selItem,setSelItem]=useState(null);
+const[aiLoading,setAiLoading]=useState(false);
+const[aiDraft,setAiDraft]=useState("");
+const[showTemplates,setShowTemplates]=useState(false);
+
+const activeSet=requests.find(r=>r.id===selSet);
+const activeItem=activeSet?activeSet.items.find(i=>i.id===selItem):null;
+
+const toggleObj=(itemId,objId)=>{setRequests(prev=>prev.map(set=>({...set,items:set.items.map(item=>{if(item.id!==itemId)return item;const has=item.objections.includes(objId);return{...item,objections:has?item.objections.filter(o=>o!==objId):[...item.objections,objId]};})
+})));};
+
+const updateResponse=(itemId,text)=>{setRequests(prev=>prev.map(set=>({...set,items:set.items.map(item=>item.id===itemId?{...item,response:text}:item)})));};
+
+const updateStatus=(itemId,st)=>{setRequests(prev=>prev.map(set=>({...set,items:set.items.map(item=>item.id===itemId?{...item,status:st}:item)})));};
+
+const generateAiDraft=async(item)=>{
+setAiLoading(true);setAiDraft("");
+try{
+const selectedObjs=item.objections.map(oId=>OBJ_TEMPLATES.find(t=>t.id===oId)).filter(Boolean);
+const prompt=`You are a litigation attorney at a plaintiff-side insurance law firm. Draft a response to the following discovery request in a first-party property insurance case.\n\nCase: ${c.client} v. ${c.insurer}\nJurisdiction: ${c.juris}\nCase Type: ${c.type}\nCause of Loss: ${c.cd.causeOfLoss}\n\nDiscovery Request #${item.num}:\n"${item.text}"\n\n${selectedObjs.length>0?`Apply these objections first:\n${selectedObjs.map(o=>"- "+o.text).join("\n")}\n\nThen provide a substantive response after the objections.`:"Provide a direct substantive response."}\n\nFormat: Start with any objections, then "Subject to and without waiving the foregoing objections, Plaintiff responds as follows:" followed by the substantive response. Be thorough but concise. Use proper legal formatting.`;
+const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+const data=await resp.json();
+const text=data.content?.map(b=>b.text||"").join("\n")||"Error generating response.";
+setAiDraft(text);
+updateResponse(item.id,text);
+updateStatus(item.id,"drafted");
+}catch(e){setAiDraft("Error: "+e.message);}
+setAiLoading(false);};
+
+const dSetClr=st=>({pending:B.gold,in_progress:"#5b8def",completed:B.green,overdue:B.danger}[st]||B.txtM);
+const dItemClr=st=>({pending:B.txtM,drafted:"#5b8def",reviewed:B.gold,final:B.green,objection_only:B.purple}[st]||B.txtM);
+
+if(!c.status.startsWith("Litigation"))return(<div style={{...S.card,padding:60,textAlign:"center"}}><div style={{fontSize:40,marginBottom:12}}>{"\ud83d\udcdd"}</div><div style={{fontSize:16,fontWeight:600,marginBottom:8}}>Not in Litigation</div><div style={{fontSize:13,color:B.txtM}}>Discovery tools will be available once the case enters litigation.</div></div>);
+
+if(activeItem){
+const selObjs=activeItem.objections;
+return(<div>
+<button onClick={()=>setSelItem(null)} style={{...S.btnO,marginBottom:16,fontSize:12}}>{"\u2190"} Back to {activeSet.type}</button>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+<div>
+<div style={{...S.card,marginBottom:16}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<h3 style={{fontSize:14,fontWeight:700}}>Request #{activeItem.num}</h3>
+<select value={activeItem.status} onChange={e=>updateStatus(activeItem.id,e.target.value)} style={{...S.input,width:140,fontSize:12}}><option value="pending">Pending</option><option value="drafted">Drafted</option><option value="reviewed">Reviewed</option><option value="final">Final</option><option value="objection_only">Objection Only</option></select>
+</div>
+<div style={{background:"#0a0a14",borderRadius:8,padding:16,fontSize:13,lineHeight:1.7,color:B.txt,border:`1px solid ${B.bdr}`}}>{activeItem.text}</div>
+</div>
+<div style={{...S.card}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<h3 style={{fontSize:14,fontWeight:700}}>Objections</h3>
+<button onClick={()=>setShowTemplates(!showTemplates)} style={{...S.btnO,fontSize:11,padding:"4px 10px"}}>{showTemplates?"Hide":"Show All"}</button>
+</div>
+{(showTemplates?OBJ_TEMPLATES:OBJ_TEMPLATES.filter(o=>selObjs.includes(o.id))).map(obj=>{
+const active=selObjs.includes(obj.id);
+return(<div key={obj.id} onClick={()=>toggleObj(activeItem.id,obj.id)} style={{display:"flex",gap:10,padding:"8px 12px",marginBottom:4,borderRadius:6,cursor:"pointer",background:active?`${B.gold}10`:"transparent",border:`1px solid ${active?B.gold+"40":B.bdr}`}}>
+<div style={{width:18,height:18,borderRadius:4,border:`2px solid ${active?B.gold:B.bdr}`,background:active?B.gold:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#000",flexShrink:0,marginTop:2}}>{active?"\u2713":""}</div>
+<div><div style={{fontSize:12,fontWeight:600,color:active?B.gold:B.txtM,marginBottom:2}}>{obj.name}</div>
+{(showTemplates||active)&&<div style={{fontSize:11,color:B.txtD,lineHeight:1.5}}>{obj.text}</div>}</div>
+</div>);})}
+</div>
+</div>
+<div>
+<div style={{...S.card,marginBottom:16}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<h3 style={{fontSize:14,fontWeight:700}}>Response</h3>
+<button onClick={()=>generateAiDraft(activeItem)} disabled={aiLoading} style={{...S.btn,fontSize:12,padding:"6px 14px",opacity:aiLoading?0.5:1}}>{aiLoading?"\u23f3 Generating...":"\u2728 AI Draft"}</button>
+</div>
+<textarea value={activeItem.response} onChange={e=>updateResponse(activeItem.id,e.target.value)} placeholder="Type response or click AI Draft to generate..." style={{...S.input,minHeight:300,resize:"vertical",lineHeight:1.7,fontSize:13}} />
+</div>
+{aiDraft&&<div style={{...S.card,background:"#0a0a14"}}>
+<div style={{fontSize:11,color:B.gold,fontWeight:600,marginBottom:8,textTransform:"uppercase",letterSpacing:0.5}}>AI Generated Draft</div>
+<div style={{fontSize:13,color:B.txt,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{aiDraft}</div>
+</div>}
+</div>
+</div></div>);}
+
+if(activeSet){
+const completed=activeSet.items.filter(i=>i.status==="final"||i.status==="reviewed").length;
+const drafted=activeSet.items.filter(i=>i.status==="drafted").length;
+return(<div>
+<button onClick={()=>setSelSet(null)} style={{...S.btnO,marginBottom:16,fontSize:12}}>{"\u2190"} Back to Discovery Sets</button>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+<div><h3 style={{fontSize:18,fontWeight:700}}>{activeSet.type} — Set {activeSet.setNum}</h3>
+<div style={{fontSize:12,color:B.txtM,marginTop:4}}>From: {activeSet.from} · Served: {fmtD(activeSet.servedDate)} · Due: <span style={{color:dU(activeSet.dueDate)<7?B.danger:dU(activeSet.dueDate)<14?B.gold:B.txtM,fontWeight:600}}>{fmtD(activeSet.dueDate)} ({dU(activeSet.dueDate)}d)</span></div></div>
+<div style={{display:"flex",gap:8}}>
+<div style={{textAlign:"center",padding:"8px 16px",background:`${B.green}15`,borderRadius:8}}><div style={{...S.mono,fontSize:16,fontWeight:700,color:B.green}}>{completed}</div><div style={{fontSize:10,color:B.txtD}}>Done</div></div>
+<div style={{textAlign:"center",padding:"8px 16px",background:`rgba(91,141,239,0.12)`,borderRadius:8}}><div style={{...S.mono,fontSize:16,fontWeight:700,color:"#5b8def"}}>{drafted}</div><div style={{fontSize:10,color:B.txtD}}>Drafted</div></div>
+<div style={{textAlign:"center",padding:"8px 16px",background:`${B.gold}15`,borderRadius:8}}><div style={{...S.mono,fontSize:16,fontWeight:700,color:B.gold}}>{activeSet.items.length-completed-drafted}</div><div style={{fontSize:10,color:B.txtD}}>Pending</div></div>
+</div></div>
+<div style={{...S.card,padding:0,overflow:"hidden"}}>
+<table style={S.tbl}><thead><tr><th style={S.th}>#</th><th style={{...S.th,width:"50%"}}>Request</th><th style={S.th}>Objections</th><th style={S.th}>Status</th><th style={S.th}></th></tr></thead><tbody>
+{activeSet.items.map(item=>{const ic=dItemClr(item.status);return(<tr key={item.id} style={{cursor:"pointer"}} onClick={()=>setSelItem(item.id)} onMouseEnter={e=>e.currentTarget.style.background=B.cardH} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+<td style={{...S.td,...S.mono,fontSize:12,color:B.gold}}>{item.num}</td>
+<td style={{...S.td,fontSize:12,color:B.txt,maxWidth:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.text.substring(0,100)}{item.text.length>100?"...":""}</td>
+<td style={S.td}>{item.objections.length>0?<span style={{...S.badge,background:`${B.purple}18`,color:B.purple}}>{item.objections.length}</span>:<span style={{fontSize:11,color:B.txtD}}>None</span>}</td>
+<td style={S.td}><span style={{...S.badge,background:`${ic}18`,color:ic}}>{item.status.replace("_"," ").replace(/\b\w/g,l=>l.toUpperCase())}</span></td>
+<td style={{...S.td,fontSize:12,color:B.gold}}>{"\u2192"}</td>
+</tr>);})}
+</tbody></table></div></div>);}
+
+return(<div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
+{requests.map(set=>{const dc=dSetClr(set.status);const days=dU(set.dueDate);const done=set.items.filter(i=>i.status==="final"||i.status==="reviewed").length;
+return(<div key={set.id} onClick={()=>setSelSet(set.id)} style={{...S.card,cursor:"pointer",borderColor:dc+"30"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<span style={{...S.badge,background:`${dc}18`,color:dc}}>{set.status.replace("_"," ").replace(/\b\w/g,l=>l.toUpperCase())}</span>
+<span style={{...S.mono,fontSize:11,color:days<7?B.danger:days<14?B.gold:B.txtD}}>{days}d left</span></div>
+<h4 style={{fontSize:14,fontWeight:600,marginBottom:4}}>{set.type}</h4>
+<div style={{fontSize:12,color:B.txtM,marginBottom:8}}>Set {set.setNum} · {set.items.length} requests · From: {set.from}</div>
+<div style={{fontSize:11,color:B.txtD,marginBottom:8}}>Served: {fmtD(set.servedDate)} · Due: {fmtD(set.dueDate)}</div>
+<div style={{height:6,background:`${B.bdr}40`,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${(done/set.items.length)*100}%`,background:B.green,borderRadius:3}}/></div>
+<div style={{fontSize:10,color:B.txtD,marginTop:4}}>{done}/{set.items.length} complete</div>
+</div>);})}
+{requests.length===0&&<div style={{...S.card,gridColumn:"1/-1",padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>No discovery requests served yet.</div></div>}
+</div></div>);}
+
 function CaseDetail({c,onBack}){
 const[tab,setTab]=useState("activity");
-const tabs=[{id:"activity",l:"Activity Feed"},{id:"claim",l:"Claim Details"},{id:"litigation",l:"Litigation"},{id:"negotiations",l:"Negotiations"},{id:"estimates",l:"Estimates"},{id:"pleadings",l:"Pleadings"},{id:"tasks",l:"Tasks"},{id:"docs",l:"Documents"}];
+const tabs=[{id:"activity",l:"Activity Feed"},{id:"claim",l:"Claim Details"},{id:"litigation",l:"Litigation"},{id:"negotiations",l:"Negotiations"},{id:"estimates",l:"Estimates"},{id:"pleadings",l:"Pleadings"},{id:"discovery",l:"Discovery"},{id:"tasks",l:"Tasks"},{id:"docs",l:"Documents"}];
 const sc=stClr(c.status);const sd=dU(c.sol);
 return(<div>
 <div style={{marginBottom:20}}>
@@ -258,6 +408,7 @@ return(<div>
 {tab==="negotiations"&&<Negotiations c={c}/>}
 {tab==="estimates"&&<Estimates c={c}/>}
 {tab==="pleadings"&&<Pleadings c={c}/>}
+{tab==="discovery"&&<Discovery c={c}/>}
 {tab==="tasks"&&<div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Tasks — wiring to Supabase next</div></div>}
 {tab==="docs"&&<div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Documents — wiring to SharePoint next</div></div>}
 </div>);}
