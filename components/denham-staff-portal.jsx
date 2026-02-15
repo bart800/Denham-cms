@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 const B={navy:"#000066",gold:"#ebb003",green:"#386f4a",bg:"#08080f",card:"#111119",cardH:"#16161f",bdr:"#1e1e2e",bdrL:"#2a2a3a",txt:"#e8e8f0",txtM:"#8888a0",txtD:"#55556a",danger:"#e04050",dangerBg:"rgba(224,64,80,0.1)",greenBg:"rgba(56,111,74,0.12)",goldBg:"rgba(235,176,3,0.1)",navyBg:"rgba(0,0,102,0.15)",purple:"#7c5cbf"};
 const JURIS=["KY","TN","MT","NC","TX","CA","WA","CO","NY"];
 const CTYPES=["Property - Wind/Hail","Property - Fire","Property - Water","Property - Theft","Property - Mold","Personal Injury - Auto","Personal Injury - Slip & Fall","Personal Injury - Dog Bite"];
@@ -159,23 +159,27 @@ acts.map((a,i)=>(<div key={a.id} style={{display:"flex",gap:14,padding:"14px 20p
 
 function ClaimDetails({c}){
 const d=c.cd;
-const F=({l,v,m,clr})=>(<div style={{marginBottom:14}}><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",letterSpacing:0.5,fontWeight:600,marginBottom:3}}>{l}</div><div style={{fontSize:m?13:14,fontWeight:500,color:clr||B.txt,...(m?S.mono:{})}}>{v||"\u2014"}</div></div>);
+const F=({l,v,m,clr,href})=>(<div style={{marginBottom:14}}><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",letterSpacing:0.5,fontWeight:600,marginBottom:3}}>{l}</div>{href?<a href={href} style={{fontSize:m?13:14,fontWeight:500,color:clr||B.gold,...(m?S.mono:{}),textDecoration:"none"}}>{v||"\u2014"}</a>:<div style={{fontSize:m?13:14,fontWeight:500,color:clr||B.txt,...(m?S.mono:{})}}>{v||"\u2014"}</div>}</div>);
+const telHref=p=>p?`tel:${p.replace(/[^0-9+]/g,"")}`:"";
+const mailHref=e=>e?`mailto:${e}`:"";
 return(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
 <div style={S.card}><h3 style={{...S.secT,marginBottom:20}}>Policy Information</h3>
 <F l="Policy Number" v={d.policyNumber} m/><F l="Claim Number" v={d.claimNumber} m/><F l="Insurance Company" v={d.insurer}/><F l="Policy Type" v={d.policyType}/><F l="Policy Limits" v={d.policyLimits} m clr={B.gold}/><F l="Deductible" v={d.deductible} m/></div>
 <div style={S.card}><h3 style={{...S.secT,marginBottom:20}}>Claim Information</h3>
 <F l="Date of Loss" v={fmtD(d.dateOfLoss)} m/><F l="Date Reported" v={fmtD(d.dateReported)} m/><F l="Date Denied" v={d.dateDenied?fmtD(d.dateDenied):"Not denied"} m clr={d.dateDenied?B.danger:B.green}/><F l="Cause of Loss" v={d.causeOfLoss}/>{d.propAddr&&<F l="Property Address" v={d.propAddr}/>}</div>
 <div style={{...S.card,gridColumn:"1/-1"}}><h3 style={{...S.secT,marginBottom:20}}>Adjuster Contact</h3>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}><F l="Name" v={d.adjuster}/><F l="Phone" v={d.adjPhone} m/><F l="Email" v={d.adjEmail} m/></div></div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}><F l="Name" v={d.adjuster}/><F l="Phone" v={d.adjPhone} m href={telHref(d.adjPhone)}/><F l="Email" v={d.adjEmail} m href={mailHref(d.adjEmail)}/></div></div>
 </div>);}
 
 function LitDetails({c}){
 const l=c.ld;
-const F=({l:lb,v,m,clr})=>(<div style={{marginBottom:14}}><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",letterSpacing:0.5,fontWeight:600,marginBottom:3}}>{lb}</div><div style={{fontSize:m?13:14,fontWeight:500,color:clr||B.txt,...(m?S.mono:{})}}>{v||"\u2014"}</div></div>);
+const F=({l:lb,v,m,clr,href})=>(<div style={{marginBottom:14}}><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",letterSpacing:0.5,fontWeight:600,marginBottom:3}}>{lb}</div>{href?<a href={href} style={{fontSize:m?13:14,fontWeight:500,color:clr||B.gold,...(m?S.mono:{}),textDecoration:"none"}}>{v||"\u2014"}</a>:<div style={{fontSize:m?13:14,fontWeight:500,color:clr||B.txt,...(m?S.mono:{})}}>{v||"\u2014"}</div>}</div>);
+const telHref=p=>p?`tel:${p.replace(/[^0-9+]/g,"")}`:"";
+const mailHref=e=>e?`mailto:${e}`:"";
 if(!l)return(<div style={{...S.card,padding:60,textAlign:"center"}}><div style={{fontSize:40,marginBottom:12}}>{"\u2696\ufe0f"}</div><div style={{fontSize:16,fontWeight:600,marginBottom:8}}>Not in Litigation</div><div style={{fontSize:13,color:B.txtM}}>Litigation details will appear here once a complaint is filed.</div></div>);
 return(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
 <div style={S.card}><h3 style={{...S.secT,marginBottom:20}}>Court Information</h3><F l="Case Number" v={l.caseNum} m/><F l="Court" v={l.court}/><F l="Judge" v={l.judge}/><F l="Filed Date" v={fmtD(l.filedDate)} m/></div>
-<div style={S.card}><h3 style={{...S.secT,marginBottom:20}}>Opposing Counsel</h3><F l="Attorney" v={l.oppCounsel}/><F l="Firm" v={l.oppFirm}/><F l="Phone" v={l.oppPhone} m/><F l="Email" v={l.oppEmail} m/></div>
+<div style={S.card}><h3 style={{...S.secT,marginBottom:20}}>Opposing Counsel</h3><F l="Attorney" v={l.oppCounsel}/><F l="Firm" v={l.oppFirm}/><F l="Phone" v={l.oppPhone} m href={telHref(l.oppPhone)}/><F l="Email" v={l.oppEmail} m href={mailHref(l.oppEmail)}/></div>
 <div style={{...S.card,gridColumn:"1/-1"}}><h3 style={{...S.secT,marginBottom:20}}>Key Dates</h3>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
 <div><F l="Trial Date" v={l.trialDate?fmtD(l.trialDate):"Not set"} m clr={l.trialDate?B.danger:B.txtD}/>{l.trialDate&&<div style={{...S.mono,fontSize:11,color:dU(l.trialDate)<60?B.danger:B.gold}}>{dU(l.trialDate)} days away</div>}</div>
@@ -420,12 +424,14 @@ export default function DenhamStaffPortal(){
 const[user,setUser]=useState(null);const[page,setPage]=useState("dashboard");const[selCase,setSelCase]=useState(null);const[statusFilter,setStatusFilter]=useState("All");
 const[cases,setCases]=useState(()=>genData());
 const updateCase=(id,updates)=>{setCases(prev=>prev.map(c=>c.id===id?{...c,...updates}:c));if(selCase&&selCase.id===id)setSelCase(prev=>({...prev,...updates}));};
+const navTo=(p,cs,sf)=>{const state={page:p,caseId:cs?.id||null,statusFilter:sf||"All"};window.history.pushState(state,"",window.location.pathname);setPage(p);setSelCase(cs||null);setStatusFilter(sf||"All");};
+useEffect(()=>{const handler=e=>{const st=e.state;if(st){setPage(st.page||"dashboard");setSelCase(st.caseId?cases.find(c=>c.id===st.caseId)||null:null);setStatusFilter(st.statusFilter||"All");}else{setPage("dashboard");setSelCase(null);setStatusFilter("All");}};window.addEventListener("popstate",handler);window.history.replaceState({page:"dashboard",caseId:null,statusFilter:"All"},"",window.location.pathname);return()=>window.removeEventListener("popstate",handler);},[cases]);
 if(!user)return<Login onLogin={setUser}/>;
-const openC=c=>{setSelCase(c);setPage("caseDetail");};
-const backC=()=>{setSelCase(null);setPage("cases");};
-const filterByStatus=st=>{setStatusFilter(st);setPage("cases");setSelCase(null);};
+const openC=c=>{navTo("caseDetail",c);};
+const backC=()=>{window.history.back();};
+const filterByStatus=st=>{navTo("cases",null,st);};
 return(<div style={{display:"flex",minHeight:"100vh",background:B.bg}}>
-<Side user={user} active={page==="caseDetail"?"cases":page} onNav={p=>{setPage(p);setSelCase(null);if(p!=="cases")setStatusFilter("All");}} onOut={()=>setUser(null)}/>
+<Side user={user} active={page==="caseDetail"?"cases":page} onNav={p=>{navTo(p,null,"All");}} onOut={()=>setUser(null)}/>
 <div style={{marginLeft:220,flex:1,padding:"28px 32px",maxWidth:1200}}>
 {page==="dashboard"&&<Dash user={user} cases={cases} onOpen={openC} onFilterStatus={filterByStatus}/>}
 {page==="cases"&&<Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={()=>setStatusFilter("All")}/>}
