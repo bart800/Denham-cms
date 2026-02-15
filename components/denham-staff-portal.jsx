@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 const B={navy:"#000066",gold:"#ebb003",green:"#386f4a",bg:"#08080f",card:"#111119",cardH:"#16161f",bdr:"#1e1e2e",bdrL:"#2a2a3a",txt:"#e8e8f0",txtM:"#8888a0",txtD:"#55556a",danger:"#e04050",dangerBg:"rgba(224,64,80,0.1)",greenBg:"rgba(56,111,74,0.12)",goldBg:"rgba(235,176,3,0.1)",navyBg:"rgba(0,0,102,0.15)",purple:"#7c5cbf"};
 const JURIS=["KY","TN","MT","NC","TX","CA","WA","CO","NY"];
 const CTYPES=["Property - Wind/Hail","Property - Fire","Property - Water","Property - Theft","Property - Mold","Personal Injury - Auto","Personal Injury - Slip & Fall","Personal Injury - Dog Bite"];
@@ -34,7 +34,9 @@ const ct={KY:["Lexington","Louisville","Frankfort"],TN:["Nashville","Memphis","K
 const sy={KY:5,TN:1,MT:5,NC:3,TX:2,CA:2,WA:3,CO:2,NY:3};
 const cases=[];
 for(let i=0;i<200;i++){
-const j=pk(JURIS),tp=pk(CTYPES),sts=pk(CSTATS),ip=tp.startsWith("Property"),att=pk(TEAM.filter(t=>t.role==="Admin"||t.role==="Attorney")),sup=pk(TEAM.filter(t=>t.role!=="Admin"&&t.role!=="Attorney")),ins=pk(INSURERS),dol=rd(2023,2025),dop=rd(2024,2026),f=pk(fn),l=pk(ln),cn=`${ins.substring(0,2).toUpperCase()}-${ri(100000,999999)}`,pn=`POL-${ri(1000000,9999999)}`,isL=sts.startsWith("Litigation"),sol=new Date(new Date(dol).getTime()+(sy[j]||3)*365.25*86400000).toISOString().split("T")[0];
+const j=pk(JURIS),tp=pk(CTYPES),sts=pk(CSTATS),ip=tp.startsWith("Property"),att=pk(TEAM.filter(t=>t.role==="Admin"||t.role==="Attorney")),sup=pk(TEAM.filter(t=>t.role!=="Admin"&&t.role!=="Attorney")),ins=pk(INSURERS),f=pk(fn),l=pk(ln),cn=`${ins.substring(0,2).toUpperCase()}-${ri(100000,999999)}`,pn=`POL-${ri(1000000,9999999)}`,isL=sts.startsWith("Litigation"),isClosed=sts==="Settled"||sts==="Closed";
+const solYrs=sy[j]||3;const minDolYear=isClosed?2022:Math.max(2024,2026-solYrs);const dol=rd(minDolYear,2025);const dop=rd(Math.max(2024,parseInt(dol.substring(0,4))),2026);
+const sol=new Date(new Date(dol).getTime()+solYrs*365.25*86400000).toISOString().split("T")[0];
 const negs=[];let nd=new Date(dop);
 for(let n=0;n<ri(0,8);n++){nd=new Date(nd.getTime()+ri(7,60)*86400000);const nt=pk(NTYPES);negs.push({id:`n${i}-${n}`,date:nd.toISOString().split("T")[0],type:nt,amount:nt==="denial"?0:ri(5000,500000),notes:nt==="denial"?"Full denial":"Settlement reached",by:pk(TEAM).name});}
 const ests=[];for(let e=0;e<(ip?ri(1,5):ri(0,2));e++){ests.push({id:`e${i}-${e}`,date:rd(2024,2026),type:pk(ETYPES),amount:ri(8000,350000),vendor:`${pk(["Premier","National","Apex","Summit"])} ${pk(["Roofing","Construction","Restoration","Engineering"])}`,notes:pk(["Full scope","Partial - supplement pending","Depreciation included","Emergency repairs only"])});}
@@ -380,10 +382,11 @@ return(<div key={set.id} onClick={()=>setSelSet(set.id)} style={{...S.card,curso
 {requests.length===0&&<div style={{...S.card,gridColumn:"1/-1",padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>No discovery requests served yet.</div></div>}
 </div></div>);}
 
-function CaseDetail({c,onBack}){
+function CaseDetail({c,onBack,onUpdate}){
 const[tab,setTab]=useState("activity");
 const tabs=[{id:"activity",l:"Activity Feed"},{id:"claim",l:"Claim Details"},{id:"litigation",l:"Litigation"},{id:"negotiations",l:"Negotiations"},{id:"estimates",l:"Estimates"},{id:"pleadings",l:"Pleadings"},{id:"discovery",l:"Discovery"},{id:"tasks",l:"Tasks"},{id:"docs",l:"Documents"}];
 const sc=stClr(c.status);const sd=dU(c.sol);
+const changeStatus=(newSt)=>{if(onUpdate)onUpdate(c.id,{status:newSt});};
 return(<div>
 <div style={{marginBottom:20}}>
 <button onClick={onBack} style={{...S.btnO,marginBottom:16,fontSize:12}}>{"\u2190"} Back to Cases</button>
@@ -391,7 +394,7 @@ return(<div>
 <div><h2 style={{fontSize:22,fontWeight:700,marginBottom:4}}>{c.client}</h2>
 <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
 <span style={{...S.mono,fontSize:13,color:B.gold}}>{c.ref}</span>
-<span style={{...S.badge,background:sc.bg,color:sc.t}}>{c.status}</span>
+<select value={c.status} onChange={e=>changeStatus(e.target.value)} style={{background:`${sc.bg}`,color:sc.t,border:`1px solid ${sc.t}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",outline:"none",appearance:"auto"}}>{CSTATS.map(st=><option key={st} value={st} style={{background:B.card,color:B.txt}}>{st}</option>)}</select>
 <span style={{fontSize:12,color:B.txtM}}>{c.type}</span>
 <span style={{...S.mono,fontSize:12,color:B.txtM}}>{c.juris}</span>
 <span style={{fontSize:12,color:B.txtM}}>v. {c.insurer}</span></div></div>
@@ -415,7 +418,8 @@ return(<div>
 
 export default function DenhamStaffPortal(){
 const[user,setUser]=useState(null);const[page,setPage]=useState("dashboard");const[selCase,setSelCase]=useState(null);
-const cases=useMemo(()=>genData(),[]);
+const[cases,setCases]=useState(()=>genData());
+const updateCase=(id,updates)=>{setCases(prev=>prev.map(c=>c.id===id?{...c,...updates}:c));if(selCase&&selCase.id===id)setSelCase(prev=>({...prev,...updates}));};
 if(!user)return<Login onLogin={setUser}/>;
 const openC=c=>{setSelCase(c);setPage("caseDetail");};
 const backC=()=>{setSelCase(null);setPage("cases");};
@@ -424,7 +428,7 @@ return(<div style={{display:"flex",minHeight:"100vh",background:B.bg}}>
 <div style={{marginLeft:220,flex:1,padding:"28px 32px",maxWidth:1200}}>
 {page==="dashboard"&&<Dash user={user} cases={cases} onOpen={openC}/>}
 {page==="cases"&&<Cases user={user} cases={cases} onOpen={openC}/>}
-{page==="caseDetail"&&selCase&&<CaseDetail c={selCase} onBack={backC}/>}
+{page==="caseDetail"&&selCase&&<CaseDetail c={selCase} onUpdate={updateCase} onBack={backC}/>}
 {page==="tasks"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Tasks</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global tasks view — coming soon</div></div></div>}
 {page==="docs"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Documents</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global documents view — coming soon</div></div></div>}
 </div></div>);}
