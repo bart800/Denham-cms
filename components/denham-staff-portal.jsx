@@ -93,7 +93,7 @@ return(<div style={{width:220,minHeight:"100vh",background:B.card,borderRight:`1
 <button onClick={onOut} style={{...S.btnO,width:"100%",fontSize:11,padding:"6px 0"}}>Sign Out</button>
 </div></div>);}
 
-function Dash({user,cases,onOpen}){
+function Dash({user,cases,onOpen,onFilterStatus}){
 const my=cases.filter(c=>c.attorney.id===user.id||c.support.id===user.id);
 const ac=my.filter(c=>c.status!=="Settled"&&c.status!=="Closed");
 const sol90=ac.filter(c=>dU(c.sol)<90);
@@ -105,13 +105,13 @@ return(<div>
 {[{l:"Active Cases",v:ac.length,c:B.gold},{l:"Total Recoveries",v:fmt(rec),c:B.green},{l:"SOL < 90 Days",v:sol90.length,c:sol90.length>0?B.danger:B.txtD},{l:"My Cases Total",v:my.length,c:"#5b8def"}].map((x,i)=>(<div key={i} style={S.card}><div style={{fontSize:11,color:B.txtM,marginBottom:6,textTransform:"uppercase",letterSpacing:0.5,fontWeight:600}}>{x.l}</div><div style={{fontSize:26,fontWeight:700,color:x.c,...S.mono}}>{x.v}</div></div>))}</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
 <div style={S.card}><h3 style={S.secT}>Cases by Status</h3>
-{Object.entries(sc).sort((a,b)=>b[1]-a[1]).map(([st,ct])=>{const c=stClr(st);return(<div key={st} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${B.bdr}06`}}><span style={{...S.badge,background:c.bg,color:c.t}}>{st}</span><span style={{...S.mono,fontSize:14,fontWeight:600,color:c.t}}>{ct}</span></div>);})}</div>
+{Object.entries(sc).sort((a,b)=>b[1]-a[1]).map(([st,ct])=>{const c=stClr(st);return(<div key={st} onClick={()=>onFilterStatus(st)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${B.bdr}06`,cursor:"pointer",borderRadius:6,paddingLeft:8,paddingRight:8}} onMouseEnter={e=>e.currentTarget.style.background=B.cardH} onMouseLeave={e=>e.currentTarget.style.background="transparent"}><span style={{...S.badge,background:c.bg,color:c.t}}>{st}</span><span style={{...S.mono,fontSize:14,fontWeight:600,color:c.t}}>{ct}</span></div>);})}</div>
 <div style={S.card}><h3 style={S.secT}>Upcoming SOL Deadlines</h3>
 {ac.sort((a,b)=>new Date(a.sol)-new Date(b.sol)).slice(0,6).map(c=>{const d=dU(c.sol);return(<div key={c.id} onClick={()=>onOpen(c)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${B.bdr}06`,cursor:"pointer"}}><div><div style={{fontSize:13,fontWeight:500}}>{c.client}</div><div style={{fontSize:11,color:B.txtD}}>{c.ref}</div></div><span style={{...S.mono,fontSize:12,fontWeight:600,color:d<30?B.danger:d<90?B.gold:B.txtM}}>{d}d</span></div>);})}</div>
 </div></div>);}
 
-function Cases({user,cases,onOpen}){
-const[search,setSearch]=useState("");const[fSt,setFSt]=useState("All");const[fJ,setFJ]=useState("All");const[sBy,setSBy]=useState("dop");const[sDir,setSDir]=useState("desc");
+function Cases({user,cases,onOpen,initialStatus,onClearFilter}){
+const[search,setSearch]=useState("");const[fSt,setFSt]=useState(initialStatus||"All");const[fJ,setFJ]=useState("All");const[sBy,setSBy]=useState("dop");const[sDir,setSDir]=useState("desc");
 const my=cases.filter(c=>c.attorney.id===user.id||c.support.id===user.id);
 const fl=my.filter(c=>{if(search&&!c.client.toLowerCase().includes(search.toLowerCase())&&!c.ref.toLowerCase().includes(search.toLowerCase())&&!c.insurer.toLowerCase().includes(search.toLowerCase()))return false;if(fSt!=="All"&&c.status!==fSt)return false;if(fJ!=="All"&&c.juris!==fJ)return false;return true;}).sort((a,b)=>{let va=a[sBy]||"",vb=b[sBy]||"";if(typeof va==="string")va=va.toLowerCase();if(typeof vb==="string")vb=vb.toLowerCase();if(va<vb)return sDir==="asc"?-1:1;if(va>vb)return sDir==="asc"?1:-1;return 0;});
 return(<div>
@@ -417,17 +417,18 @@ return(<div>
 </div>);}
 
 export default function DenhamStaffPortal(){
-const[user,setUser]=useState(null);const[page,setPage]=useState("dashboard");const[selCase,setSelCase]=useState(null);
+const[user,setUser]=useState(null);const[page,setPage]=useState("dashboard");const[selCase,setSelCase]=useState(null);const[statusFilter,setStatusFilter]=useState("All");
 const[cases,setCases]=useState(()=>genData());
 const updateCase=(id,updates)=>{setCases(prev=>prev.map(c=>c.id===id?{...c,...updates}:c));if(selCase&&selCase.id===id)setSelCase(prev=>({...prev,...updates}));};
 if(!user)return<Login onLogin={setUser}/>;
 const openC=c=>{setSelCase(c);setPage("caseDetail");};
 const backC=()=>{setSelCase(null);setPage("cases");};
+const filterByStatus=st=>{setStatusFilter(st);setPage("cases");setSelCase(null);};
 return(<div style={{display:"flex",minHeight:"100vh",background:B.bg}}>
-<Side user={user} active={page==="caseDetail"?"cases":page} onNav={p=>{setPage(p);setSelCase(null);}} onOut={()=>setUser(null)}/>
+<Side user={user} active={page==="caseDetail"?"cases":page} onNav={p=>{setPage(p);setSelCase(null);if(p!=="cases")setStatusFilter("All");}} onOut={()=>setUser(null)}/>
 <div style={{marginLeft:220,flex:1,padding:"28px 32px",maxWidth:1200}}>
-{page==="dashboard"&&<Dash user={user} cases={cases} onOpen={openC}/>}
-{page==="cases"&&<Cases user={user} cases={cases} onOpen={openC}/>}
+{page==="dashboard"&&<Dash user={user} cases={cases} onOpen={openC} onFilterStatus={filterByStatus}/>}
+{page==="cases"&&<Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={()=>setStatusFilter("All")}/>}
 {page==="caseDetail"&&selCase&&<CaseDetail c={selCase} onUpdate={updateCase} onBack={backC}/>}
 {page==="tasks"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Tasks</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global tasks view — coming soon</div></div></div>}
 {page==="docs"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Documents</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global documents view — coming soon</div></div></div>}
