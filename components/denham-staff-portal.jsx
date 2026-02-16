@@ -63,7 +63,7 @@ function nClr(t){return{bottom_line:B.gold,plaintiff_offer:B.green,defendant_off
 function nLbl(t){return t.split("_").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");}
 function aIcon(t){return{note:"\u270d\ufe0f",call:"\ud83d\udcde",email:"\u2709\ufe0f",task:"\u2705",document:"\ud83d\udcc4",negotiation:"\ud83d\udcb0",pleading:"\u2696\ufe0f",estimate:"\ud83d\udcca",status_change:"\ud83d\udd04",deadline:"\u23f0"}[t]||"\u2022";}
 
-function Login({onLogin}){
+function Login({onLogin, team}){
 const[e,setE]=useState("");const[p,setP]=useState("");
 return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:`radial-gradient(ellipse at 30% 20%,${B.navyBg} 0%,${B.bg} 70%)`}}>
 <div style={{width:380,...S.card,padding:40,textAlign:"center"}}>
@@ -75,7 +75,7 @@ return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justify
 <button style={{...S.btn,width:"100%",padding:"10px 0"}}>Sign In</button>
 <p style={{fontSize:11,color:B.txtD,marginTop:24,marginBottom:12}}>Demo — click to login as:</p>
 <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center"}}>
-{TEAM.slice(0,8).map(t=>(<button key={t.id} onClick={()=>onLogin(t)} style={{background:`${t.clr}15`,border:`1px solid ${t.clr}30`,borderRadius:6,padding:"4px 10px",fontSize:11,color:t.clr,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{t.name.split(" ")[0]}</button>))}
+{(team||TEAM).slice(0,8).map(t=>(<button key={t.id} onClick={()=>onLogin(t)} style={{background:`${t.clr}15`,border:`1px solid ${t.clr}30`,borderRadius:6,padding:"4px 10px",fontSize:11,color:t.clr,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{t.name.split(" ")[0]}</button>))}
 </div>
 <p style={{fontSize:10,color:B.txtD,marginTop:28}}>859-900-BART · denham.law</p>
 </div></div>);}
@@ -501,6 +501,23 @@ export default function DenhamStaffPortal(){
 const[user,setUser]=useState(null);const[page,setPage]=useState("dashboard");const[selCase,setSelCase]=useState(null);const[statusFilter,setStatusFilter]=useState("All");
 const[cases,setCases]=useState([]);
 const[usingSupabase,setUsingSupabase]=useState(false);
+const[team,setTeam]=useState(TEAM);
+
+// Load team members from Supabase (for demo login with correct UUIDs)
+useEffect(()=>{
+  if (!supabase) return;
+  (async () => {
+    try {
+      const members = await api.listTeamMembers();
+      if (members && members.length > 0) {
+        setTeam(members.map(m => ({
+          id: m.id, name: m.name, role: m.role, title: m.title,
+          ini: m.initials, clr: m.color || "#888",
+        })));
+      }
+    } catch(e) { console.warn("Failed to load team from Supabase:", e); }
+  })();
+}, []);
 
 // Load cases: try Supabase first, fall back to genData
 useEffect(()=>{
@@ -543,7 +560,7 @@ const updateCase=useCallback(async(id,updates)=>{
 
 const navTo=(p,cs,sf)=>{const state={page:p,caseId:cs?.id||null,statusFilter:sf||"All"};window.history.pushState(state,"",window.location.pathname);setPage(p);setSelCase(cs||null);setStatusFilter(sf||"All");};
 useEffect(()=>{const handler=e=>{const st=e.state;if(st){setPage(st.page||"dashboard");setSelCase(st.caseId?cases.find(c=>c.id===st.caseId)||null:null);setStatusFilter(st.statusFilter||"All");}else{setPage("dashboard");setSelCase(null);setStatusFilter("All");}};window.addEventListener("popstate",handler);window.history.replaceState({page:"dashboard",caseId:null,statusFilter:"All"},"",window.location.pathname);return()=>window.removeEventListener("popstate",handler);},[cases]);
-if(!user)return<Login onLogin={setUser}/>;
+if(!user)return<Login onLogin={setUser} team={team}/>;
 const openC=c=>{navTo("caseDetail",c);};
 const backC=()=>{window.history.back();};
 const filterByStatus=st=>{navTo("cases",null,st);};
