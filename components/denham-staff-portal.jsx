@@ -3210,6 +3210,13 @@ export default function DenhamStaffPortal() {
     return () => window.removeEventListener("popstate", handler);
   }, [cases]);
 
+  // SOL alerts computation (must be before early returns to maintain hook order)
+  const solCases = useMemo(() => cases.filter(c => c.sol && c.status !== "Settled" && c.status !== "Closed")
+    .map(c => ({ ...c, _solDays: dU(c.sol) }))
+    .filter(c => c._solDays <= 90)
+    .sort((a, b) => a._solDays - b._solDays), [cases]);
+  const sidebarCounts = { cases: cases.length, tasks: taskCount, solAlerts: solCases.length };
+
   // Error state
   if (error && !user) {
     return (
@@ -3233,13 +3240,6 @@ export default function DenhamStaffPortal() {
     const newCase = sbToCase(row);
     setCases(prev => [newCase, ...prev]);
   };
-
-  // SOL alerts computation
-  const solCases = useMemo(() => cases.filter(c => c.sol && c.status !== "Settled" && c.status !== "Closed")
-    .map(c => ({ ...c, _solDays: dU(c.sol) }))
-    .filter(c => c._solDays <= 90)
-    .sort((a, b) => a._solDays - b._solDays), [cases]);
-  const sidebarCounts = { cases: cases.length, tasks: taskCount, solAlerts: solCases.length };
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: B.bg }}>
