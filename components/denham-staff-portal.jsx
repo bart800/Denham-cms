@@ -220,6 +220,44 @@ function nClr(t) {
 
 function nLbl(t) { return (t || "").split("_").map(w => w.length > 0 ? w[0].toUpperCase() + w.slice(1) : "").join(" "); }
 
+// ─── Risk Score Calculation ─────────────────────────────────
+function calcRiskScore(c, litDetails) {
+  let score = 0;
+  const now = new Date();
+  if (c.sol && !solIsMet(c.status)) {
+    const sd = dU(c.sol);
+    if (sd < 0) score += 50;
+    else if (sd <= 30) score += 40;
+    else if (sd <= 60) score += 25;
+  }
+  const isLit = (c.status || "").includes("Litigation");
+  const ld = litDetails || {};
+  if (isLit && !ld.discovery_deadline) score += 15;
+  if (isLit && !ld.trial_date) score += 15;
+  if (c.dop) {
+    const daysOpen = Math.ceil((now - new Date(c.dop + "T00:00:00")) / 86400000);
+    if (daysOpen > 180 && !(c.totalRec > 0)) score += 10;
+    if ((c.status === "Intake" || c.status === "New") && daysOpen > 30) score += 10;
+  }
+  return Math.min(score, 100);
+}
+
+function riskColor(score) {
+  if (score <= 20) return { bg: B.greenBg, t: B.green, label: "Low" };
+  if (score <= 40) return { bg: B.goldBg, t: B.gold, label: "Medium" };
+  if (score <= 60) return { bg: "rgba(235,140,3,0.12)", t: "#eb8c03", label: "High" };
+  return { bg: B.dangerBg, t: B.danger, label: "Critical" };
+}
+
+function RiskBadge({ score }) {
+  const rc = riskColor(score);
+  return (
+    <span style={{ ...S.badge, background: rc.bg, color: rc.t, border: `1px solid ${rc.t}30` }}>
+      {score > 60 ? "🔴" : score > 40 ? "🟠" : score > 20 ? "🟡" : "🟢"} {score}
+    </span>
+  );
+}
+
 function aIcon(t) {
   return {
     note: "✍️", call: "📞", email: "✉️", task: "✅", document: "📄",
@@ -891,6 +929,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
     { id: "tasks", label: "Tasks", icon: "☐", count: counts?.tasks },
     { id: "calendar", label: "Calendar", icon: "📅" },
     { id: "docs", label: "Documents", icon: "◇" },
+    { id: "compliance", label: "Compliance", icon: "🛡️", dot: counts?.criticalCases > 0 },
   ];
 
   return (
@@ -1649,7 +1688,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
               <input type="checkbox" checked={paged.length > 0 && selected.size === paged.length} onChange={toggleAll}
                 style={{ cursor: "pointer", accentColor: B.gold }} />
             </th>
-            {[["ref", "Case #"], ["client", "Client"], ["status", "Status"], ["insurer", "Insurer"], ["attorney", "Attorney"], ["juris", "State"], ["dop", "Opened"], ["sol", "SOL"], ["lastAct", "Last Activity"]].map(([c, l]) => (
+            {[["ref", "Case #"], ["client", "Client"], ["status", "Status"], ["insurer", "Insurer"], ["attorney", "Attorney"], ["juris", "State"], ["dop", "Opened"], ["sol", "SOL"], ["risk", "Risk"], ["lastAct", "Last Activity"]].map(([c, l]) => (
               <th key={c} onClick={() => { if (sBy === c) setSDir(d => d === "asc" ? "desc" : "asc"); else { setSBy(c); setSDir("desc"); } }} style={{ ...S.th, cursor: "pointer", userSelect: "none" }}>
                 {l}{sBy === c ? (sDir === "asc" ? " ↑" : " ↓") : ""}
               </th>
@@ -1684,6 +1723,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, fontWeight: 600, color: sd != null ? (sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtM) : B.txtD }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{c.sol ? fmtD(c.sol) : "—"}{solBadge(c.sol, c.status)}</div>
                   </td>
+                  <td style={S.td}><RiskBadge score={calcRiskScore(c, {})} /></td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 11, color: B.txtD }}>{getLastActivity(c)}</td>
                 </tr>
               );
@@ -2238,7 +2278,7 @@ function NewCaseModal({ open, onClose, cases, team, onCreated }) {
 // ═══════════════════════════════════════════════════════════
 // GLOBAL HEADER BAR
 // ═══════════════════════════════════════════════════════════
-function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK }) {
+function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK, criticalCount, onNavCompliance }) {
   const [solOpen, setSolOpen] = useState(false);
   const breadcrumbs = [{ label: "Dashboard" }];
   if (page === "cases" || page === "caseDetail") breadcrumbs.push({ label: "Cases" });
@@ -2246,9 +2286,17 @@ function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK }) {
   if (page === "calendar") breadcrumbs.push({ label: "Calendar" });
   if (page === "tasks") breadcrumbs.push({ label: "Tasks" });
   if (page === "docs") breadcrumbs.push({ label: "Documents" });
+  if (page === "compliance") breadcrumbs.push({ label: "Compliance" });
   const solCritical = (solCases || []).filter(c => c._solDays <= 30);
 
   return (
+    <div>
+      {criticalCount > 0 && page !== "compliance" && (
+        <div onClick={onNavCompliance} style={{ padding: "8px 16px", marginBottom: 12, borderRadius: 8, background: B.dangerBg, border: `1px solid ${B.danger}40`, display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontSize: 13, fontWeight: 600, color: B.danger }}>
+          ⚠️ {criticalCount} case{criticalCount !== 1 ? "s" : ""} need{criticalCount === 1 ? "s" : ""} immediate attention
+          <span style={{ marginLeft: "auto", fontSize: 11, color: B.danger, opacity: 0.7 }}>View Compliance →</span>
+        </div>
+      )}
     <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 0", marginBottom: 20, borderBottom: `1px solid ${B.bdr}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         <div style={{ width: 30, height: 30, borderRadius: "50%", background: user?.clr || B.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>{user?.ini || "?"}</div>
@@ -2289,6 +2337,275 @@ function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK }) {
           )}
         </div>
       )}
+    </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// COMPLIANCE DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function ComplianceDash({ cases, onOpen }) {
+  const [filter, setFilter] = useState("all"); // all, critical, high, sol, communication, litigation
+
+  const now = new Date();
+  const caseData = useMemo(() => cases.map(c => {
+    const score = calcRiskScore(c, {});
+    const sd = c.sol ? dU(c.sol) : null;
+    const daysOpen = c.dop ? Math.ceil((now - new Date(c.dop + "T00:00:00")) / 86400000) : 0;
+    const isLit = (c.status || "").includes("Litigation");
+    return { ...c, _risk: score, _solDays: sd, _daysOpen: daysOpen, _isLit: isLit };
+  }), [cases]);
+
+  const critical = caseData.filter(c => c._risk > 60);
+  const high = caseData.filter(c => c._risk > 40 && c._risk <= 60);
+  const solIssues = caseData.filter(c => c._solDays !== null && !solIsMet(c.status) && c._solDays <= 90);
+  const commIssues = caseData.filter(c =>
+    ((c.status === "Intake" || c.status === "New") && c._daysOpen > 30) ||
+    (c.status === "Presuit Demand" && c._daysOpen > 90)
+  );
+  const litMissing = caseData.filter(c => c._isLit);
+
+  const filtered = filter === "critical" ? critical : filter === "high" ? high : filter === "sol" ? solIssues : filter === "communication" ? commIssues : filter === "litigation" ? litMissing : caseData.filter(c => c._risk > 0);
+
+  const summaryCards = [
+    { label: "Critical", count: critical.length, icon: "🔴", bg: B.dangerBg, t: B.danger, f: "critical" },
+    { label: "High Risk", count: high.length, icon: "🟠", bg: "rgba(235,140,3,0.12)", t: "#eb8c03", f: "high" },
+    { label: "SOL Alerts", count: solIssues.length, icon: "⏰", bg: B.goldBg, t: B.gold, f: "sol" },
+    { label: "Comm. Flags", count: commIssues.length, icon: "📞", bg: B.navyBg, t: "#6b6bff", f: "communication" },
+    { label: "Litigation Gaps", count: litMissing.filter(c => c._risk >= 15).length, icon: "⚖️", bg: "rgba(124,92,191,0.12)", t: B.purple, f: "litigation" },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>🛡️ Compliance Dashboard</h2>
+        <span style={{ fontSize: 12, color: B.txtD }}>Malpractice Prevention & Risk Tracking</span>
+      </div>
+
+      {/* Summary Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 24 }}>
+        {summaryCards.map(s => (
+          <div key={s.f} onClick={() => setFilter(f => f === s.f ? "all" : s.f)}
+            style={{ ...S.card, padding: 16, cursor: "pointer", borderColor: filter === s.f ? s.t + "60" : B.bdr, textAlign: "center", transition: "border-color 0.15s" }}>
+            <div style={{ fontSize: 24, marginBottom: 4 }}>{s.icon}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: s.t, ...S.mono }}>{s.count}</div>
+            <div style={{ fontSize: 11, color: B.txtM, marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* SOL Timeline */}
+      <div style={{ ...S.card, marginBottom: 20 }}>
+        <div style={S.secT}>⏰ Statute of Limitations Tracker</div>
+        {solIssues.length === 0 ? (
+          <div style={{ padding: 20, textAlign: "center", color: B.green, fontSize: 13 }}>✅ All SOL deadlines are met or beyond 90 days</div>
+        ) : (
+          <table style={S.tbl}>
+            <thead><tr>
+              <th style={S.th}>Case</th><th style={S.th}>Status</th><th style={S.th}>SOL Date</th><th style={S.th}>Days Left</th><th style={S.th}>Risk</th>
+            </tr></thead>
+            <tbody>
+              {solIssues.sort((a, b) => a._solDays - b._solDays).map(c => {
+                const clr = c._solDays < 0 ? B.danger : c._solDays <= 30 ? B.danger : c._solDays <= 60 ? B.gold : "#eb8c03";
+                return (
+                  <tr key={c.id} onClick={() => onOpen(c)} style={{ cursor: "pointer" }}
+                    onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <td style={S.td}><div style={{ fontWeight: 600, fontSize: 13 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
+                    <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
+                    <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{fmtD(c.sol)}</td>
+                    <td style={{ ...S.td, ...S.mono, fontWeight: 700, color: clr }}>{c._solDays < 0 ? `EXPIRED ${Math.abs(c._solDays)}d` : `${c._solDays}d`}</td>
+                    <td style={S.td}><RiskBadge score={c._risk} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Client Communication Flags */}
+      <div style={{ ...S.card, marginBottom: 20 }}>
+        <div style={S.secT}>📞 Client Communication Flags</div>
+        {commIssues.length === 0 ? (
+          <div style={{ padding: 20, textAlign: "center", color: B.green, fontSize: 13 }}>✅ No communication concerns detected</div>
+        ) : (
+          <table style={S.tbl}>
+            <thead><tr>
+              <th style={S.th}>Case</th><th style={S.th}>Status</th><th style={S.th}>Days Open</th><th style={S.th}>Concern</th><th style={S.th}>Risk</th>
+            </tr></thead>
+            <tbody>
+              {commIssues.sort((a, b) => b._daysOpen - a._daysOpen).map(c => {
+                const concern = (c.status === "Intake" || c.status === "New") ? "Intake stalled >30 days" : "Presuit Demand >90 days";
+                return (
+                  <tr key={c.id} onClick={() => onOpen(c)} style={{ cursor: "pointer" }}
+                    onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <td style={S.td}><div style={{ fontWeight: 600, fontSize: 13 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
+                    <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
+                    <td style={{ ...S.td, ...S.mono, fontWeight: 600 }}>{c._daysOpen}d</td>
+                    <td style={{ ...S.td, fontSize: 12, color: B.gold }}>{concern}</td>
+                    <td style={S.td}><RiskBadge score={c._risk} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Litigation Missing Deadlines */}
+      <div style={{ ...S.card, marginBottom: 20 }}>
+        <div style={S.secT}>⚖️ Litigation Cases — Scheduling Order Compliance</div>
+        <div style={{ fontSize: 12, color: B.txtM, marginBottom: 12 }}>Cases in litigation without discovery deadlines, trial dates, or mediation dates set. Add deadlines in the case detail Litigation tab.</div>
+        {litMissing.length === 0 ? (
+          <div style={{ padding: 20, textAlign: "center", color: B.green, fontSize: 13 }}>✅ No litigation cases found</div>
+        ) : (
+          <table style={S.tbl}>
+            <thead><tr>
+              <th style={S.th}>Case</th><th style={S.th}>Status</th><th style={S.th}>Days in Litigation</th><th style={S.th}>Missing Dates</th><th style={S.th}>Risk</th>
+            </tr></thead>
+            <tbody>
+              {litMissing.sort((a, b) => b._risk - a._risk).map(c => (
+                <tr key={c.id} onClick={() => onOpen(c)} style={{ cursor: "pointer" }}
+                  onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <td style={S.td}><div style={{ fontWeight: 600, fontSize: 13 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
+                  <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
+                  <td style={{ ...S.td, ...S.mono }}>{c._daysOpen}d</td>
+                  <td style={S.td}>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      <span style={{ ...S.badge, fontSize: 10, background: B.dangerBg, color: B.danger }}>Discovery</span>
+                      <span style={{ ...S.badge, fontSize: 10, background: B.dangerBg, color: B.danger }}>Trial</span>
+                      <span style={{ ...S.badge, fontSize: 10, background: B.dangerBg, color: B.danger }}>Mediation</span>
+                    </div>
+                  </td>
+                  <td style={S.td}><RiskBadge score={c._risk} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Full Risk Table */}
+      {filter !== "all" && filtered.length > 0 && filter !== "sol" && filter !== "communication" && filter !== "litigation" && (
+        <div style={{ ...S.card }}>
+          <div style={S.secT}>{filter === "critical" ? "🔴 Critical Cases" : "🟠 High Risk Cases"}</div>
+          <table style={S.tbl}>
+            <thead><tr>
+              <th style={S.th}>Case</th><th style={S.th}>Status</th><th style={S.th}>SOL</th><th style={S.th}>Days Open</th><th style={S.th}>Risk</th>
+            </tr></thead>
+            <tbody>
+              {filtered.sort((a, b) => b._risk - a._risk).map(c => (
+                <tr key={c.id} onClick={() => onOpen(c)} style={{ cursor: "pointer" }}
+                  onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <td style={S.td}><div style={{ fontWeight: 600 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
+                  <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
+                  <td style={S.td}>{c.sol ? <>{fmtD(c.sol)} {solBadge(c.sol, c.status)}</> : "—"}</td>
+                  <td style={{ ...S.td, ...S.mono }}>{c._daysOpen}d</td>
+                  <td style={S.td}><RiskBadge score={c._risk} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// CASE DETAIL - COMPLIANCE TAB
+// ═══════════════════════════════════════════════════════════
+function ComplianceTab({ c }) {
+  const score = calcRiskScore(c, {});
+  const rc = riskColor(score);
+  const sd = c.sol ? dU(c.sol) : null;
+  const isLit = (c.status || "").includes("Litigation");
+  const daysOpen = c.dop ? Math.ceil((new Date() - new Date(c.dop + "T00:00:00")) / 86400000) : 0;
+
+  const breakdown = [];
+  if (c.sol && !solIsMet(c.status)) {
+    if (sd < 0) breakdown.push({ label: "SOL Expired — NOT MET", pts: 50, color: B.danger });
+    else if (sd <= 30) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 40, color: B.danger });
+    else if (sd <= 60) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 25, color: B.gold });
+  }
+  if (isLit) {
+    breakdown.push({ label: "No discovery deadline set", pts: 15, color: "#eb8c03" });
+    breakdown.push({ label: "No trial date set", pts: 15, color: "#eb8c03" });
+  }
+  if (daysOpen > 180 && !(c.totalRec > 0)) breakdown.push({ label: `Case open ${daysOpen} days, no recovery`, pts: 10, color: B.gold });
+  if ((c.status === "Intake" || c.status === "New") && daysOpen > 30) breakdown.push({ label: `Intake stalled ${daysOpen} days`, pts: 10, color: B.gold });
+
+  return (
+    <div>
+      {/* Risk Score Card */}
+      <div style={{ ...S.card, marginBottom: 20, borderColor: rc.t + "40" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={S.secT}>Risk Assessment</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 36, fontWeight: 800, color: rc.t, ...S.mono }}>{score}</div>
+            <div style={{ ...S.badge, background: rc.bg, color: rc.t, fontSize: 12, padding: "4px 12px" }}>{rc.label}</div>
+          </div>
+        </div>
+        {breakdown.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {breakdown.map((b, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", borderRadius: 6, background: `${b.color}10`, border: `1px solid ${b.color}20` }}>
+                <span style={{ fontSize: 13, color: b.color }}>{b.label}</span>
+                <span style={{ ...S.mono, fontSize: 12, fontWeight: 700, color: b.color }}>+{b.pts}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding: 16, textAlign: "center", color: B.green, fontSize: 13 }}>✅ No risk factors detected</div>
+        )}
+      </div>
+
+      {/* SOL Status */}
+      <div style={{ ...S.card, marginBottom: 20 }}>
+        <div style={S.secT}>Statute of Limitations</div>
+        {c.sol ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ ...S.mono, fontSize: 14 }}>{fmtD(c.sol)}</div>
+            {solBadge(c.sol, c.status)}
+            {sd !== null && !solIsMet(c.status) && (
+              <div style={{ ...S.mono, fontSize: 20, fontWeight: 800, color: sd <= 30 ? B.danger : sd <= 60 ? B.gold : B.green }}>{sd}d</div>
+            )}
+          </div>
+        ) : (
+          <div style={{ color: B.txtM, fontSize: 13 }}>No SOL date set — <span style={{ color: B.gold, cursor: "pointer" }}>Add SOL date in case details</span></div>
+        )}
+      </div>
+
+      {/* Litigation Dates */}
+      {isLit && (
+        <div style={{ ...S.card, marginBottom: 20 }}>
+          <div style={S.secT}>Scheduling Order Dates</div>
+          <div style={{ fontSize: 12, color: B.txtM, marginBottom: 12 }}>Add deadlines via the Litigation tab to track compliance.</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            {[{ label: "Discovery Deadline", icon: "📋" }, { label: "Trial Date", icon: "⚖️" }, { label: "Mediation Date", icon: "🤝" }].map(d => (
+              <div key={d.label} style={{ padding: 16, borderRadius: 8, background: B.dangerBg, border: `1px solid ${B.danger}20`, textAlign: "center" }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{d.icon}</div>
+                <div style={{ fontSize: 11, color: B.txtD, marginBottom: 4 }}>{d.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: B.danger }}>Not Set</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Client Contact Log Placeholder */}
+      <div style={{ ...S.card }}>
+        <div style={S.secT}>📞 Client Contact Log</div>
+        <div style={{ padding: 20, textAlign: "center", color: B.txtM, fontSize: 13, borderRadius: 8, border: `1px dashed ${B.bdr}` }}>
+          Contact logging will be available once activity_log data is populated.<br />
+          <span style={{ fontSize: 11, color: B.txtD }}>Track calls, emails, and meetings with clients here.</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2609,6 +2926,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "estimates", l: "Estimates" }, { id: "pleadings", l: "Pleadings" },
     { id: "timeline", l: "Timeline" }, { id: "tasks", l: "Tasks" },
     { id: "docs", l: "Documents" }, { id: "docgen", l: "Generate Docs" },
+    { id: "compliance", l: "⚠️ Compliance" },
   ];
   const sc = stClr(c.status);
   const sd = c.sol ? dU(c.sol) : null;
@@ -2812,6 +3130,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "tasks" && <TasksPanel caseId={c.id} userId={user?.id} team={team} />}
       {tab === "docs" && <DocumentBrowser clientName={c.client} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
+      {tab === "compliance" && <ComplianceTab c={c} />}
     </div>
   );
 }
@@ -3248,7 +3567,8 @@ export default function DenhamStaffPortal() {
     .map(c => ({ ...c, _solDays: dU(c.sol) }))
     .filter(c => c._solDays <= 90) // includes negative (expired)
     .sort((a, b) => a._solDays - b._solDays), [cases]);
-  const sidebarCounts = { cases: cases.length, tasks: taskCount, solAlerts: solCases.length };
+  const criticalCases = useMemo(() => cases.filter(c => calcRiskScore(c, {}) > 60), [cases]);
+  const sidebarCounts = { cases: cases.length, tasks: taskCount, solAlerts: solCases.length, criticalCases: criticalCases.length };
 
   // Error state
   if (error && !user) {
@@ -3303,7 +3623,7 @@ export default function DenhamStaffPortal() {
         <ToastContainer />
         {/* Global Header Bar */}
         {!loading && user && (
-          <GlobalHeader user={user} page={page} selCase={selCase} solCases={solCases} onOpenCase={openC} onCmdK={() => setCmdBarOpen(true)} />
+          <GlobalHeader user={user} page={page} selCase={selCase} solCases={solCases} onOpenCase={openC} onCmdK={() => setCmdBarOpen(true)} criticalCount={criticalCases.length} onNavCompliance={() => navTo("compliance")} />
         )}
         {!loading && error && (
           <div style={{ padding: "12px 16px", background: B.dangerBg, borderRadius: 8, marginBottom: 16, fontSize: 13, color: B.danger }}>
@@ -3325,6 +3645,7 @@ export default function DenhamStaffPortal() {
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Tasks</h2>
             <TasksKanban userId={user.id} team={team} cases={cases} /></div>
         )}
+        {!loading && page === "compliance" && <ComplianceDash cases={cases} onOpen={openC} />}
         {!loading && page === "docs" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Documents</h2>
             <DocumentBrowser />
