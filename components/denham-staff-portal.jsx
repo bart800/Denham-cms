@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
+import * as api from "../lib/api";
 const B={navy:"#000066",gold:"#ebb003",green:"#386f4a",bg:"#08080f",card:"#111119",cardH:"#16161f",bdr:"#1e1e2e",bdrL:"#2a2a3a",txt:"#e8e8f0",txtM:"#8888a0",txtD:"#55556a",danger:"#e04050",dangerBg:"rgba(224,64,80,0.1)",greenBg:"rgba(56,111,74,0.12)",goldBg:"rgba(235,176,3,0.1)",navyBg:"rgba(0,0,102,0.15)",purple:"#7c5cbf"};
 const JURIS=["KY","TN","MT","NC","TX","CA","WA","CO","NY"];
 const CTYPES=["Property - Wind/Hail","Property - Fire","Property - Water","Property - Theft","Property - Mold","Personal Injury - Auto","Personal Injury - Slip & Fall","Personal Injury - Dog Bite"];
@@ -8,8 +10,6 @@ const PTYPES=["Complaint","Answer","Motion to Dismiss","Motion for Summary Judgm
 const ETYPES=["Contractor Estimate","Public Adjuster Estimate","Insurance Estimate","Supplement","Engineer Report","Independent Estimate"];
 const ATYPES=["note","call","email","task","document","negotiation","pleading","estimate","status_change","deadline"];
 const NTYPES=["bottom_line","plaintiff_offer","defendant_offer","presuit_demand","settlement","undisputed_payment","denial","appraisal_award"];
-const TASK_CATS=["Client Communication","Adjuster Follow-up","Document Collection","Demand Preparation","Filing Deadline","Discovery Response","Deposition Prep","Mediation Prep","Trial Prep","Expert Coordination","Settlement","Internal Review","Intake","Administrative"];
-const TASK_PRIORITIES=["urgent","high","normal","low"];
 const TEAM=[
 {id:1,name:"Bart Denham",role:"Admin",title:"Principal Attorney",ini:"BD",clr:"#ebb003"},
 {id:2,name:"Joey",role:"Attorney",title:"Associate Attorney",ini:"JY",clr:"#5b8def"},
@@ -49,20 +49,9 @@ acts.push({id:`a${i}-${a}`,date:ad.toISOString().split("T")[0],time:`${ri(8,18)}
 title:at==="note"?pk(["Case note added","Internal memo","Client update"]):at==="call"?pk(["Called client","Called adjuster","Conference call"]):at==="email"?pk(["Email to adjuster","Email from client","Demand sent"]):at==="task"?pk(["Task created","Task completed"]):at==="document"?pk(["Doc uploaded","Doc signed","Policy uploaded"]):at==="negotiation"?pk(["Offer received","Counter sent","Demand issued"]):at==="pleading"?pk(["Motion filed","Response served","Discovery sent"]):at==="estimate"?pk(["Estimate received","Supplement submitted"]):at==="status_change"?"Status \u2192 "+pk(CSTATS):pk(["SOL approaching","Hearing date set"]),
 desc:pk(["","Details attached","Follow up required","No action needed","Awaiting response"])});}
 acts.sort((a,b)=>new Date(b.date)-new Date(a.date));
-const tasks=[];const numTasks=ri(3,12);let tkDate=new Date(dop);
-const taskTemplates=[{cat:"Client Communication",titles:["Call client for status update","Send client engagement letter","Request signed medical authorization","Follow up on missing documents from client","Send case status update to client"]},{cat:"Adjuster Follow-up",titles:["Follow up with adjuster on claim status","Request adjuster's estimate","Demand additional inspection","Challenge adjuster's scope","Request claim file from carrier"]},{cat:"Document Collection",titles:["Obtain police report","Request medical records","Collect repair estimates","Get weather data for date of loss","Obtain building permits/plans","Request prior claim history"]},{cat:"Demand Preparation",titles:["Draft presuit demand letter","Compile demand package exhibits","Calculate damages summary","Review demand letter - attorney","Send demand to carrier"]},{cat:"Filing Deadline",titles:["File complaint before SOL","Serve defendant","File proof of service","Calendar response deadline"]},{cat:"Discovery Response",titles:["Draft interrogatory responses","Compile document production","Review RFA responses","Prepare privilege log","Serve discovery responses"]},{cat:"Deposition Prep",titles:["Prepare client for deposition","Outline deposition questions for adjuster","Schedule court reporter","Send deposition notice"]},{cat:"Mediation Prep",titles:["Draft mediation brief","Prepare settlement authority memo","Compile mediation exhibits","Schedule mediator"]},{cat:"Trial Prep",titles:["Prepare witness list","Draft jury instructions","Compile trial exhibits","Prepare opening statement outline"]},{cat:"Expert Coordination",titles:["Retain contractor for estimate","Schedule engineering inspection","Request expert report","Review expert opinion letter"]},{cat:"Settlement",titles:["Send settlement demand","Review settlement offer","Draft release agreement","Process settlement funds"]},{cat:"Internal Review",titles:["Attorney case review","Update case valuation","Review new evidence","Strategy meeting - schedule"]},{cat:"Administrative",titles:["Update case status in CMS","File correspondence","Calendar next deadline","Request conflict check"]}];
-for(let tk=0;tk<numTasks;tk++){
-tkDate=new Date(tkDate.getTime()+ri(2,21)*86400000);
-const tmpl=pk(taskTemplates);const title=pk(tmpl.titles);const assignee=pk(TEAM);const creator=pk(TEAM.filter(t=>t.role==="Admin"||t.role==="Attorney"));
-const created=new Date(tkDate.getTime()-ri(1,14)*86400000).toISOString().split("T")[0];
-const due=tkDate.toISOString().split("T")[0];
-const isOverdue=new Date(due)<new Date()&&r()>0.3;
-const isDone=isClosed?r()>0.1:r()>0.6;
-tasks.push({id:`t${i}-${tk}`,title,category:tmpl.cat,priority:pk(TASK_PRIORITIES),assignee:{id:assignee.id,name:assignee.name,ini:assignee.ini,clr:assignee.clr},createdBy:{id:creator.id,name:creator.name},created,due,completed:isDone?new Date(new Date(due).getTime()+ri(-3,5)*86400000).toISOString().split("T")[0]:null,status:isDone?"done":isOverdue?"overdue":"open",notes:pk(["","See case notes","Per attorney instructions","Client requested","Follow up if no response in 48hrs","Urgent - approaching deadline",""])});}
-tasks.sort((a,b)=>a.status==="done"&&b.status!=="done"?1:a.status!=="done"&&b.status==="done"?-1:new Date(a.due)-new Date(b.due));
 const cd={policyNumber:pn,claimNumber:cn,insurer:ins,adjuster:`${pk(fn)} ${pk(ln)}`,adjPhone:`(${ri(200,999)}) ${ri(200,999)}-${ri(1000,9999)}`,adjEmail:`adj${ri(100,999)}@${ins.toLowerCase().replace(/\s/g,"")}.com`,dateOfLoss:dol,dateReported:new Date(new Date(dol).getTime()+ri(1,30)*86400000).toISOString().split("T")[0],dateDenied:r()>0.6?new Date(new Date(dol).getTime()+ri(30,120)*86400000).toISOString().split("T")[0]:null,policyType:ip?pk(["HO-3","HO-5","HO-6","Commercial Property"]):pk(["Auto Liability","Premises Liability"]),policyLimits:`$${ri(100,2000)}K`,deductible:ip?`$${pk(["1,000","2,500","5,000"])}`:"N/A",causeOfLoss:ip?pk(["Wind/Hail","Fire","Water Damage","Theft","Mold"]):pk(["Auto Collision","Slip & Fall","Dog Bite"]),propAddr:ip?`${ri(100,9999)} ${pk(st)}, ${pk(ct[j])}, ${j}`:null};
 const ld=isL?{caseNum:`${ri(20,26)}-CI-${ri(10000,99999)}`,court:`${pk(ct[j])} ${pk(["Circuit","District","Superior"])} Court`,judge:`Hon. ${pk(fn)} ${pk(ln)}`,filedDate:rd(2024,2026),oppCounsel:`${pk(fn)} ${pk(ln)}`,oppFirm:`${pk(ln)} & ${pk(ln)}, PLLC`,oppPhone:`(${ri(200,999)}) ${ri(200,999)}-${ri(1000,9999)}`,oppEmail:`atty${ri(100,999)}@${pk(ln).toLowerCase()}law.com`,trialDate:r()>0.5?rd(2026,2027):null,medDate:r()>0.4?rd(2026,2027):null,discDeadline:rd(2026,2027)}:null;
-cases.push({id:i+1,ref:`DEN-${String(2024+Math.floor(i/80)).slice(-2)}-${String(i+1).padStart(4,"0")}`,client:`${f} ${l}`,clientPhone:`(${ri(200,999)}) ${ri(200,999)}-${ri(1000,9999)}`,clientEmail:`${f.toLowerCase()}.${l.toLowerCase()}@${pk(["gmail","yahoo","outlook"])}.com`,type:tp,status:sts,juris:j,attorney:att,support:sup,dol,dop,sol,insurer:ins,cn,pn,cd,ld,negs,ests,pleads,acts,tasks,totalRec:sts==="Settled"?ri(15000,750000):0,attFees:sts==="Settled"?ri(5000,250000):0});}
+cases.push({id:i+1,ref:`DEN-${String(2024+Math.floor(i/80)).slice(-2)}-${String(i+1).padStart(4,"0")}`,client:`${f} ${l}`,clientPhone:`(${ri(200,999)}) ${ri(200,999)}-${ri(1000,9999)}`,clientEmail:`${f.toLowerCase()}.${l.toLowerCase()}@${pk(["gmail","yahoo","outlook"])}.com`,type:tp,status:sts,juris:j,attorney:att,support:sup,dol,dop,sol,insurer:ins,cn,pn,cd,ld,negs,ests,pleads,acts,totalRec:sts==="Settled"?ri(15000,750000):0,attFees:sts==="Settled"?ri(5000,250000):0});}
 return cases;}
 
 const S={card:{background:B.card,border:`1px solid ${B.bdr}`,borderRadius:10,padding:20},badge:{display:"inline-block",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600},mono:{fontFamily:"'JetBrains Mono',monospace"},input:{background:"#0a0a14",border:`1px solid ${B.bdr}`,borderRadius:6,padding:"8px 12px",color:B.txt,fontSize:13,outline:"none",width:"100%",fontFamily:"'DM Sans',sans-serif"},btn:{background:B.gold,color:"#000",border:"none",borderRadius:6,padding:"8px 16px",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"},btnO:{background:"transparent",border:`1px solid ${B.bdr}`,borderRadius:6,padding:"8px 16px",fontSize:13,fontWeight:500,cursor:"pointer",color:B.txtM,fontFamily:"'DM Sans',sans-serif"},tbl:{width:"100%",borderCollapse:"collapse",fontSize:13},th:{textAlign:"left",padding:"10px 16px",borderBottom:`1px solid ${B.bdr}`,color:B.txtD,fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:0.5},td:{padding:"10px 16px",borderBottom:`1px solid ${B.bdr}06`},secT:{fontSize:15,fontWeight:700,color:B.txt,marginBottom:16}};
@@ -399,64 +388,6 @@ return(<div key={set.id} onClick={()=>setSelSet(set.id)} style={{...S.card,curso
 {requests.length===0&&<div style={{...S.card,gridColumn:"1/-1",padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>No discovery requests served yet.</div></div>}
 </div></div>);}
 
-function CaseTasks({c,onUpdate}){
-const[showAdd,setShowAdd]=useState(false);
-const[newTitle,setNewTitle]=useState("");const[newCat,setNewCat]=useState(TASK_CATS[0]);const[newPri,setNewPri]=useState("normal");const[newAssignee,setNewAssignee]=useState(TEAM[0].id);const[newDue,setNewDue]=useState(new Date(Date.now()+7*86400000).toISOString().split("T")[0]);const[newNotes,setNewNotes]=useState("");
-const[filterSt,setFilterSt]=useState("open");const[filterAssignee,setFilterAssignee]=useState("all");const[editId,setEditId]=useState(null);
-
-const tasks=c.tasks||[];
-const filtered=tasks.filter(t=>{if(filterSt!=="all"&&t.status!==filterSt)return false;if(filterAssignee!=="all"&&t.assignee.id!==parseInt(filterAssignee))return false;return true;});
-const open=tasks.filter(t=>t.status==="open").length;const overdue=tasks.filter(t=>t.status==="overdue").length;const done=tasks.filter(t=>t.status==="done").length;
-
-const addTask=()=>{if(!newTitle.trim())return;const a=TEAM.find(t=>t.id===parseInt(newAssignee));const task={id:`t${c.id}-new-${Date.now()}`,title:newTitle,category:newCat,priority:newPri,assignee:{id:a.id,name:a.name,ini:a.ini,clr:a.clr},createdBy:{id:1,name:"Bart Denham"},created:new Date().toISOString().split("T")[0],due:newDue,completed:null,status:"open",notes:newNotes};
-onUpdate(c.id,{tasks:[task,...c.tasks]});setShowAdd(false);setNewTitle("");setNewNotes("");};
-
-const toggleDone=(taskId)=>{const updated=c.tasks.map(t=>{if(t.id!==taskId)return t;if(t.status==="done")return{...t,status:new Date(t.due)<new Date()?"overdue":"open",completed:null};return{...t,status:"done",completed:new Date().toISOString().split("T")[0]};});onUpdate(c.id,{tasks:updated});};
-
-const deleteTask=(taskId)=>{onUpdate(c.id,{tasks:c.tasks.filter(t=>t.id!==taskId)});};
-
-const priClr=p=>({urgent:B.danger,high:"#e0a050",normal:"#5b8def",low:B.txtD}[p]||B.txtM);
-const stClrT=s=>({open:B.gold,overdue:B.danger,done:B.green}[s]||B.txtM);
-
-return(<div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
-{[{l:"Open",v:open,c:B.gold},{l:"Overdue",v:overdue,c:B.danger},{l:"Completed",v:done,c:B.green}].map((x,i)=>(<div key={i} style={{...S.card,padding:"12px 16px"}}><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",letterSpacing:0.5,fontWeight:600,marginBottom:4}}>{x.l}</div><div style={{...S.mono,fontSize:20,fontWeight:700,color:x.c}}>{x.v}</div></div>))}</div>
-
-<div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center"}}>
-<select value={filterSt} onChange={e=>setFilterSt(e.target.value)} style={{...S.input,width:140}}><option value="all">All Tasks</option><option value="open">Open</option><option value="overdue">Overdue</option><option value="done">Completed</option></select>
-<select value={filterAssignee} onChange={e=>setFilterAssignee(e.target.value)} style={{...S.input,width:160}}><option value="all">All Assignees</option>{TEAM.map(t=><option key={t.id} value={t.id}>{t.name.split(" ")[0]}</option>)}</select>
-<div style={{marginLeft:"auto"}}><button onClick={()=>setShowAdd(!showAdd)} style={S.btn}>{showAdd?"\u2715 Cancel":"+ New Task"}</button></div>
-</div>
-
-{showAdd&&<div style={{...S.card,marginBottom:16,background:"#0d0d18",border:`1px solid ${B.gold}30`}}>
-<h4 style={{fontSize:14,fontWeight:600,marginBottom:12,color:B.gold}}>New Task</h4>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-<div><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",marginBottom:4,fontWeight:600}}>Title</div><input value={newTitle} onChange={e=>setNewTitle(e.target.value)} placeholder="Task title..." style={S.input}/></div>
-<div><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",marginBottom:4,fontWeight:600}}>Category</div><select value={newCat} onChange={e=>setNewCat(e.target.value)} style={S.input}>{TASK_CATS.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
-<div><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",marginBottom:4,fontWeight:600}}>Assign To</div><select value={newAssignee} onChange={e=>setNewAssignee(e.target.value)} style={S.input}>{TEAM.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-<div><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",marginBottom:4,fontWeight:600}}>Priority</div><select value={newPri} onChange={e=>setNewPri(e.target.value)} style={S.input}><option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option></select></div>
-<div><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",marginBottom:4,fontWeight:600}}>Due Date</div><input type="date" value={newDue} onChange={e=>setNewDue(e.target.value)} style={S.input}/></div>
-</div></div>
-<div style={{marginBottom:12}}><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",marginBottom:4,fontWeight:600}}>Notes</div><input value={newNotes} onChange={e=>setNewNotes(e.target.value)} placeholder="Optional notes..." style={S.input}/></div>
-<button onClick={addTask} style={{...S.btn,padding:"8px 24px"}}>Create Task</button>
-</div>}
-
-<div style={{...S.card,padding:0,overflow:"hidden"}}>
-{filtered.length===0?<div style={{padding:40,textAlign:"center",color:B.txtD}}>No tasks matching filter</div>:
-<table style={S.tbl}><thead><tr><th style={{...S.th,width:30}}></th><th style={S.th}>Task</th><th style={S.th}>Category</th><th style={S.th}>Assigned</th><th style={S.th}>Priority</th><th style={S.th}>Due</th><th style={S.th}>Status</th><th style={{...S.th,width:30}}></th></tr></thead><tbody>
-{filtered.map(t=>{const days=dU(t.due);const isDone=t.status==="done";return(<tr key={t.id} style={{opacity:isDone?0.5:1}}>
-<td style={S.td}><div onClick={()=>toggleDone(t.id)} style={{width:20,height:20,borderRadius:4,border:`2px solid ${isDone?B.green:B.bdr}`,background:isDone?B.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,color:"#fff"}}>{isDone?"\u2713":""}</div></td>
-<td style={S.td}><div style={{fontSize:13,fontWeight:500,textDecoration:isDone?"line-through":"none",color:isDone?B.txtD:B.txt}}>{t.title}</div>{t.notes&&<div style={{fontSize:11,color:B.txtD,marginTop:2}}>{t.notes}</div>}</td>
-<td style={S.td}><span style={{...S.badge,background:`${B.navyBg}`,color:"#6b6bff",fontSize:10}}>{t.category}</span></td>
-<td style={S.td}><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:22,height:22,borderRadius:"50%",background:t.assignee.clr,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{t.assignee.ini}</div><span style={{fontSize:12}}>{t.assignee.name.split(" ")[0]}</span></div></td>
-<td style={S.td}><span style={{...S.badge,background:`${priClr(t.priority)}18`,color:priClr(t.priority)}}>{t.priority}</span></td>
-<td style={{...S.td,...S.mono,fontSize:12,color:isDone?B.txtD:days<0?B.danger:days<3?B.gold:B.txtM}}>{fmtD(t.due)}{!isDone&&days<0&&<span style={{color:B.danger,fontSize:10,marginLeft:4}}>({Math.abs(days)}d late)</span>}{!isDone&&days>=0&&days<7&&<span style={{color:B.gold,fontSize:10,marginLeft:4}}>({days}d)</span>}</td>
-<td style={S.td}><span style={{...S.badge,background:`${stClrT(t.status)}18`,color:stClrT(t.status)}}>{t.status}</span></td>
-<td style={S.td}><span onClick={()=>deleteTask(t.id)} style={{fontSize:14,color:B.txtD,cursor:"pointer"}} title="Delete">{"\u2715"}</span></td>
-</tr>);})}
-</tbody></table>}</div></div>);}
-
 function CaseDetail({c,onBack,onUpdate}){
 const[tab,setTab]=useState("activity");
 const tabs=[{id:"activity",l:"Activity Feed"},{id:"claim",l:"Claim Details"},{id:"litigation",l:"Litigation"},{id:"negotiations",l:"Negotiations"},{id:"estimates",l:"Estimates"},{id:"pleadings",l:"Pleadings"},{id:"discovery",l:"Discovery"},{id:"tasks",l:"Tasks"},{id:"docs",l:"Documents"}];
@@ -478,7 +409,7 @@ return(<div>
 {[{l:"Attorney",v:c.attorney.name.split(" ")[0],c:c.attorney.clr},{l:"Support",v:c.support.name.split(" ")[0],c:c.support.clr},{l:"Date of Loss",v:fmtD(c.dol),c:B.txtM},{l:"Negotiations",v:c.negs.length,c:"#5b8def"},{l:"Recovery",v:c.totalRec>0?fmt(c.totalRec):"\u2014",c:c.totalRec>0?B.green:B.txtD}].map((x,i)=>(<div key={i} style={{...S.card,padding:"12px 16px"}}><div style={{fontSize:10,color:B.txtD,textTransform:"uppercase",letterSpacing:0.5,fontWeight:600,marginBottom:4}}>{x.l}</div><div style={{fontSize:14,fontWeight:600,color:x.c}}>{x.v}</div></div>))}</div>
 <div style={{display:"flex",gap:4,marginBottom:20,borderBottom:`1px solid ${B.bdr}`,paddingBottom:0}}>
 {tabs.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{padding:"10px 16px",border:"none",borderBottom:tab===t.id?`2px solid ${B.gold}`:"2px solid transparent",background:"transparent",color:tab===t.id?B.gold:B.txtM,fontSize:13,fontWeight:tab===t.id?600:400,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",marginBottom:-1}}>
-{t.l}{t.id==="negotiations"&&c.negs.length>0&&<span style={{marginLeft:6,...S.mono,fontSize:10,background:`${B.gold}20`,color:B.gold,padding:"1px 6px",borderRadius:10}}>{c.negs.length}</span>}{t.id==="pleadings"&&c.pleads.length>0&&<span style={{marginLeft:6,...S.mono,fontSize:10,background:`${B.purple}20`,color:B.purple,padding:"1px 6px",borderRadius:10}}>{c.pleads.length}</span>}{t.id==="tasks"&&(c.tasks||[]).filter(tk=>tk.status!=="done").length>0&&<span style={{marginLeft:6,...S.mono,fontSize:10,background:`${(c.tasks||[]).some(tk=>tk.status==="overdue")?B.danger+"20":B.gold+"20"}`,color:(c.tasks||[]).some(tk=>tk.status==="overdue")?B.danger:B.gold,padding:"1px 6px",borderRadius:10}}>{(c.tasks||[]).filter(tk=>tk.status!=="done").length}</span>}
+{t.l}{t.id==="negotiations"&&c.negs.length>0&&<span style={{marginLeft:6,...S.mono,fontSize:10,background:`${B.gold}20`,color:B.gold,padding:"1px 6px",borderRadius:10}}>{c.negs.length}</span>}{t.id==="pleadings"&&c.pleads.length>0&&<span style={{marginLeft:6,...S.mono,fontSize:10,background:`${B.purple}20`,color:B.purple,padding:"1px 6px",borderRadius:10}}>{c.pleads.length}</span>}
 </button>))}</div>
 {tab==="activity"&&<ActivityFeed c={c}/>}
 {tab==="claim"&&<ClaimDetails c={c}/>}
@@ -487,61 +418,129 @@ return(<div>
 {tab==="estimates"&&<Estimates c={c}/>}
 {tab==="pleadings"&&<Pleadings c={c}/>}
 {tab==="discovery"&&<Discovery c={c}/>}
-{tab==="tasks"&&<CaseTasks c={c} onUpdate={onUpdate}/>}
+{tab==="tasks"&&<div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Tasks — wiring to Supabase next</div></div>}
 {tab==="docs"&&<div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Documents — wiring to SharePoint next</div></div>}
 </div>);}
 
-function GlobalTasks({user,cases,onOpen,onUpdate}){
-const[filterSt,setFilterSt]=useState("open");const[filterAssignee,setFilterAssignee]=useState("mine");const[filterCat,setFilterCat]=useState("all");const[sortBy,setSortBy]=useState("due");
-const myCases=cases.filter(c=>c.attorney.id===user.id||c.support.id===user.id);
-const allTasks=[];
-myCases.forEach(cs=>{(cs.tasks||[]).forEach(t=>{allTasks.push({...t,caseId:cs.id,caseRef:cs.ref,caseClient:cs.client,caseObj:cs});});});
-const filtered=allTasks.filter(t=>{
-if(filterSt!=="all"&&t.status!==filterSt)return false;
-if(filterAssignee==="mine"&&t.assignee.id!==user.id)return false;
-if(filterAssignee!=="all"&&filterAssignee!=="mine"&&t.assignee.id!==parseInt(filterAssignee))return false;
-if(filterCat!=="all"&&t.category!==filterCat)return false;
-return true;
-}).sort((a,b)=>{if(sortBy==="due")return new Date(a.due)-new Date(b.due);if(sortBy==="priority"){const po={urgent:0,high:1,normal:2,low:3};return po[a.priority]-po[b.priority];}if(sortBy==="case")return a.caseRef.localeCompare(b.caseRef);return 0;});
-
-const toggleDone=(task)=>{const cs=cases.find(c=>c.id===task.caseId);if(!cs)return;const updated=cs.tasks.map(t=>{if(t.id!==task.id)return t;if(t.status==="done")return{...t,status:new Date(t.due)<new Date()?"overdue":"open",completed:null};return{...t,status:"done",completed:new Date().toISOString().split("T")[0]};});onUpdate(task.caseId,{tasks:updated});};
-
-const openTasks=allTasks.filter(t=>t.status==="open").length;const overdueTasks=allTasks.filter(t=>t.status==="overdue").length;const todayTasks=allTasks.filter(t=>t.status!=="done"&&dU(t.due)===0).length;const weekTasks=allTasks.filter(t=>t.status!=="done"&&dU(t.due)>=0&&dU(t.due)<=7).length;
-const priClr=p=>({urgent:B.danger,high:"#e0a050",normal:"#5b8def",low:B.txtD}[p]||B.txtM);
-const stClrT=s=>({open:B.gold,overdue:B.danger,done:B.green}[s]||B.txtM);
-
-return(<div>
-<h2 style={{fontSize:22,fontWeight:700,marginBottom:24}}>Tasks</h2>
-<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
-{[{l:"Open",v:openTasks,c:B.gold},{l:"Overdue",v:overdueTasks,c:B.danger},{l:"Due Today",v:todayTasks,c:"#e0a050"},{l:"Due This Week",v:weekTasks,c:"#5b8def"}].map((x,i)=>(<div key={i} style={S.card}><div style={{fontSize:11,color:B.txtM,marginBottom:6,textTransform:"uppercase",letterSpacing:0.5,fontWeight:600}}>{x.l}</div><div style={{fontSize:26,fontWeight:700,color:x.c,...S.mono}}>{x.v}</div></div>))}</div>
-
-<div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-<select value={filterSt} onChange={e=>setFilterSt(e.target.value)} style={{...S.input,width:140}}><option value="all">All Tasks</option><option value="open">Open</option><option value="overdue">Overdue</option><option value="done">Completed</option></select>
-<select value={filterAssignee} onChange={e=>setFilterAssignee(e.target.value)} style={{...S.input,width:160}}><option value="mine">My Tasks</option><option value="all">All Assignees</option>{TEAM.map(t=><option key={t.id} value={t.id}>{t.name.split(" ")[0]}</option>)}</select>
-<select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{...S.input,width:180}}><option value="all">All Categories</option>{TASK_CATS.map(c=><option key={c} value={c}>{c}</option>)}</select>
-<select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{...S.input,width:140}}><option value="due">Sort by Due Date</option><option value="priority">Sort by Priority</option><option value="case">Sort by Case</option></select>
-<div style={{marginLeft:"auto",fontSize:12,color:B.txtD}}>{filtered.length} tasks</div>
-</div>
-
-<div style={{...S.card,padding:0,overflow:"hidden"}}>
-{filtered.length===0?<div style={{padding:40,textAlign:"center",color:B.txtD}}>No tasks matching filters</div>:
-<table style={S.tbl}><thead><tr><th style={{...S.th,width:30}}></th><th style={S.th}>Task</th><th style={S.th}>Case</th><th style={S.th}>Category</th><th style={S.th}>Assigned</th><th style={S.th}>Priority</th><th style={S.th}>Due</th><th style={S.th}>Status</th></tr></thead><tbody>
-{filtered.slice(0,100).map(t=>{const days=dU(t.due);const isDone=t.status==="done";return(<tr key={t.id+t.caseId} style={{opacity:isDone?0.5:1}}>
-<td style={S.td}><div onClick={()=>toggleDone(t)} style={{width:20,height:20,borderRadius:4,border:`2px solid ${isDone?B.green:B.bdr}`,background:isDone?B.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,color:"#fff"}}>{isDone?"\u2713":""}</div></td>
-<td style={S.td}><div style={{fontSize:13,fontWeight:500,textDecoration:isDone?"line-through":"none",color:isDone?B.txtD:B.txt}}>{t.title}</div>{t.notes&&<div style={{fontSize:11,color:B.txtD,marginTop:2}}>{t.notes}</div>}</td>
-<td style={S.td}><span onClick={()=>onOpen(t.caseObj)} style={{...S.mono,fontSize:11,color:B.gold,cursor:"pointer"}}>{t.caseRef}</span><div style={{fontSize:11,color:B.txtD}}>{t.caseClient}</div></td>
-<td style={S.td}><span style={{...S.badge,background:B.navyBg,color:"#6b6bff",fontSize:10}}>{t.category}</span></td>
-<td style={S.td}><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:22,height:22,borderRadius:"50%",background:t.assignee.clr,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{t.assignee.ini}</div><span style={{fontSize:12}}>{t.assignee.name.split(" ")[0]}</span></div></td>
-<td style={S.td}><span style={{...S.badge,background:`${priClr(t.priority)}18`,color:priClr(t.priority)}}>{t.priority}</span></td>
-<td style={{...S.td,...S.mono,fontSize:12,color:isDone?B.txtD:days<0?B.danger:days<3?B.gold:B.txtM}}>{fmtD(t.due)}{!isDone&&days<0&&<span style={{color:B.danger,fontSize:10,marginLeft:4}}>({Math.abs(days)}d late)</span>}</td>
-<td style={S.td}><span style={{...S.badge,background:`${stClrT(t.status)}18`,color:stClrT(t.status)}}>{t.status}</span></td>
-</tr>);})}
-</tbody></table>}</div></div>);}
+// Transform Supabase case row to match the shape genData() produces
+function sbToCase(row) {
+  const att = row.attorney || {};
+  const sup = row.support || {};
+  const cd = row.claim_details?.[0] || row.claim_details || {};
+  const ld = row.litigation_details?.[0] || row.litigation_details || null;
+  return {
+    id: row.id,
+    ref: row.ref,
+    client: row.client_name,
+    clientPhone: row.client_phone,
+    clientEmail: row.client_email,
+    type: row.type,
+    status: row.status,
+    juris: row.jurisdiction,
+    attorney: { id: att.id, name: att.name, role: att.role, title: att.title, ini: att.initials, clr: att.color },
+    support: { id: sup.id, name: sup.name, role: sup.role, title: sup.title, ini: sup.initials, clr: sup.color },
+    dol: row.date_of_loss,
+    dop: row.date_opened,
+    sol: row.statute_of_limitations,
+    insurer: row.insurer,
+    cn: row.claim_number,
+    pn: row.policy_number,
+    totalRec: Number(row.total_recovery) || 0,
+    attFees: Number(row.attorney_fees) || 0,
+    cd: {
+      policyNumber: cd.policy_number || row.policy_number,
+      claimNumber: cd.claim_number || row.claim_number,
+      insurer: cd.insurer || row.insurer,
+      adjuster: cd.adjuster_name,
+      adjPhone: cd.adjuster_phone,
+      adjEmail: cd.adjuster_email,
+      dateOfLoss: cd.date_of_loss || row.date_of_loss,
+      dateReported: cd.date_reported,
+      dateDenied: cd.date_denied,
+      policyType: cd.policy_type,
+      policyLimits: cd.policy_limits,
+      deductible: cd.deductible,
+      causeOfLoss: cd.cause_of_loss,
+      propAddr: cd.property_address,
+    },
+    ld: ld ? {
+      caseNum: ld.case_number,
+      court: ld.court,
+      judge: ld.judge,
+      filedDate: ld.filed_date,
+      oppCounsel: ld.opposing_counsel,
+      oppFirm: ld.opposing_firm,
+      oppPhone: ld.opposing_phone,
+      oppEmail: ld.opposing_email,
+      trialDate: ld.trial_date,
+      medDate: ld.mediation_date,
+      discDeadline: ld.discovery_deadline,
+    } : null,
+    negs: (row.negotiations || []).map(n => ({
+      id: n.id, date: n.date, type: n.type,
+      amount: Number(n.amount) || 0, notes: n.notes, by: n.by_name,
+    })),
+    ests: (row.estimates || []).map(e => ({
+      id: e.id, date: e.date, type: e.type,
+      amount: Number(e.amount) || 0, vendor: e.vendor, notes: e.notes,
+    })),
+    pleads: (row.pleadings || []).map(p => ({
+      id: p.id, date: p.date, type: p.type,
+      filedBy: p.filed_by, status: p.status, notes: p.notes, docUrl: p.doc_url,
+    })),
+    acts: (row.activity_log || []).map(a => ({
+      id: a.id, date: a.date, time: a.time, type: a.type,
+      actor: a.actor_name, aIni: a.actor_initials, aClr: a.actor_color,
+      title: a.title, desc: a.description,
+    })),
+    _supabase: true,
+  };
+}
 
 export default function DenhamStaffPortal(){
 const[user,setUser]=useState(null);const[page,setPage]=useState("dashboard");const[selCase,setSelCase]=useState(null);const[statusFilter,setStatusFilter]=useState("All");
-const[cases,setCases]=useState(()=>genData());
-const updateCase=(id,updates)=>{setCases(prev=>prev.map(c=>c.id===id?{...c,...updates}:c));if(selCase&&selCase.id===id)setSelCase(prev=>({...prev,...updates}));};
+const[cases,setCases]=useState([]);
+const[usingSupabase,setUsingSupabase]=useState(false);
+
+// Load cases: try Supabase first, fall back to genData
+useEffect(()=>{
+  if (!supabase) { setCases(genData()); return; }
+  let cancelled = false;
+  (async () => {
+    try {
+      const rows = await api.listCases();
+      if (cancelled) return;
+      if (rows && rows.length > 0) {
+        setCases(rows.map(sbToCase));
+        setUsingSupabase(true);
+      } else {
+        // No data in Supabase yet, use mock
+        setCases(genData());
+      }
+    } catch (e) {
+      console.warn("Supabase load failed, using mock data:", e);
+      if (!cancelled) setCases(genData());
+    }
+  })();
+  return () => { cancelled = true; };
+}, []);
+
+const updateCase=useCallback(async(id,updates)=>{
+  setCases(prev=>prev.map(c=>c.id===id?{...c,...updates}:c));
+  if(selCase&&selCase.id===id)setSelCase(prev=>({...prev,...updates}));
+  if(usingSupabase && supabase){
+    try {
+      // Map component field names to DB column names
+      const dbUpdates = {};
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.client !== undefined) dbUpdates.client_name = updates.client;
+      if (Object.keys(dbUpdates).length > 0) {
+        await api.updateCase(id, dbUpdates);
+      }
+    } catch(e) { console.error("Failed to update case in Supabase:", e); }
+  }
+},[selCase, usingSupabase]);
+
 const navTo=(p,cs,sf)=>{const state={page:p,caseId:cs?.id||null,statusFilter:sf||"All"};window.history.pushState(state,"",window.location.pathname);setPage(p);setSelCase(cs||null);setStatusFilter(sf||"All");};
 useEffect(()=>{const handler=e=>{const st=e.state;if(st){setPage(st.page||"dashboard");setSelCase(st.caseId?cases.find(c=>c.id===st.caseId)||null:null);setStatusFilter(st.statusFilter||"All");}else{setPage("dashboard");setSelCase(null);setStatusFilter("All");}};window.addEventListener("popstate",handler);window.history.replaceState({page:"dashboard",caseId:null,statusFilter:"All"},"",window.location.pathname);return()=>window.removeEventListener("popstate",handler);},[cases]);
 if(!user)return<Login onLogin={setUser}/>;
@@ -554,7 +553,7 @@ return(<div style={{display:"flex",minHeight:"100vh",background:B.bg}}>
 {page==="dashboard"&&<Dash user={user} cases={cases} onOpen={openC} onFilterStatus={filterByStatus}/>}
 {page==="cases"&&<Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={()=>setStatusFilter("All")}/>}
 {page==="caseDetail"&&selCase&&<CaseDetail c={selCase} onUpdate={updateCase} onBack={backC}/>}
-{page==="tasks"&&<GlobalTasks user={user} cases={cases} onOpen={openC} onUpdate={(id,upd)=>{const updated=cases.map(c=>c.id===id?{...c,...upd}:c);setCases(updated);}}/>}
+{page==="tasks"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Tasks</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global tasks view — coming soon</div></div></div>}
 {page==="docs"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Documents</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global documents view — coming soon</div></div></div>}
 </div></div>);}
 
