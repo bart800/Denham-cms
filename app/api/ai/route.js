@@ -104,10 +104,52 @@ async function summarizeCase(caseId) {
   return Response.json({ summary });
 }
 
+// ─── Date Parsing Helpers ─────────────────────────────────
+const MONTH_MAP = {
+  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
+  jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+
+function parseDateFromQuery(q) {
+  // MM/DD/YY or MM/DD/YYYY
+  let m = q.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (m) {
+    let year = parseInt(m[3]);
+    if (year < 100) year += 2000;
+    const month = m[1].padStart(2, "0");
+    const day = m[2].padStart(2, "0");
+    return { type: "exact", date: `${year}-${month}-${day}` };
+  }
+
+  // "month day year" or "month day, year"
+  m = q.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{2,4})\b/i);
+  if (m) {
+    let year = parseInt(m[3]);
+    if (year < 100) year += 2000;
+    const month = String(MONTH_MAP[m[1].toLowerCase()]).padStart(2, "0");
+    const day = m[2].padStart(2, "0");
+    return { type: "exact", date: `${year}-${month}-${day}` };
+  }
+
+  // "month year" (whole month)
+  m = q.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+(\d{4})\b/i);
+  if (m) {
+    const mon = MONTH_MAP[m[1].toLowerCase()];
+    const year = parseInt(m[2]);
+    const monthStr = String(mon).padStart(2, "0");
+    const lastDay = new Date(year, mon, 0).getDate();
+    return { type: "range", from: `${year}-${monthStr}-01`, to: `${year}-${monthStr}-${String(lastDay).padStart(2, "0")}` };
+  }
+
+  return null;
+}
+
 async function handleNaturalLanguageQuery(query) {
   if (!query) return Response.json({ error: "No query provided" }, { status: 400 });
 
   const q = query.toLowerCase();
+  const descParts = [];
 
   // Parse natural language into Supabase filters
   let supabaseQuery = supabase.from("cases").select(`
@@ -115,46 +157,98 @@ async function handleNaturalLanguageQuery(query) {
     support:team_members!cases_support_id_fkey(name, initials, color)
   `);
 
-  // Insurer filter
-  const insurers = ["State Farm", "Allstate", "USAA", "Liberty Mutual", "Nationwide", "Travelers", "Progressive", "Erie", "QBE", "Citizens", "Farmers", "American Family", "Auto-Owners", "Cincinnati Financial", "Westfield"];
-  const matchedInsurer = insurers.find(ins => q.includes(ins.toLowerCase()));
-  if (matchedInsurer) supabaseQuery = supabaseQuery.ilike("insurer", `%${matchedInsurer}%`);
+  let hasFilter = false;
 
-  // Status filter
-  const statuses = ["Intake", "Investigation", "Presuit Demand", "Presuit Negotiation", "Litigation - Filed", "Litigation - Discovery", "Litigation - Mediation", "Litigation - Trial Prep", "Appraisal", "Settled", "Closed"];
-  if (q.includes("litigation") || q.includes("in lit")) {
-    supabaseQuery = supabaseQuery.ilike("status", "Litigation%");
-  } else if (q.includes("settled")) {
-    supabaseQuery = supabaseQuery.eq("status", "Settled");
-  } else if (q.includes("closed")) {
-    supabaseQuery = supabaseQuery.eq("status", "Closed");
-  } else if (q.includes("intake")) {
-    supabaseQuery = supabaseQuery.eq("status", "Intake");
-  } else if (q.includes("presuit")) {
-    supabaseQuery = supabaseQuery.ilike("status", "Presuit%");
-  } else if (q.includes("appraisal")) {
-    supabaseQuery = supabaseQuery.eq("status", "Appraisal");
-  } else if (q.includes("active") || q.includes("open")) {
-    supabaseQuery = supabaseQuery.not("status", "in", '("Settled","Closed")');
+  // ─── Insurer filter ───────────────────────────────────
+  const insurers = [
+    "State Farm", "Allstate", "USAA", "Liberty Mutual", "Nationwide", "Travelers",
+    "Progressive", "Erie", "QBE", "Citizens", "Farmers", "American Family", "Auto-Owners",
+    "Cincinnati Financial", "Westfield", "Shelter", "KFB", "Kentucky Farm Bureau",
+    "Farm Bureau", "Homesite", "Safeco", "Foremost", "Grange", "Encova",
+    "Church Mutual", "Auto Owners", "Cincinnati", "Countryway", "Esurance",
+    "American Bankers", "American Reliable", "Brotherhood Mutual", "Battle Creek",
+    "BEVCO", "Everett Cash", "Flathead", "Sedgwick", "West Bend", "Stillwater",
+    "Mercury", "Guide One", "Peninsula",
+  ];
+  const matchedInsurer = insurers.find(ins => q.includes(ins.toLowerCase()));
+  if (matchedInsurer) {
+    supabaseQuery = supabaseQuery.ilike("insurer", `%${matchedInsurer}%`);
+    descParts.push(`involving ${matchedInsurer}`);
+    hasFilter = true;
   }
 
-  // Jurisdiction filter
-  const jurisMatch = q.match(/\b(kentucky|tennessee|montana|north carolina|texas|california|washington|colorado|new york|ky|tn|mt|nc|tx|ca|wa|co|ny)\b/i);
+  // ─── Loss type filter ─────────────────────────────────
+  let matchedType = null;
+  if (/\bhail\b/.test(q)) matchedType = "Hail";
+  else if (/\bfire\b/.test(q)) matchedType = "Fire";
+  else if (/\bwind\b/.test(q)) matchedType = "Wind";
+  else if (/\bwater\b/.test(q) || /\bwater damage\b/.test(q)) matchedType = "Water";
+  if (matchedType) {
+    supabaseQuery = supabaseQuery.eq("type", matchedType);
+    descParts.push(matchedType.toLowerCase());
+    hasFilter = true;
+  }
+
+  // ─── Status filter ────────────────────────────────────
+  let matchedStatus = null;
+  if (/\bdemand(s)?\s*(sent|cases?)?\b/.test(q) || /\bpresuit demand\b/.test(q) || /\bcases? with demands?\b/.test(q)) {
+    supabaseQuery = supabaseQuery.eq("status", "Presuit Demand");
+    matchedStatus = "Presuit Demand";
+  } else if (/\blitigation\b/.test(q) || /\bin lit\b/.test(q)) {
+    supabaseQuery = supabaseQuery.ilike("status", "Litigation%");
+    matchedStatus = "Litigation";
+  } else if (/\bsettled\b/.test(q)) {
+    supabaseQuery = supabaseQuery.eq("status", "Settled");
+    matchedStatus = "Settled";
+  } else if (/\bclosed\b/.test(q)) {
+    supabaseQuery = supabaseQuery.eq("status", "Closed");
+    matchedStatus = "Closed";
+  } else if (/\bintake\b/.test(q)) {
+    supabaseQuery = supabaseQuery.eq("status", "Intake");
+    matchedStatus = "Intake";
+  } else if (/\bnegotiat/.test(q)) {
+    supabaseQuery = supabaseQuery.eq("status", "Presuit Negotiation");
+    matchedStatus = "Presuit Negotiation";
+  } else if (/\bpresuit\b/.test(q)) {
+    supabaseQuery = supabaseQuery.ilike("status", "Presuit%");
+    matchedStatus = "Presuit";
+  } else if (/\bappraisal\b/.test(q)) {
+    supabaseQuery = supabaseQuery.eq("status", "Appraisal");
+    matchedStatus = "Appraisal";
+  } else if (/\b(active|open)\b/.test(q)) {
+    supabaseQuery = supabaseQuery.not("status", "in", '("Settled","Closed")');
+    matchedStatus = "active";
+  }
+  if (matchedStatus) {
+    descParts.push(`in ${matchedStatus} status`);
+    hasFilter = true;
+  }
+
+  // ─── Date of Loss filter ──────────────────────────────
+  const parsedDate = parseDateFromQuery(q);
+  if (parsedDate) {
+    if (parsedDate.type === "exact") {
+      supabaseQuery = supabaseQuery.eq("date_of_loss", parsedDate.date);
+      descParts.push(`from ${parsedDate.date}`);
+    } else {
+      supabaseQuery = supabaseQuery.gte("date_of_loss", parsedDate.from).lte("date_of_loss", parsedDate.to);
+      descParts.push(`from ${parsedDate.from} to ${parsedDate.to}`);
+    }
+    hasFilter = true;
+  }
+
+  // ─── Jurisdiction filter ──────────────────────────────
+  const jurisMatch = q.match(/\b(kentucky|tennessee|montana|north carolina|texas|california|washington|colorado|new york|ohio|indiana|nebraska|south carolina|michigan|wyoming|missouri|arizona|ky|tn|mt|nc|tx|ca|wa|co|ny|oh|in|ne|sc|mi|wy|mo|az)\b/i);
   if (jurisMatch) {
-    const jurisMap = { kentucky: "KY", tennessee: "TN", montana: "MT", "north carolina": "NC", texas: "TX", california: "CA", washington: "WA", colorado: "CO", "new york": "NY" };
+    const jurisMap = { kentucky: "KY", tennessee: "TN", montana: "MT", "north carolina": "NC", texas: "TX", california: "CA", washington: "WA", colorado: "CO", "new york": "NY", ohio: "OH", indiana: "IN", nebraska: "NE", "south carolina": "SC", michigan: "MI", wyoming: "WY", missouri: "MO", arizona: "AZ" };
     const j = jurisMap[jurisMatch[1].toLowerCase()] || jurisMatch[1].toUpperCase();
     supabaseQuery = supabaseQuery.eq("jurisdiction", j);
+    descParts.push(`in ${j}`);
+    hasFilter = true;
   }
 
-  // Case type filter
-  if (q.includes("property")) supabaseQuery = supabaseQuery.ilike("type", "Property%");
-  if (q.includes("personal injury") || q.includes("pi")) supabaseQuery = supabaseQuery.ilike("type", "Personal Injury%");
-  if (q.includes("wind") || q.includes("hail")) supabaseQuery = supabaseQuery.ilike("type", "%Wind/Hail%");
-  if (q.includes("fire")) supabaseQuery = supabaseQuery.ilike("type", "%Fire%");
-  if (q.includes("water")) supabaseQuery = supabaseQuery.ilike("type", "%Water%");
-
-  // SOL queries
-  if (q.includes("sol") || q.includes("statute of limitation")) {
+  // ─── SOL queries ──────────────────────────────────────
+  if (/\bsol\b/.test(q) || /\bstatute of limitation/.test(q)) {
     const daysMatch = q.match(/(\d+)\s*days/);
     const days = daysMatch ? parseInt(daysMatch[1]) : 90;
     const futureDate = new Date(Date.now() + days * 86400000).toISOString().split("T")[0];
@@ -163,12 +257,25 @@ async function handleNaturalLanguageQuery(query) {
       .gte("statute_of_limitations", today)
       .lte("statute_of_limitations", futureDate)
       .not("status", "in", '("Settled","Closed")');
+    descParts.push(`with SOL within ${days} days`);
+    hasFilter = true;
   }
 
-  // Client name search
+  // ─── Client name search ───────────────────────────────
   const clientMatch = q.match(/(?:case|client|for)\s+(\w+(?:\s+\w+)?)/i);
-  if (clientMatch && !matchedInsurer && !q.includes("sol")) {
+  if (clientMatch && !matchedInsurer && !matchedType && !matchedStatus) {
     supabaseQuery = supabaseQuery.ilike("client_name", `%${clientMatch[1]}%`);
+    descParts.push(`for client "${clientMatch[1]}"`);
+    hasFilter = true;
+  }
+
+  // If no structured filters matched, try the raw query as a name search
+  if (!hasFilter) {
+    const trimmed = query.trim();
+    if (trimmed.length >= 2) {
+      supabaseQuery = supabaseQuery.ilike("client_name", `%${trimmed}%`);
+      descParts.push(`matching "${trimmed}"`);
+    }
   }
 
   supabaseQuery = supabaseQuery.order("date_opened", { ascending: false }).limit(50);
@@ -176,16 +283,13 @@ async function handleNaturalLanguageQuery(query) {
   const { data, error } = await supabaseQuery;
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Generate a natural language description of results
+  // Generate descriptive result text
   let description = "";
   if (data.length === 0) {
     description = "No cases found matching your query.";
   } else {
-    description = `Found ${data.length} case${data.length === 1 ? "" : "s"}`;
-    if (matchedInsurer) description += ` involving ${matchedInsurer}`;
-    if (q.includes("litigation")) description += " in litigation";
-    if (q.includes("sol")) description += " with approaching SOL deadlines";
-    description += ".";
+    const typePart = descParts.length > 0 ? ` ${descParts.join(" ")}` : "";
+    description = `Found ${data.length} case${data.length === 1 ? "" : "s"}${typePart}.`;
   }
 
   return Response.json({

@@ -34,6 +34,8 @@ const ATYPES = ["note", "call", "email", "task", "document", "negotiation",
   "pleading", "estimate", "status_change", "deadline"];
 const DOC_CATEGORIES = ["Intake", "Correspondence", "Discovery", "Estimates",
   "E-Pleadings", "Photos", "Policy", "PA Files", "Pleadings"];
+const LOSS_TYPES = ["Fire", "Water", "Wind", "Hail", "Other"];
+const LOSS_ICON = { Fire: "🔥", Water: "💧", Wind: "🌬️", Hail: "🧊", Other: "❓" };
 
 // ─── Shared Styles ──────────────────────────────────────────
 const S = {
@@ -202,9 +204,9 @@ function solBadge(sol, status, c) {
 
 // ─── CSV Export ──────────────────────────────────────────────
 function exportCasesToCSV(cases, filename) {
-  const headers = ["Ref", "Client", "Status", "Insurer", "Attorney", "Jurisdiction", "Date Opened", "SOL", "Date of Loss", "Recovery", "Attorney Fees"];
+  const headers = ["Ref", "Client", "Status", "Loss Type", "Insurer", "Attorney", "Jurisdiction", "Date Opened", "SOL", "Date of Loss", "Recovery", "Attorney Fees"];
   const rows = cases.map(c => [
-    c.ref, c.client, c.status, c.insurer, c.attorney?.name || "", c.juris || "",
+    c.ref, c.client, c.status, c.type || "", c.insurer, c.attorney?.name || "", c.juris || "",
     c.dop || "", c.sol || "", c.dol || "", c.totalRec || 0, c.attFees || 0,
   ]);
   const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -1376,6 +1378,7 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
   const rec = useMemo(() => cases.reduce((s, c) => s + c.totalRec, 0), [cases]);
   const sc = useMemo(() => { const m = {}; ac.forEach(c => { m[c.status] = (m[c.status] || 0) + 1; }); return m; }, [ac]);
   const insurerCounts = useMemo(() => { const m = {}; ac.forEach(c => { if (c.insurer) m[c.insurer] = (m[c.insurer] || 0) + 1; }); return m; }, [ac]);
+  const typeCounts = useMemo(() => { const m = {}; ac.forEach(c => { const t = c.type || "Other"; m[t] = (m[t] || 0) + 1; }); return m; }, [ac]);
 
   return (
     <div>
@@ -1430,6 +1433,20 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Loss Type Breakdown */}
+      <div style={{ ...S.card, marginBottom: 24 }}>
+        <h3 style={S.secT}>🔥 Cases by Loss Type</h3>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([t, ct]) => (
+            <div key={t} style={{ ...S.card, padding: "12px 20px", flex: "1 1 100px", textAlign: "center", minWidth: 100 }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>{LOSS_ICON[t] || "❓"}</div>
+              <div style={{ ...S.mono, fontSize: 20, fontWeight: 700, color: B.gold }}>{ct}</div>
+              <div style={{ fontSize: 11, color: B.txtM, marginTop: 2 }}>{t}</div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -1545,6 +1562,9 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
   const [fAtt, setFAtt] = useState("All");
   const [fDateFrom, setFDateFrom] = useState("");
   const [fDateTo, setFDateTo] = useState("");
+  const [fType, setFType] = useState("All");
+  const [fDolFrom, setFDolFrom] = useState("");
+  const [fDolTo, setFDolTo] = useState("");
   const [scope, setScope] = useState("all");
   const [sBy, setSBy] = useState("dop");
   const [sDir, setSDir] = useState("desc");
@@ -1563,11 +1583,11 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
   const insurers = useMemo(() => [...new Set(cases.map(c => c.insurer).filter(Boolean))].sort(), [cases]);
   const attorneys = useMemo(() => [...new Set(cases.map(c => c.attorney?.name).filter(Boolean))].sort(), [cases]);
 
-  const hasFilters = fSt !== "All" || fJ !== "All" || fIns !== "All" || fAtt !== "All" || fDateFrom || fDateTo || search;
+  const hasFilters = fSt !== "All" || fJ !== "All" || fIns !== "All" || fAtt !== "All" || fType !== "All" || fDateFrom || fDateTo || fDolFrom || fDolTo || search;
 
   const clearFilters = () => {
-    setFSt("All"); setFJ("All"); setFIns("All"); setFAtt("All");
-    setFDateFrom(""); setFDateTo(""); setSearch(""); setAiResults(null); setPg(0);
+    setFSt("All"); setFJ("All"); setFIns("All"); setFAtt("All"); setFType("All");
+    setFDateFrom(""); setFDateTo(""); setFDolFrom(""); setFDolTo(""); setSearch(""); setAiResults(null); setPg(0);
   };
 
   const handleSearch = (val) => {
@@ -1606,8 +1626,11 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
     if (fJ !== "All" && c.juris !== fJ) return false;
     if (fIns !== "All" && c.insurer !== fIns) return false;
     if (fAtt !== "All" && c.attorney?.name !== fAtt) return false;
+    if (fType !== "All" && c.type !== fType) return false;
     if (fDateFrom && c.dop && c.dop < fDateFrom) return false;
     if (fDateTo && c.dop && c.dop > fDateTo) return false;
+    if (fDolFrom && c.dol && c.dol < fDolFrom) return false;
+    if (fDolTo && c.dol && c.dol > fDolTo) return false;
     return true;
   }).sort((a, b) => {
     let va, vb;
@@ -1622,7 +1645,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
     if (va < vb) return sDir === "asc" ? -1 : 1;
     if (va > vb) return sDir === "asc" ? 1 : -1;
     return 0;
-  }), [pool, search, aiResults, fSt, fJ, fIns, fAtt, fDateFrom, fDateTo, sBy, sDir]);
+  }), [pool, search, aiResults, fSt, fJ, fIns, fAtt, fType, fDateFrom, fDateTo, fDolFrom, fDolTo, sBy, sDir]);
 
   const displayCases = aiResults ? aiResults.cases : fl;
   const totalPages = Math.ceil(displayCases.length / PG_SIZE);
@@ -1725,6 +1748,10 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
             <option value="All">All Insurers</option>
             {insurers.map(x => <option key={x} value={x}>{x}</option>)}
           </select>
+          <select value={fType} onChange={e => { setFType(e.target.value); setPg(0); }} style={{ ...S.input, width: 120, flex: "0 0 auto" }}>
+            <option value="All">All Types</option>
+            {LOSS_TYPES.map(x => <option key={x} value={x}>{LOSS_ICON[x]} {x}</option>)}
+          </select>
         </div>
         {/* Date range row */}
         <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -1732,6 +1759,10 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
           <input type="date" value={fDateFrom} onChange={e => { setFDateFrom(e.target.value); setPg(0); }} style={{ ...S.input, width: 150 }} placeholder="From" />
           <span style={{ fontSize: 11, color: B.txtD }}>to</span>
           <input type="date" value={fDateTo} onChange={e => { setFDateTo(e.target.value); setPg(0); }} style={{ ...S.input, width: 150 }} placeholder="To" />
+          <span style={{ fontSize: 11, color: B.txtD, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginLeft: 8 }}>DOL</span>
+          <input type="date" value={fDolFrom} onChange={e => { setFDolFrom(e.target.value); setPg(0); }} style={{ ...S.input, width: 150 }} placeholder="From" />
+          <span style={{ fontSize: 11, color: B.txtD }}>to</span>
+          <input type="date" value={fDolTo} onChange={e => { setFDolTo(e.target.value); setPg(0); }} style={{ ...S.input, width: 150 }} placeholder="To" />
           {hasFilters && (
             <button onClick={clearFilters} style={{ ...S.btnO, fontSize: 11, padding: "6px 12px", color: B.danger, borderColor: `${B.danger}40` }}>
               ✕ Clear Filters
@@ -1783,7 +1814,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
               <input type="checkbox" checked={paged.length > 0 && selected.size === paged.length} onChange={toggleAll}
                 style={{ cursor: "pointer", accentColor: B.gold }} />
             </th>
-            {[["ref", "Case #"], ["client", "Client"], ["status", "Status"], ["insurer", "Insurer"], ["attorney", "Attorney"], ["juris", "State"], ["dop", "Opened"], ["sol", "SOL"], ["risk", "Risk"], ["lastAct", "Last Activity"]].map(([c, l]) => (
+            {[["ref", "Case #"], ["client", "Client"], ["type", "Type"], ["status", "Status"], ["insurer", "Insurer"], ["attorney", "Attorney"], ["juris", "State"], ["dop", "Opened"], ["sol", "SOL"], ["risk", "Risk"], ["lastAct", "Last Activity"]].map(([c, l]) => (
               <th key={c} onClick={() => { if (sBy === c) setSDir(d => d === "asc" ? "desc" : "asc"); else { setSBy(c); setSDir("desc"); } }} style={{ ...S.th, cursor: "pointer", userSelect: "none" }}>
                 {l}{sBy === c ? (sDir === "asc" ? " ↑" : " ↓") : ""}
               </th>
@@ -1805,6 +1836,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
                   </td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.gold, fontWeight: 500 }}>{c.ref}</td>
                   <td style={{ ...S.td, fontWeight: 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.client}</td>
+                  <td style={{ ...S.td, fontSize: 12, whiteSpace: "nowrap" }}>{LOSS_ICON[c.type] || "❓"} {c.type || "—"}</td>
                   <td style={S.td}><span style={{ ...S.badge, background: sc.bg, color: sc.t }}>{c.status}</span></td>
                   <td style={{ ...S.td, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.insurer}</td>
                   <td style={S.td}>
@@ -1824,7 +1856,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
               );
             })}
             {paged.length === 0 && (
-              <tr><td colSpan={10} style={{ ...S.td, textAlign: "center", padding: 60 }}>
+              <tr><td colSpan={12} style={{ ...S.td, textAlign: "center", padding: 60 }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: B.txtM, marginBottom: 6 }}>No cases match your filters</div>
                 <div style={{ fontSize: 12, color: B.txtD, marginBottom: 16 }}>Try adjusting your search or filter criteria</div>
