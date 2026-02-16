@@ -675,7 +675,7 @@ function Login({ onLogin, team }) {
 // ═══════════════════════════════════════════════════════════
 // SIDEBAR
 // ═══════════════════════════════════════════════════════════
-function Side({ user, active, onNav, onOut }) {
+function Side({ user, active, onNav, onOut, onCmdK }) {
   const nav = [
     { id: "dashboard", label: "Dashboard", icon: "⬡" },
     { id: "cases", label: "My Cases", icon: "◈" },
@@ -705,9 +705,11 @@ function Side({ user, active, onNav, onOut }) {
             <span style={{ fontSize: 16, opacity: 0.7 }}>{n.icon}</span>{n.label}
           </button>
         ))}
-        {/* Cmd+K hint */}
+        {/* Cmd+K hint — clickable */}
         <div style={{ padding: "12px 12px 0", marginTop: 8, borderTop: `1px solid ${B.bdr}` }}>
-          <div style={{ fontSize: 11, color: B.txtD, display: "flex", alignItems: "center", gap: 6 }}>
+          <div onClick={onCmdK} style={{ fontSize: 11, color: B.txtD, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "6px 8px", borderRadius: 6, transition: "background 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = `${B.gold}15`; e.currentTarget.style.color = B.gold; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = B.txtD; }}>
             <kbd style={{ background: B.bdr, padding: "2px 6px", borderRadius: 4, fontSize: 10 }}>⌘K</kbd>
             <span>AI Command Bar</span>
           </div>
@@ -723,6 +725,288 @@ function Side({ user, active, onNav, onOut }) {
         </div>
         <button onClick={onOut} style={{ ...S.btnO, width: "100%", fontSize: 11, padding: "6px 0" }}>Sign Out</button>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// SOL REMINDERS PANEL
+// ═══════════════════════════════════════════════════════════
+function SolRemindersPanel({ onOpen }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const resp = await fetch("/api/sol-reminders");
+        const json = await resp.json();
+        setData(json);
+      } catch { setData({ critical: [], warning: [], attention: [], total: 0 }); }
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <div style={{ ...S.card, padding: 20, textAlign: "center", color: B.txtM }}>Loading SOL reminders...</div>;
+  if (!data || data.total === 0) return null;
+
+  const Section = ({ title, items, color, icon }) => items.length === 0 ? null : (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, color, display: "flex", alignItems: "center", gap: 6 }}>
+        <span>{icon}</span> {title} ({items.length})
+      </div>
+      {items.map(c => (
+        <div key={c.id} onClick={() => onOpen({ id: c.id })}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", marginBottom: 4, borderRadius: 6, cursor: "pointer", background: `${color}08`, border: `1px solid ${color}20` }}
+          onMouseEnter={e => e.currentTarget.style.background = `${color}15`}
+          onMouseLeave={e => e.currentTarget.style.background = `${color}08`}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500 }}>{c.client}</div>
+            <div style={{ fontSize: 11, color: B.txtD }}>{c.ref} · {c.insurer} · {c.attorney}</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ ...S.mono, fontSize: 14, fontWeight: 700, color }}>{c.daysRemaining}d</div>
+            <div style={{ ...S.mono, fontSize: 10, color: B.txtD }}>{fmtD(c.sol)}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{ ...S.card, borderColor: data.critical.length > 0 ? `${B.danger}40` : `${B.gold}30` }}>
+      <h3 style={{ ...S.secT, display: "flex", alignItems: "center", gap: 8 }}>
+        <span>🚨</span> SOL Reminders
+        <span style={{ ...S.badge, background: data.critical.length > 0 ? B.dangerBg : B.goldBg, color: data.critical.length > 0 ? B.danger : B.gold, marginLeft: 8 }}>{data.total} cases</span>
+      </h3>
+      <Section title="Critical — Under 30 Days" items={data.critical} color={B.danger} icon="🔴" />
+      <Section title="Warning — Under 60 Days" items={data.warning} color={B.gold} icon="🟡" />
+      <Section title="Attention — Under 90 Days" items={data.attention} color="#5b8def" icon="🔵" />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// DOCUMENT GENERATOR PANEL
+// ═══════════════════════════════════════════════════════════
+function DocGenPanel({ caseId, caseRef }) {
+  const [templates, setTemplates] = useState([]);
+  const [generating, setGenerating] = useState(null);
+  const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/docgen").then(r => r.json()).then(d => setTemplates(d.templates || [])).catch(() => {});
+  }, []);
+
+  const generate = async (key) => {
+    setGenerating(key); setResult(null);
+    try {
+      const resp = await fetch("/api/docgen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseId, template: key }),
+      });
+      const data = await resp.json();
+      if (data.error) setResult({ error: data.error });
+      else setResult(data);
+    } catch (err) { setResult({ error: err.message }); }
+    setGenerating(null);
+  };
+
+  const copyToClipboard = () => {
+    if (result?.content) navigator.clipboard.writeText(result.content);
+  };
+
+  return (
+    <div style={{ ...S.card, marginBottom: 16 }}>
+      <h3 style={{ ...S.secT, display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <span>📝</span> Generate Document
+      </h3>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: result ? 16 : 0 }}>
+        {templates.map(t => (
+          <button key={t.key} onClick={() => generate(t.key)} disabled={generating === t.key}
+            style={{ ...S.btnO, fontSize: 12, padding: "6px 14px", opacity: generating === t.key ? 0.5 : 1 }}>
+            {generating === t.key ? "⏳ Generating..." : t.name}
+          </button>
+        ))}
+      </div>
+      {result && !result.error && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: B.gold }}>{result.templateName}</div>
+            <button onClick={copyToClipboard} style={{ ...S.btnO, fontSize: 11, padding: "4px 10px" }}>📋 Copy</button>
+          </div>
+          <pre style={{ background: "#0a0a14", border: `1px solid ${B.bdr}`, borderRadius: 6, padding: 16, fontSize: 12, color: B.txtM, whiteSpace: "pre-wrap", maxHeight: 400, overflowY: "auto", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.5 }}>
+            {result.content}
+          </pre>
+        </div>
+      )}
+      {result?.error && (
+        <div style={{ padding: 12, background: B.dangerBg, borderRadius: 6, fontSize: 12, color: B.danger }}>{result.error}</div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// TASKS PANEL (for case detail + global)
+// ═══════════════════════════════════════════════════════════
+function TasksPanel({ caseId, userId, team, showCaseColumn }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", due_date: "", priority: "normal" });
+  const [saving, setSaving] = useState(false);
+
+  const loadTasks = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (caseId) params.case_id = caseId;
+      if (userId && !caseId) params.assigned_to = userId;
+      const t = await api.listTasks(params);
+      setTasks(t || []);
+    } catch { setTasks([]); }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadTasks(); }, [caseId, userId]);
+
+  const createTask = async () => {
+    if (!form.title.trim()) return;
+    setSaving(true);
+    try {
+      await api.createTask({
+        case_id: caseId || null,
+        title: form.title,
+        description: form.description || null,
+        assigned_to: form.assigned_to || userId,
+        created_by: userId,
+        due_date: form.due_date || null,
+        priority: form.priority,
+      });
+      setForm({ title: "", description: "", assigned_to: "", due_date: "", priority: "normal" });
+      setShowForm(false);
+      loadTasks();
+    } catch (err) { console.error("Failed to create task:", err); }
+    setSaving(false);
+  };
+
+  const toggleStatus = async (task) => {
+    const newStatus = task.status === "completed" ? "pending" : "completed";
+    try {
+      await api.updateTask(task.id, { status: newStatus, completed_at: newStatus === "completed" ? new Date().toISOString() : null });
+      loadTasks();
+    } catch (err) { console.error("Failed to update task:", err); }
+  };
+
+  const filtered = tasks.filter(t => filter === "all" || t.status === filter);
+  const priClr = p => ({ urgent: B.danger, high: "#e0a050", normal: B.txtM, low: B.txtD }[p] || B.txtM);
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
+        <select value={filter} onChange={e => setFilter(e.target.value)} style={{ ...S.input, width: 160 }}>
+          <option value="all">All Tasks</option>
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+        <button onClick={() => setShowForm(!showForm)} style={S.btn}>+ New Task</button>
+        <div style={{ marginLeft: "auto", fontSize: 12, color: B.txtD }}>{filtered.length} task{filtered.length !== 1 ? "s" : ""}</div>
+      </div>
+
+      {showForm && (
+        <div style={{ ...S.card, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ gridColumn: "1/-1" }}>
+              <input placeholder="Task title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} style={S.input} />
+            </div>
+            <div style={{ gridColumn: "1/-1" }}>
+              <input placeholder="Description (optional)" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={S.input} />
+            </div>
+            <select value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })} style={S.input}>
+              <option value="">Assign to...</option>
+              {(team || []).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} style={S.input} />
+            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} style={S.input}>
+              <option value="low">Low</option>
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={createTask} disabled={saving} style={{ ...S.btn, opacity: saving ? 0.6 : 1 }}>{saving ? "Saving..." : "Create Task"}</button>
+              <button onClick={() => setShowForm(false)} style={S.btnO}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ ...S.card, padding: 40, textAlign: "center", color: B.txtM }}>Loading tasks...</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ ...S.card, padding: 40, textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>☐</div>
+          <div style={{ fontSize: 14, color: B.txtM }}>No tasks {filter !== "all" ? `with status "${filter}"` : "yet"}</div>
+        </div>
+      ) : (
+        <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
+          <table style={S.tbl}>
+            <thead><tr>
+              <th style={{ ...S.th, width: 40 }}></th>
+              <th style={S.th}>Task</th>
+              {showCaseColumn && <th style={S.th}>Case</th>}
+              <th style={S.th}>Assigned</th>
+              <th style={S.th}>Due</th>
+              <th style={S.th}>Priority</th>
+              <th style={S.th}>Status</th>
+            </tr></thead>
+            <tbody>
+              {filtered.map(t => {
+                const overdue = t.due_date && t.status !== "completed" && new Date(t.due_date + "T00:00:00") < new Date();
+                return (
+                  <tr key={t.id}
+                    onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <td style={{ ...S.td, textAlign: "center" }}>
+                      <span onClick={() => toggleStatus(t)} style={{ cursor: "pointer", fontSize: 16 }}>
+                        {t.status === "completed" ? "✅" : "⬜"}
+                      </span>
+                    </td>
+                    <td style={S.td}>
+                      <div style={{ fontSize: 13, fontWeight: 500, textDecoration: t.status === "completed" ? "line-through" : "none", color: t.status === "completed" ? B.txtD : B.txt }}>{t.title}</div>
+                      {t.description && <div style={{ fontSize: 11, color: B.txtD, marginTop: 2 }}>{t.description}</div>}
+                    </td>
+                    {showCaseColumn && <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{t.case_id ? "📁" : "—"}</td>}
+                    <td style={S.td}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {t.assigned && <div style={{ width: 22, height: 22, borderRadius: "50%", background: t.assigned.color || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff" }}>{t.assigned.initials || "?"}</div>}
+                        <span style={{ fontSize: 12 }}>{t.assigned?.name?.split(" ")[0] || "—"}</span>
+                      </div>
+                    </td>
+                    <td style={{ ...S.td, ...S.mono, fontSize: 12, color: overdue ? B.danger : B.txtM, fontWeight: overdue ? 600 : 400 }}>
+                      {t.due_date ? fmtD(t.due_date) : "—"}{overdue ? " ⚠️" : ""}
+                    </td>
+                    <td style={S.td}>
+                      <span style={{ ...S.badge, background: `${priClr(t.priority)}18`, color: priClr(t.priority) }}>
+                        {t.priority}
+                      </span>
+                    </td>
+                    <td style={S.td}>
+                      <span style={{ ...S.badge, background: t.status === "completed" ? B.greenBg : t.status === "in_progress" ? B.goldBg : `${B.txtD}15`, color: t.status === "completed" ? B.green : t.status === "in_progress" ? B.gold : B.txtM }}>
+                        {t.status.replace("_", " ")}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -754,6 +1038,11 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
           </div>
         ))}
       </div>
+      {/* SOL Reminders */}
+      <div style={{ marginBottom: 24 }}>
+        <SolRemindersPanel onOpen={onOpen} />
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div style={S.card}>
           <h3 style={S.secT}>Cases by Status</h3>
@@ -1226,13 +1515,14 @@ function Pleadings({ c }) {
 // ═══════════════════════════════════════════════════════════
 // CASE DETAIL
 // ═══════════════════════════════════════════════════════════
-function CaseDetail({ c, onBack, onUpdate }) {
+function CaseDetail({ c, onBack, onUpdate, user, team }) {
   const [tab, setTab] = useState("activity");
   const tabs = [
     { id: "activity", l: "Activity Feed" }, { id: "claim", l: "Claim Details" },
     { id: "litigation", l: "Litigation" }, { id: "negotiations", l: "Negotiations" },
     { id: "estimates", l: "Estimates" }, { id: "pleadings", l: "Pleadings" },
-    { id: "docs", l: "Documents" },
+    { id: "tasks", l: "Tasks" }, { id: "docs", l: "Documents" },
+    { id: "docgen", l: "Generate Docs" },
   ];
   const sc = stClr(c.status);
   const sd = c.sol ? dU(c.sol) : null;
@@ -1307,7 +1597,9 @@ function CaseDetail({ c, onBack, onUpdate }) {
       {tab === "negotiations" && <Negotiations c={c} />}
       {tab === "estimates" && <Estimates c={c} />}
       {tab === "pleadings" && <Pleadings c={c} />}
+      {tab === "tasks" && <TasksPanel caseId={c.id} userId={user?.id} team={team} />}
       {tab === "docs" && <DocumentBrowser clientName={c.client} />}
+      {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
     </div>
   );
 }
@@ -1469,7 +1761,7 @@ export default function DenhamStaffPortal() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: B.bg }}>
-      <Side user={user} active={page === "caseDetail" ? "cases" : page} onNav={p => navTo(p, null, "All")} onOut={() => { setUser(null); if (supabase) api.signOut().catch(() => {}); }} />
+      <Side user={user} active={page === "caseDetail" ? "cases" : page} onNav={p => navTo(p, null, "All")} onOut={() => { setUser(null); if (supabase) api.signOut().catch(() => {}); }} onCmdK={() => setCmdBarOpen(true)} />
       <CommandBar open={cmdBarOpen} onClose={() => setCmdBarOpen(false)} onOpenCase={openCaseById} cases={cases} />
       <div style={{ marginLeft: 220, flex: 1, padding: "28px 32px", maxWidth: 1200 }}>
         {loading && (
@@ -1485,10 +1777,10 @@ export default function DenhamStaffPortal() {
         )}
         {!loading && page === "dashboard" && <Dash user={user} cases={cases} onOpen={openC} onFilterStatus={filterByStatus} />}
         {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={() => setStatusFilter("All")} />}
-        {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} />}
+        {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} />}
         {!loading && page === "tasks" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Tasks</h2>
-            <div style={{ ...S.card, padding: 40, textAlign: "center" }}><div style={{ fontSize: 14, color: B.txtM }}>Global tasks view — coming soon</div></div></div>
+            <TasksPanel userId={user.id} team={team} showCaseColumn /></div>
         )}
         {!loading && page === "docs" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Documents</h2>
