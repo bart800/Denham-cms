@@ -53,6 +53,112 @@ const S = {
   secT: { fontSize: 15, fontWeight: 700, color: B.txt, marginBottom: 16 },
 };
 
+// ─── Toast System ───────────────────────────────────────────
+let _toastId = 0;
+let _toastListeners = [];
+const toast = {
+  _toasts: [],
+  _notify() { _toastListeners.forEach(fn => fn([...this._toasts])); },
+  success(msg) { this._add(msg, "success"); },
+  error(msg) { this._add(msg, "error"); },
+  info(msg) { this._add(msg, "info"); },
+  _add(msg, type) {
+    const id = ++_toastId;
+    this._toasts.push({ id, msg, type });
+    this._notify();
+    setTimeout(() => { this._toasts = this._toasts.filter(t => t.id !== id); this._notify(); }, 4000);
+  },
+  subscribe(fn) { _toastListeners.push(fn); return () => { _toastListeners = _toastListeners.filter(f => f !== fn); }; },
+};
+
+function ToastContainer() {
+  const [toasts, setToasts] = useState([]);
+  useEffect(() => toast.subscribe(setToasts), []);
+  if (toasts.length === 0) return null;
+  const colors = { success: { bg: B.greenBg, c: B.green, icon: "✅", bdr: B.green }, error: { bg: B.dangerBg, c: B.danger, icon: "❌", bdr: B.danger }, info: { bg: B.goldBg, c: B.gold, icon: "ℹ️", bdr: B.gold } };
+  return (
+    <div style={{ position: "fixed", top: 20, right: 20, zIndex: 10000, display: "flex", flexDirection: "column", gap: 8, maxWidth: 380 }}>
+      {toasts.map(t => {
+        const s = colors[t.type] || colors.info;
+        return (
+          <div key={t.id} style={{ padding: "12px 16px", borderRadius: 8, background: B.card, border: `1px solid ${s.bdr}40`, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", gap: 10, animation: "slideInRight 0.3s ease" }}>
+            <span style={{ fontSize: 16 }}>{s.icon}</span>
+            <span style={{ fontSize: 13, color: s.c, fontWeight: 500 }}>{t.msg}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── SOL Helpers ─────────────────────────────────────────────
+function solBadge(sol) {
+  if (!sol) return null;
+  const d = Math.ceil((new Date(sol + "T00:00:00") - new Date()) / 86400000);
+  if (d > 90) return null;
+  const critical = d <= 30;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: critical ? B.dangerBg : B.goldBg, color: critical ? B.danger : B.gold, border: `1px solid ${critical ? B.danger : B.gold}30`, whiteSpace: "nowrap" }}>
+      {critical ? "🔴" : "🟡"} SOL {d}d
+    </span>
+  );
+}
+
+// ─── CSV Export ──────────────────────────────────────────────
+function exportCasesToCSV(cases, filename) {
+  const headers = ["Ref", "Client", "Status", "Insurer", "Attorney", "Jurisdiction", "Date Opened", "SOL", "Date of Loss", "Recovery", "Attorney Fees"];
+  const rows = cases.map(c => [
+    c.ref, c.client, c.status, c.insurer, c.attorney?.name || "", c.juris || "",
+    c.dop || "", c.sol || "", c.dol || "", c.totalRec || 0, c.attFees || 0,
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename || "cases.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Print Case Summary ─────────────────────────────────────
+function printCaseSummary(c) {
+  const w = window.open("", "_blank");
+  const negs = (c.negs || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const ests = c.ests || [];
+  w.document.write(`<html><head><title>${c.ref} - ${c.client}</title><style>
+    body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#222;line-height:1.6}
+    h1{font-size:22px;margin-bottom:4px}h2{font-size:16px;border-bottom:2px solid #000066;padding-bottom:4px;margin-top:24px}
+    .meta{color:#666;font-size:13px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}
+    .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px}
+    .val{font-size:14px;font-weight:600;margin-bottom:8px}
+    table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+    th{text-align:left;border-bottom:2px solid #ddd;padding:6px 8px;font-size:11px;text-transform:uppercase;color:#888}
+    td{padding:6px 8px;border-bottom:1px solid #eee}
+    .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#f0f0f0}
+    @media print{body{margin:20px}}
+  </style></head><body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><h1>${c.client}</h1><div class="meta">${c.ref} · ${c.type} · ${c.juris || ""} · v. ${c.insurer || ""}</div></div>
+      <div style="text-align:right"><div class="label">Status</div><div class="badge">${c.status}</div></div>
+    </div>
+    <h2>Case Information</h2>
+    <div class="grid">
+      <div><div class="label">Attorney</div><div class="val">${c.attorney?.name || "—"}</div></div>
+      <div><div class="label">Support</div><div class="val">${c.support?.name || "—"}</div></div>
+      <div><div class="label">Date of Loss</div><div class="val">${c.dol || "—"}</div></div>
+      <div><div class="label">Date Opened</div><div class="val">${c.dop || "—"}</div></div>
+      <div><div class="label">SOL</div><div class="val" style="${c.sol && Math.ceil((new Date(c.sol+'T00:00:00')-new Date())/86400000) < 90 ? 'color:red;font-weight:700' : ''}">${c.sol || "—"}</div></div>
+      <div><div class="label">Claim #</div><div class="val">${c.cn || "—"}</div></div>
+      <div><div class="label">Policy #</div><div class="val">${c.pn || "—"}</div></div>
+      <div><div class="label">Client Phone</div><div class="val">${c.clientPhone || "—"}</div></div>
+    </div>
+    ${negs.length > 0 ? `<h2>Negotiations</h2><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Notes</th></tr></thead><tbody>${negs.map(n => `<tr><td>${n.date}</td><td>${(n.type||"").replace(/_/g," ")}</td><td>$${Number(n.amount).toLocaleString()}</td><td>${n.notes||""}</td></tr>`).join("")}</tbody></table>` : ""}
+    ${ests.length > 0 ? `<h2>Estimates</h2><table><thead><tr><th>Date</th><th>Type</th><th>Vendor</th><th>Amount</th></tr></thead><tbody>${ests.map(e => `<tr><td>${e.date}</td><td>${e.type||""}</td><td>${e.vendor||""}</td><td>$${Number(e.amount).toLocaleString()}</td></tr>`).join("")}</tbody></table>` : ""}
+    <div style="margin-top:32px;font-size:10px;color:#888;border-top:1px solid #eee;padding-top:8px">Printed ${new Date().toLocaleString()} · DENHAM LAW · Confidential</div>
+  </body></html>`);
+  w.document.close();
+  w.print();
+}
+
 // ─── Utilities ──────────────────────────────────────────────
 const fmt = n => "$" + Number(n).toLocaleString("en-US");
 const fmtD = d => {
@@ -751,11 +857,11 @@ function Login({ onLogin, team }) {
 // ═══════════════════════════════════════════════════════════
 // SIDEBAR
 // ═══════════════════════════════════════════════════════════
-function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile }) {
+function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, counts }) {
   const nav = [
-    { id: "dashboard", label: "Dashboard", icon: "⬡" },
-    { id: "cases", label: "Cases", icon: "◈" },
-    { id: "tasks", label: "Tasks", icon: "☐" },
+    { id: "dashboard", label: "Dashboard", icon: "⬡", count: null, dot: counts?.solAlerts > 0 },
+    { id: "cases", label: "Cases", icon: "◈", count: counts?.cases },
+    { id: "tasks", label: "Tasks", icon: "☐", count: counts?.tasks },
     { id: "calendar", label: "Calendar", icon: "📅" },
     { id: "docs", label: "Documents", icon: "◇" },
   ];
@@ -785,6 +891,8 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile }
             fontWeight: active === n.id ? 600 : 400, fontFamily: "'DM Sans',sans-serif", marginBottom: 2, textAlign: "left",
           }}>
             <span style={{ fontSize: 16, opacity: 0.7 }}>{n.icon}</span>{n.label}
+            {n.count != null && <span style={{ marginLeft: "auto", fontSize: 10, color: B.txtD, ...S.mono }}>{n.count}</span>}
+            {n.dot && <span style={{ width: 7, height: 7, borderRadius: "50%", background: B.danger, marginLeft: n.count != null ? 6 : "auto", flexShrink: 0 }} />}
           </button>
         ))}
         {/* Cmd+K hint — clickable */}
@@ -971,8 +1079,9 @@ function TasksPanel({ caseId, userId, team, showCaseColumn }) {
       });
       setForm({ title: "", description: "", assigned_to: "", due_date: "", priority: "normal" });
       setShowForm(false);
+      toast.success("Task created");
       loadTasks();
-    } catch (err) { console.error("Failed to create task:", err); }
+    } catch (err) { console.error("Failed to create task:", err); toast.error("Failed to create task"); }
     setSaving(false);
   };
 
@@ -980,8 +1089,9 @@ function TasksPanel({ caseId, userId, team, showCaseColumn }) {
     const newStatus = task.status === "completed" ? "pending" : "completed";
     try {
       await api.updateTask(task.id, { status: newStatus, completed_at: newStatus === "completed" ? new Date().toISOString() : null });
+      toast.success(newStatus === "completed" ? "Task completed" : "Task reopened");
       loadTasks();
-    } catch (err) { console.error("Failed to update task:", err); }
+    } catch (err) { console.error("Failed to update task:", err); toast.error("Failed to update task"); }
   };
 
   const filtered = tasks.filter(t => filter === "all" || t.status === filter);
@@ -1405,7 +1515,8 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
             }}>{l}</button>
           ))}
         </div>
-        <div style={{ marginLeft: "auto", fontSize: 13, color: B.txtM }}>
+        <button onClick={() => { exportCasesToCSV(displayCases, `cases-${new Date().toISOString().split("T")[0]}.csv`); toast.success(`Exported ${displayCases.length} cases to CSV`); }} style={{ ...S.btnO, fontSize: 11, padding: "6px 12px", marginLeft: "auto" }}>📥 Export CSV</button>
+        <div style={{ fontSize: 13, color: B.txtM }}>
           Showing <span style={{ ...S.mono, color: B.gold, fontWeight: 600 }}>{displayCases.length}</span> of <span style={{ ...S.mono, fontWeight: 600 }}>{cases.length}</span> cases
         </div>
       </div>
@@ -1529,13 +1640,20 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
                   </td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{c.juris || c.jurisdiction}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtD(c.dop)}</td>
-                  <td style={{ ...S.td, ...S.mono, fontSize: 12, fontWeight: 600, color: sd != null ? (sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtM) : B.txtD }}>{c.sol ? fmtD(c.sol) : "—"}</td>
+                  <td style={{ ...S.td, ...S.mono, fontSize: 12, fontWeight: 600, color: sd != null ? (sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtM) : B.txtD }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{c.sol ? fmtD(c.sol) : "—"}{solBadge(c.sol)}</div>
+                  </td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 11, color: B.txtD }}>{getLastActivity(c)}</td>
                 </tr>
               );
             })}
             {paged.length === 0 && (
-              <tr><td colSpan={10} style={{ ...S.td, textAlign: "center", padding: 40, color: B.txtD }}>No cases match your filters</td></tr>
+              <tr><td colSpan={10} style={{ ...S.td, textAlign: "center", padding: 60 }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: B.txtM, marginBottom: 6 }}>No cases match your filters</div>
+                <div style={{ fontSize: 12, color: B.txtD, marginBottom: 16 }}>Try adjusting your search or filter criteria</div>
+                {hasFilters && <button onClick={clearFilters} style={{ ...S.btn, fontSize: 12 }}>✕ Clear All Filters</button>}
+              </td></tr>
             )}
           </tbody>
         </table>
@@ -1880,9 +1998,10 @@ function AddNoteModal({ caseId, user, onClose, onSaved }) {
         date: now.toISOString().split("T")[0],
         time: now.toTimeString().slice(0, 5),
       });
+      toast.success("Note added");
       onSaved();
       onClose();
-    } catch (err) { console.error("Failed to save note:", err); }
+    } catch (err) { console.error("Failed to save note:", err); toast.error("Failed to save note"); }
     setSaving(false);
   };
 
@@ -2067,8 +2186,9 @@ function CaseNotesTab({ c, caseId, user, onRefresh }) {
         time: now.toTimeString().slice(0, 5),
       });
       setNoteText("");
+      toast.success("Note added");
       if (onRefresh) onRefresh();
-    } catch (err) { console.error("Failed to save note:", err); }
+    } catch (err) { console.error("Failed to save note:", err); toast.error("Failed to save note"); }
     setSaving(false);
   };
 
@@ -2155,9 +2275,11 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
       }
       setEditing(false);
       setFeedback({ type: "success", msg: "Case updated successfully" });
+      toast.success("Case updated successfully");
       setTimeout(() => setFeedback(null), 3000);
     } catch (err) {
       setFeedback({ type: "error", msg: "Failed to save: " + err.message });
+      toast.error("Failed to save: " + err.message);
     }
     setSaving(false);
   };
@@ -2205,6 +2327,20 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
           )}
         </div>
       </div>
+
+      {/* SOL Warning Banner */}
+      {sd != null && sd <= 90 && (
+        <div style={{ padding: "12px 16px", marginBottom: 16, borderRadius: 8, display: "flex", alignItems: "center", gap: 12, background: sd <= 30 ? B.dangerBg : B.goldBg, border: `1px solid ${sd <= 30 ? B.danger : B.gold}40` }}>
+          <span style={{ fontSize: 22 }}>{sd <= 30 ? "🚨" : "⚠️"}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: sd <= 30 ? B.danger : B.gold }}>
+              {sd <= 30 ? "CRITICAL: " : ""}Statute of Limitations {sd <= 0 ? "has EXPIRED" : `expires in ${sd} days`}
+            </div>
+            <div style={{ fontSize: 12, color: sd <= 30 ? B.danger : B.gold, opacity: 0.8 }}>SOL Date: {fmtD(c.sol)}</div>
+          </div>
+          <div style={{ ...S.mono, fontSize: 28, fontWeight: 800, color: sd <= 30 ? B.danger : B.gold }}>{sd}d</div>
+        </div>
+      )}
 
       {/* Feedback toast */}
       {feedback && (
@@ -2288,6 +2424,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
               <button onClick={() => setNoteModal(true)} style={{ ...S.btn, fontSize: 11, padding: "5px 12px" }}>✍️ Add Note</button>
               <button onClick={() => setTab("docs")} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>📄 Docs</button>
               <button onClick={() => setTab("docgen")} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>📝 Generate</button>
+              <button onClick={() => printCaseSummary(c)} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>🖨️ Print</button>
             </div>
           </div>
 
@@ -2638,6 +2775,8 @@ export default function DenhamStaffPortal() {
   const [cmdBarOpen, setCmdBarOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [solAlertOpen, setSolAlertOpen] = useState(false);
+  const [taskCount, setTaskCount] = useState(0);
 
   // Mobile detection
   useEffect(() => {
@@ -2682,6 +2821,13 @@ export default function DenhamStaffPortal() {
       } catch (e) {
         console.warn("Failed to load team from Supabase:", e);
       }
+    })();
+  }, []);
+
+  // Load task count
+  useEffect(() => {
+    (async () => {
+      try { const t = await api.listTasks({}); setTaskCount((t || []).filter(x => x.status !== "completed").length); } catch {}
     })();
   }, []);
 
@@ -2787,6 +2933,15 @@ export default function DenhamStaffPortal() {
   const backC = () => { window.history.back(); };
   const filterByStatus = st => { navTo("cases", null, st); };
 
+  // SOL alerts computation
+  const solCases = cases.filter(c => c.sol && c.status !== "Settled" && c.status !== "Closed")
+    .map(c => ({ ...c, _solDays: dU(c.sol) }))
+    .filter(c => c._solDays <= 90)
+    .sort((a, b) => a._solDays - b._solDays);
+  const solCritical = solCases.filter(c => c._solDays <= 30);
+  const solWarning = solCases.filter(c => c._solDays > 30 && c._solDays <= 90);
+  const sidebarCounts = { cases: cases.length, tasks: taskCount, solAlerts: solCases.length };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: B.bg }}>
       {/* Mobile hamburger */}
@@ -2807,12 +2962,45 @@ export default function DenhamStaffPortal() {
           onNav={p => { navTo(p, null, "All"); if (isMobile) setSidebarOpen(false); }}
           onOut={() => { setUser(null); setSidebarOpen(false); if (supabase) api.signOut().catch(() => {}); }}
           onCmdK={() => { setCmdBarOpen(true); if (isMobile) setSidebarOpen(false); }}
-          mobileOpen={isMobile ? sidebarOpen : true} onToggleMobile={() => setSidebarOpen(false)} />
+          mobileOpen={isMobile ? sidebarOpen : true} onToggleMobile={() => setSidebarOpen(false)} counts={sidebarCounts} />
       </div>
       <CommandBar open={cmdBarOpen} onClose={() => setCmdBarOpen(false)} onOpenCase={openCaseById} cases={cases} />
       <div style={{ marginLeft: isMobile ? 0 : 220, flex: 1, padding: isMobile ? "60px 16px 28px" : "28px 32px", maxWidth: 1200 }}>
         {/* Shimmer animation for skeletons */}
-        <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+        <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+        <ToastContainer />
+        {/* SOL Alerts Bell */}
+        {!loading && solCases.length > 0 && (
+          <div style={{ position: "fixed", top: 16, right: 20, zIndex: 200 }}>
+            <div onClick={() => setSolAlertOpen(o => !o)} style={{ width: 40, height: 40, borderRadius: "50%", background: solCritical.length > 0 ? B.dangerBg : B.goldBg, border: `1px solid ${solCritical.length > 0 ? B.danger : B.gold}40`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+              <span style={{ fontSize: 18 }}>🔔</span>
+              <span style={{ position: "absolute", top: -2, right: -2, width: 18, height: 18, borderRadius: "50%", background: solCritical.length > 0 ? B.danger : B.gold, color: "#000", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{solCases.length}</span>
+            </div>
+            {solAlertOpen && (
+              <div style={{ position: "absolute", top: 48, right: 0, width: 380, maxHeight: 480, overflowY: "auto", background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, boxShadow: "0 16px 48px rgba(0,0,0,0.5)", padding: 0 }}>
+                <div style={{ padding: "12px 16px", borderBottom: `1px solid ${B.bdr}`, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                  🚨 SOL Alerts
+                  <span style={{ ...S.badge, background: B.dangerBg, color: B.danger, marginLeft: "auto" }}>{solCritical.length} critical</span>
+                </div>
+                {solCases.map(c => (
+                  <div key={c.id} onClick={() => { openC(c); setSolAlertOpen(false); }}
+                    style={{ padding: "10px 16px", borderBottom: `1px solid ${B.bdr}06`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                    onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500 }}>{c.client}</div>
+                      <div style={{ fontSize: 11, color: B.txtD }}>{c.ref} · {c.insurer}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      {solBadge(c.sol)}
+                      <div style={{ ...S.mono, fontSize: 10, color: B.txtD, marginTop: 2 }}>{fmtD(c.sol)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {!loading && error && (
           <div style={{ padding: "12px 16px", background: B.dangerBg, borderRadius: 8, marginBottom: 16, fontSize: 13, color: B.danger }}>
             ⚠️ {error}
