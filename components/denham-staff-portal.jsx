@@ -19,6 +19,17 @@ const JURIS = ["KY", "TN", "MT", "NC", "TX", "CA", "WA", "CO", "NY"];
 const CSTATS = ["Intake", "Investigation", "Presuit Demand", "Presuit Negotiation",
   "Litigation - Filed", "Litigation - Discovery", "Litigation - Mediation",
   "Litigation - Trial Prep", "Appraisal", "Settled", "Closed"];
+const WORKFLOW_STAGES = [
+  { key: "Intake", label: "New", icon: "📥" },
+  { key: "Investigation", label: "Review", icon: "🔍" },
+  { key: "Presuit Demand", label: "Presuit", icon: "📋" },
+  { key: "Presuit Negotiation", label: "Demand Sent", icon: "📤" },
+  { key: "Litigation - Filed", label: "Negotiation", icon: "🤝" },
+  { key: "Litigation - Discovery", label: "Litigation", icon: "⚖️" },
+  { key: "Appraisal", label: "Appraisal", icon: "📊" },
+  { key: "Settled", label: "Settlement", icon: "💰" },
+  { key: "Closed", label: "Closed", icon: "✅" },
+];
 const ATYPES = ["note", "call", "email", "task", "document", "negotiation",
   "pleading", "estimate", "status_change", "deadline"];
 const DOC_CATEGORIES = ["Intake", "Correspondence", "Discovery", "Estimates",
@@ -1363,9 +1374,10 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
 // ═══════════════════════════════════════════════════════════
 // CASES LIST (with smart search)
 // ═══════════════════════════════════════════════════════════
-function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatchUpdate }) {
+function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatchUpdate, onCaseCreated }) {
   const [search, setSearch] = useState("");
   const [fSt, setFSt] = useState(initialStatus || "All");
+  const [newCaseOpen, setNewCaseOpen] = useState(false);
   const [fJ, setFJ] = useState("All");
   const [fIns, setFIns] = useState("All");
   const [fAtt, setFAtt] = useState("All");
@@ -1515,7 +1527,8 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
             }}>{l}</button>
           ))}
         </div>
-        <button onClick={() => { exportCasesToCSV(displayCases, `cases-${new Date().toISOString().split("T")[0]}.csv`); toast.success(`Exported ${displayCases.length} cases to CSV`); }} style={{ ...S.btnO, fontSize: 11, padding: "6px 12px", marginLeft: "auto" }}>📥 Export CSV</button>
+        <button onClick={() => setNewCaseOpen(true)} style={{ ...S.btn, fontSize: 11, padding: "6px 14px", marginLeft: "auto" }}>➕ New Case</button>
+        <button onClick={() => { exportCasesToCSV(displayCases, `cases-${new Date().toISOString().split("T")[0]}.csv`); toast.success(`Exported ${displayCases.length} cases to CSV`); }} style={{ ...S.btnO, fontSize: 11, padding: "6px 12px" }}>📥 Export CSV</button>
         <div style={{ fontSize: 13, color: B.txtM }}>
           Showing <span style={{ ...S.mono, color: B.gold, fontWeight: 600 }}>{displayCases.length}</span> of <span style={{ ...S.mono, fontWeight: 600 }}>{cases.length}</span> cases
         </div>
@@ -1669,6 +1682,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
             style={{ ...S.btnO, fontSize: 12, padding: "6px 12px", opacity: pg >= totalPages - 1 ? 0.4 : 1 }}>Next →</button>
         </div>
       )}
+      <NewCaseModal open={newCaseOpen} onClose={() => setNewCaseOpen(false)} cases={cases} team={team} onCreated={onCaseCreated} />
     </div>
   );
 }
@@ -1976,6 +1990,282 @@ function Pleadings({ c }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// WORKFLOW STEPPER
+// ═══════════════════════════════════════════════════════════
+function WorkflowStepper({ currentStatus, onAdvance }) {
+  const [confirmStage, setConfirmStage] = useState(null);
+  const getActiveIdx = () => {
+    for (let i = WORKFLOW_STAGES.length - 1; i >= 0; i--) {
+      if (currentStatus?.startsWith(WORKFLOW_STAGES[i].key) || currentStatus === WORKFLOW_STAGES[i].key) return i;
+    }
+    if (currentStatus?.includes("Litigation")) return 5;
+    return 0;
+  };
+  const activeIdx = getActiveIdx();
+
+  return (
+    <div style={{ ...S.card, marginBottom: 16, padding: "16px 20px" }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 14 }}>Case Workflow</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+        {WORKFLOW_STAGES.map((stage, idx) => {
+          const isActive = idx === activeIdx;
+          const isPast = idx < activeIdx;
+          const isFuture = idx > activeIdx;
+          const isLast = idx === WORKFLOW_STAGES.length - 1;
+          return (
+            <div key={stage.key} style={{ display: "flex", alignItems: "center", flex: isLast ? "0 0 auto" : 1 }}>
+              <div
+                onClick={() => isFuture && setConfirmStage({ stage, idx })}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  cursor: isFuture ? "pointer" : "default", zIndex: 1,
+                  opacity: isFuture ? 0.5 : 1, transition: "opacity 0.2s",
+                }}
+                onMouseEnter={e => { if (isFuture) e.currentTarget.style.opacity = "1"; }}
+                onMouseLeave={e => { if (isFuture) e.currentTarget.style.opacity = "0.5"; }}
+              >
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: isActive ? B.gold : isPast ? B.green : B.bdr,
+                  border: `2px solid ${isActive ? B.gold : isPast ? B.green : B.bdr}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, color: isActive || isPast ? "#fff" : B.txtD,
+                  boxShadow: isActive ? `0 0 12px ${B.gold}40` : "none",
+                }}>
+                  {isPast ? "✓" : stage.icon}
+                </div>
+                <span style={{
+                  fontSize: 9, fontWeight: isActive ? 700 : 500,
+                  color: isActive ? B.gold : isPast ? B.green : B.txtD,
+                  textAlign: "center", whiteSpace: "nowrap",
+                }}>{stage.label}</span>
+              </div>
+              {!isLast && (
+                <div style={{ flex: 1, height: 2, minWidth: 8, background: idx < activeIdx ? B.green : B.bdr, margin: "0 2px", marginBottom: 18 }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {confirmStage && (
+        <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 8, background: B.goldBg, border: `1px solid ${B.gold}30`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 13, color: B.gold }}>Advance to <strong>{confirmStage.stage.label}</strong>?</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setConfirmStage(null)} style={{ ...S.btnO, fontSize: 11, padding: "4px 12px" }}>Cancel</button>
+            <button onClick={() => { onAdvance(confirmStage.stage.key); setConfirmStage(null); }} style={{ ...S.btn, fontSize: 11, padding: "4px 12px" }}>Confirm</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// INSURER AUTOCOMPLETE
+// ═══════════════════════════════════════════════════════════
+function InsurerAutocomplete({ value, onChange, cases }) {
+  const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const insurers = [...new Set((cases || []).map(c => c.insurer).filter(Boolean))].sort();
+  const filtered = value ? insurers.filter(i => i.toLowerCase().includes(value.toLowerCase())) : insurers;
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        type="text" value={value}
+        onChange={e => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => { setFocused(true); setOpen(true); }}
+        onBlur={() => setTimeout(() => { setOpen(false); setFocused(false); }, 150)}
+        style={S.input} placeholder="Start typing insurer..."
+      />
+      {open && focused && filtered.length > 0 && (
+        <div style={{
+          position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+          background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 6,
+          maxHeight: 180, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+        }}>
+          {filtered.slice(0, 15).map(ins => (
+            <div key={ins}
+              onMouseDown={e => { e.preventDefault(); onChange(ins); setOpen(false); }}
+              style={{ padding: "8px 12px", fontSize: 12, color: B.txt, cursor: "pointer" }}
+              onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              {ins}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// NEW CASE MODAL
+// ═══════════════════════════════════════════════════════════
+function NewCaseModal({ open, onClose, cases, team, onCreated }) {
+  const [form, setForm] = useState({ client_name: "", type: "Property Casualty", jurisdiction: "", insurer: "", date_of_loss: "", attorney_id: "" });
+  const [saving, setSaving] = useState(false);
+  const [duplicates, setDuplicates] = useState([]);
+
+  useEffect(() => {
+    if (open) { setForm({ client_name: "", type: "Property Casualty", jurisdiction: "", insurer: "", date_of_loss: "", attorney_id: "" }); setDuplicates([]); }
+  }, [open]);
+
+  useEffect(() => {
+    const name = form.client_name.trim().toLowerCase();
+    if (name.length < 3) { setDuplicates([]); return; }
+    setDuplicates((cases || []).filter(c => c.client?.toLowerCase().includes(name) || name.includes(c.client?.toLowerCase() || "~~~")).slice(0, 5));
+  }, [form.client_name, cases]);
+
+  const generateRef = () => {
+    const yr = new Date().getFullYear().toString().slice(-2);
+    const nums = (cases || []).map(c => c.ref).filter(r => r?.startsWith(`DC-${yr}`)).map(r => parseInt(r.split("-")[2]) || 0);
+    return `DC-${yr}-${(Math.max(0, ...nums) + 1).toString().padStart(4, "0")}`;
+  };
+
+  const handleSubmit = async () => {
+    if (!form.client_name.trim() || !form.jurisdiction) { toast.error("Client name and jurisdiction are required"); return; }
+    setSaving(true);
+    try {
+      const ref = generateRef();
+      const caseData = { ref, client_name: form.client_name.trim(), type: form.type, jurisdiction: form.jurisdiction, status: "Intake", date_opened: new Date().toISOString().split("T")[0] };
+      if (form.insurer) caseData.insurer = form.insurer;
+      if (form.date_of_loss) caseData.date_of_loss = form.date_of_loss;
+      if (form.attorney_id) caseData.attorney_id = form.attorney_id;
+      const row = await api.createCase(caseData);
+      toast.success(`Case ${ref} created`);
+      if (onCreated) onCreated(row);
+      onClose();
+    } catch (err) { toast.error("Failed: " + err.message); }
+    setSaving(false);
+  };
+
+  if (!open) return null;
+  const attorneys = (team || []).filter(m => m.role === "Attorney" || m.title?.includes("Attorney"));
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div style={{ width: 520, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${B.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: B.gold }}>➕ New Case</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: B.txtD, fontSize: 18, cursor: "pointer" }}>✕</button>
+        </div>
+        <div style={{ padding: 20 }}>
+          {duplicates.length > 0 && (
+            <div style={{ padding: "10px 14px", marginBottom: 16, borderRadius: 8, background: B.goldBg, border: `1px solid ${B.gold}30` }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: B.gold, marginBottom: 6 }}>⚠️ Possible duplicates:</div>
+              {duplicates.map(d => <div key={d.id} style={{ fontSize: 11, color: B.txtM, padding: "2px 0" }}><span style={{ ...S.mono, color: B.gold }}>{d.ref}</span> — {d.client} ({d.status})</div>)}
+            </div>
+          )}
+          <div style={{ display: "grid", gap: 14 }}>
+            <div>
+              <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>Client Name *</div>
+              <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} style={S.input} placeholder="Full client name" autoFocus />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>Type *</div>
+                <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} style={S.input}>
+                  <option value="Property Casualty">Property Casualty</option>
+                  <option value="First Party Property">First Party Property</option>
+                  <option value="Bad Faith">Bad Faith</option>
+                </select>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>Jurisdiction *</div>
+                <select value={form.jurisdiction} onChange={e => setForm({ ...form, jurisdiction: e.target.value })} style={S.input}>
+                  <option value="">Select state...</option>
+                  {JURIS.map(j => <option key={j} value={j}>{j}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>Insurer</div>
+              <InsurerAutocomplete value={form.insurer} onChange={v => setForm({ ...form, insurer: v })} cases={cases} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>Date of Loss</div>
+                <input type="date" value={form.date_of_loss} onChange={e => setForm({ ...form, date_of_loss: e.target.value })} style={S.input} />
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>Attorney</div>
+                <select value={form.attorney_id} onChange={e => setForm({ ...form, attorney_id: e.target.value })} style={S.input}>
+                  <option value="">Unassigned</option>
+                  {attorneys.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: "12px 20px", borderTop: `1px solid ${B.bdr}`, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button onClick={onClose} style={S.btnO}>Cancel</button>
+          <button onClick={handleSubmit} disabled={saving} style={{ ...S.btn, opacity: saving ? 0.5 : 1 }}>{saving ? "Creating..." : "Create Case"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// GLOBAL HEADER BAR
+// ═══════════════════════════════════════════════════════════
+function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK }) {
+  const [solOpen, setSolOpen] = useState(false);
+  const breadcrumbs = [{ label: "Dashboard" }];
+  if (page === "cases" || page === "caseDetail") breadcrumbs.push({ label: "Cases" });
+  if (page === "caseDetail" && selCase) breadcrumbs.push({ label: selCase.client });
+  if (page === "calendar") breadcrumbs.push({ label: "Calendar" });
+  if (page === "tasks") breadcrumbs.push({ label: "Tasks" });
+  if (page === "docs") breadcrumbs.push({ label: "Documents" });
+  const solCritical = (solCases || []).filter(c => c._solDays <= 30);
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 0", marginBottom: 20, borderBottom: `1px solid ${B.bdr}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div style={{ width: 30, height: 30, borderRadius: "50%", background: user?.clr || B.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>{user?.ini || "?"}</div>
+        <span style={{ fontSize: 12, fontWeight: 600, color: B.txt }}>{user?.name?.split(" ")[0] || ""}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: B.txtD }}>
+        {breadcrumbs.map((b, i) => (
+          <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {i > 0 && <span>›</span>}
+            <span style={{ color: i === breadcrumbs.length - 1 ? B.txt : B.txtM, fontWeight: i === breadcrumbs.length - 1 ? 600 : 400 }}>{b.label}</span>
+          </span>
+        ))}
+      </div>
+      <div style={{ flex: 1 }} />
+      <div onClick={onCmdK} style={{ width: 200, padding: "6px 10px 6px 28px", borderRadius: 20, border: `1px solid ${B.bdr}`, background: "#0a0a14", fontSize: 11, color: B.txtD, cursor: "pointer", position: "relative" }}>
+        <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11 }}>🔍</span>
+        Search... <kbd style={{ background: B.bdr, padding: "1px 5px", borderRadius: 3, fontSize: 9, marginLeft: 8 }}>⌘K</kbd>
+      </div>
+      {(solCases || []).length > 0 && (
+        <div style={{ position: "relative" }}>
+          <div onClick={() => setSolOpen(o => !o)} style={{ width: 32, height: 32, borderRadius: "50%", background: solCritical.length > 0 ? B.dangerBg : B.goldBg, border: `1px solid ${solCritical.length > 0 ? B.danger : B.gold}40`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+            <span style={{ fontSize: 14 }}>🔔</span>
+            <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: solCritical.length > 0 ? B.danger : B.gold, color: "#000", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{(solCases || []).length}</span>
+          </div>
+          {solOpen && (
+            <div style={{ position: "absolute", top: 40, right: 0, width: 360, maxHeight: 400, overflowY: "auto", background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, boxShadow: "0 16px 48px rgba(0,0,0,0.5)", zIndex: 100 }}>
+              <div style={{ padding: "10px 14px", borderBottom: `1px solid ${B.bdr}`, fontSize: 13, fontWeight: 700 }}>🚨 SOL Alerts</div>
+              {(solCases || []).map(c => (
+                <div key={c.id} onClick={() => { onOpenCase(c); setSolOpen(false); }}
+                  style={{ padding: "8px 14px", borderBottom: `1px solid ${B.bdr}06`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                  onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <div><div style={{ fontSize: 12, fontWeight: 500 }}>{c.client}</div><div style={{ fontSize: 10, color: B.txtD }}>{c.ref}</div></div>
+                  {solBadge(c.sol)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // CASE DETAIL
 // ═══════════════════════════════════════════════════════════
 function AddNoteModal({ caseId, user, onClose, onSaved }) {
@@ -2228,7 +2518,7 @@ function CaseNotesTab({ c, caseId, user, onRefresh }) {
   );
 }
 
-function CaseDetail({ c, onBack, onUpdate, user, team }) {
+function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
   const [tab, setTab] = useState("overview");
   const [noteModal, setNoteModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -2328,6 +2618,9 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
         </div>
       </div>
 
+      {/* Workflow Stepper */}
+      <WorkflowStepper currentStatus={c.status} onAdvance={(newSt) => changeStatus(newSt)} />
+
       {/* SOL Warning Banner */}
       {sd != null && sd <= 90 && (
         <div style={{ padding: "12px 16px", marginBottom: 16, borderRadius: 8, display: "flex", alignItems: "center", gap: 12, background: sd <= 30 ? B.dangerBg : B.goldBg, border: `1px solid ${sd <= 30 ? B.danger : B.gold}40` }}>
@@ -2385,6 +2678,8 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
                         <option value="">—</option>
                         {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
+                    ) : f.k === "insurer" ? (
+                      <InsurerAutocomplete value={editForm[f.k] || ""} onChange={v => setEditForm({ ...editForm, [f.k]: v })} cases={allCases} />
                     ) : (
                       <input type={f.type || "text"} value={editForm[f.k] || ""} onChange={e => setEditForm({ ...editForm, [f.k]: e.target.value })} style={S.input} />
                     )}
@@ -2932,6 +3227,10 @@ export default function DenhamStaffPortal() {
   const openC = c => { navTo("caseDetail", c); };
   const backC = () => { window.history.back(); };
   const filterByStatus = st => { navTo("cases", null, st); };
+  const handleCaseCreated = (row) => {
+    const newCase = sbToCase(row);
+    setCases(prev => [newCase, ...prev]);
+  };
 
   // SOL alerts computation
   const solCases = cases.filter(c => c.sol && c.status !== "Settled" && c.status !== "Closed")
@@ -2969,37 +3268,9 @@ export default function DenhamStaffPortal() {
         {/* Shimmer animation for skeletons */}
         <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
         <ToastContainer />
-        {/* SOL Alerts Bell */}
-        {!loading && solCases.length > 0 && (
-          <div style={{ position: "fixed", top: 16, right: 20, zIndex: 200 }}>
-            <div onClick={() => setSolAlertOpen(o => !o)} style={{ width: 40, height: 40, borderRadius: "50%", background: solCritical.length > 0 ? B.dangerBg : B.goldBg, border: `1px solid ${solCritical.length > 0 ? B.danger : B.gold}40`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
-              <span style={{ fontSize: 18 }}>🔔</span>
-              <span style={{ position: "absolute", top: -2, right: -2, width: 18, height: 18, borderRadius: "50%", background: solCritical.length > 0 ? B.danger : B.gold, color: "#000", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{solCases.length}</span>
-            </div>
-            {solAlertOpen && (
-              <div style={{ position: "absolute", top: 48, right: 0, width: 380, maxHeight: 480, overflowY: "auto", background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, boxShadow: "0 16px 48px rgba(0,0,0,0.5)", padding: 0 }}>
-                <div style={{ padding: "12px 16px", borderBottom: `1px solid ${B.bdr}`, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                  🚨 SOL Alerts
-                  <span style={{ ...S.badge, background: B.dangerBg, color: B.danger, marginLeft: "auto" }}>{solCritical.length} critical</span>
-                </div>
-                {solCases.map(c => (
-                  <div key={c.id} onClick={() => { openC(c); setSolAlertOpen(false); }}
-                    style={{ padding: "10px 16px", borderBottom: `1px solid ${B.bdr}06`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                    onMouseEnter={e => e.currentTarget.style.background = B.cardH}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 500 }}>{c.client}</div>
-                      <div style={{ fontSize: 11, color: B.txtD }}>{c.ref} · {c.insurer}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      {solBadge(c.sol)}
-                      <div style={{ ...S.mono, fontSize: 10, color: B.txtD, marginTop: 2 }}>{fmtD(c.sol)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Global Header Bar */}
+        {!loading && user && (
+          <GlobalHeader user={user} page={page} selCase={selCase} solCases={solCases} onOpenCase={openC} onCmdK={() => setCmdBarOpen(true)} />
         )}
         {!loading && error && (
           <div style={{ padding: "12px 16px", background: B.dangerBg, borderRadius: 8, marginBottom: 16, fontSize: 13, color: B.danger }}>
@@ -3014,8 +3285,8 @@ export default function DenhamStaffPortal() {
           </div>
         )}
         {!loading && page === "dashboard" && <Dash user={user} cases={cases} onOpen={openC} onFilterStatus={filterByStatus} />}
-        {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={() => setStatusFilter("All")} team={team} onBatchUpdate={updateCase} />}
-        {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} />}
+        {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={() => setStatusFilter("All")} team={team} onBatchUpdate={updateCase} onCaseCreated={handleCaseCreated} />}
+        {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} allCases={cases} />}
         {!loading && page === "calendar" && <CalendarView cases={cases} onOpen={openC} />}
         {!loading && page === "tasks" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Tasks</h2>
