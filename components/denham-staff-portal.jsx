@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import * as api from "../lib/api";
 
@@ -202,7 +202,7 @@ function nClr(t) {
   }[t] || B.txtM;
 }
 
-function nLbl(t) { return (t || "").split("_").map(w => w[0].toUpperCase() + w.slice(1)).join(" "); }
+function nLbl(t) { return (t || "").split("_").map(w => w.length > 0 ? w[0].toUpperCase() + w.slice(1) : "").join(" "); }
 
 function aIcon(t) {
   return {
@@ -1219,17 +1219,13 @@ function TasksPanel({ caseId, userId, team, showCaseColumn }) {
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════
 function Dash({ user, cases, onOpen, onFilterStatus }) {
-  const my = cases.filter(c => c.attorney?.id === user.id || c.support?.id === user.id);
-  const allActive = cases.filter(c => c.status !== "Settled" && c.status !== "Closed");
-  const ac = allActive;
-  const myActive = my.filter(c => c.status !== "Settled" && c.status !== "Closed");
-  const sol90 = ac.filter(c => c.sol && dU(c.sol) < 90);
-  const rec = cases.reduce((s, c) => s + c.totalRec, 0);
-  const sc = {};
-  ac.forEach(c => { sc[c.status] = (sc[c.status] || 0) + 1; });
-  // Insurer breakdown
-  const insurerCounts = {};
-  ac.forEach(c => { if (c.insurer) insurerCounts[c.insurer] = (insurerCounts[c.insurer] || 0) + 1; });
+  const my = useMemo(() => cases.filter(c => c.attorney?.id === user.id || c.support?.id === user.id), [cases, user.id]);
+  const ac = useMemo(() => cases.filter(c => c.status !== "Settled" && c.status !== "Closed"), [cases]);
+  const myActive = useMemo(() => my.filter(c => c.status !== "Settled" && c.status !== "Closed"), [my]);
+  const sol90 = useMemo(() => ac.filter(c => c.sol && dU(c.sol) < 90), [ac]);
+  const rec = useMemo(() => cases.reduce((s, c) => s + c.totalRec, 0), [cases]);
+  const sc = useMemo(() => { const m = {}; ac.forEach(c => { m[c.status] = (m[c.status] || 0) + 1; }); return m; }, [ac]);
+  const insurerCounts = useMemo(() => { const m = {}; ac.forEach(c => { if (c.insurer) m[c.insurer] = (m[c.insurer] || 0) + 1; }); return m; }, [ac]);
 
   return (
     <div>
@@ -1398,8 +1394,8 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
   const [focusIdx, setFocusIdx] = useState(-1);
   const tableRef = useRef(null);
 
-  const insurers = [...new Set(cases.map(c => c.insurer).filter(Boolean))].sort();
-  const attorneys = [...new Set(cases.map(c => c.attorney?.name).filter(Boolean))].sort();
+  const insurers = useMemo(() => [...new Set(cases.map(c => c.insurer).filter(Boolean))].sort(), [cases]);
+  const attorneys = useMemo(() => [...new Set(cases.map(c => c.attorney?.name).filter(Boolean))].sort(), [cases]);
 
   const hasFilters = fSt !== "All" || fJ !== "All" || fIns !== "All" || fAtt !== "All" || fDateFrom || fDateTo || search;
 
@@ -1433,8 +1429,8 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
     }
   };
 
-  const pool = scope === "mine" ? cases.filter(c => c.attorney?.id === user.id || c.support?.id === user.id) : cases;
-  const fl = pool.filter(c => {
+  const pool = useMemo(() => scope === "mine" ? cases.filter(c => c.attorney?.id === user.id || c.support?.id === user.id) : cases, [cases, scope, user.id]);
+  const fl = useMemo(() => pool.filter(c => {
     if (search && !aiResults) {
       const q = search.toLowerCase();
       if (!c.client?.toLowerCase().includes(q) && !c.ref?.toLowerCase().includes(q) && !c.insurer?.toLowerCase().includes(q)
@@ -1460,7 +1456,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
     if (va < vb) return sDir === "asc" ? -1 : 1;
     if (va > vb) return sDir === "asc" ? 1 : -1;
     return 0;
-  });
+  }), [pool, search, aiResults, fSt, fJ, fIns, fAtt, fDateFrom, fDateTo, sBy, sDir]);
 
   const displayCases = aiResults ? aiResults.cases : fl;
   const totalPages = Math.ceil(displayCases.length / PG_SIZE);
@@ -2148,7 +2144,7 @@ function NewCaseModal({ open, onClose, cases, team, onCreated }) {
       <div style={{ width: 520, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${B.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: B.gold }}>➕ New Case</span>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: B.txtD, fontSize: 18, cursor: "pointer" }}>✕</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: B.txtD, fontSize: 18, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
           {duplicates.length > 0 && (
@@ -2241,7 +2237,7 @@ function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK }) {
       </div>
       {(solCases || []).length > 0 && (
         <div style={{ position: "relative" }}>
-          <div onClick={() => setSolOpen(o => !o)} style={{ width: 32, height: 32, borderRadius: "50%", background: solCritical.length > 0 ? B.dangerBg : B.goldBg, border: `1px solid ${solCritical.length > 0 ? B.danger : B.gold}40`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+          <div onClick={() => setSolOpen(o => !o)} role="button" aria-label="SOL alerts" style={{ width: 32, height: 32, borderRadius: "50%", background: solCritical.length > 0 ? B.dangerBg : B.goldBg, border: `1px solid ${solCritical.length > 0 ? B.danger : B.gold}40`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
             <span style={{ fontSize: 14 }}>🔔</span>
             <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: solCritical.length > 0 ? B.danger : B.gold, color: "#000", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{(solCases || []).length}</span>
           </div>
@@ -3167,7 +3163,10 @@ export default function DenhamStaffPortal() {
     // Try to find in loaded cases first
     let c = cases.find(x => x.id === caseId);
     if (c) {
-      navTo("caseDetail", c);
+      setPage("caseDetail");
+      setSelCase(c);
+      setStatusFilter("All");
+      window.history.pushState({ page: "caseDetail", caseId: c.id, statusFilter: "All" }, "", window.location.pathname);
       return;
     }
     // If not found (e.g. from AI search), fetch from Supabase
@@ -3175,7 +3174,10 @@ export default function DenhamStaffPortal() {
       const row = await api.getCase(caseId);
       if (row) {
         c = sbToCase(row);
-        navTo("caseDetail", c);
+        setPage("caseDetail");
+        setSelCase(c);
+        setStatusFilter("All");
+        window.history.pushState({ page: "caseDetail", caseId: c.id, statusFilter: "All" }, "", window.location.pathname);
       }
     } catch (e) {
       console.error("Failed to load case:", e);
@@ -3233,19 +3235,17 @@ export default function DenhamStaffPortal() {
   };
 
   // SOL alerts computation
-  const solCases = cases.filter(c => c.sol && c.status !== "Settled" && c.status !== "Closed")
+  const solCases = useMemo(() => cases.filter(c => c.sol && c.status !== "Settled" && c.status !== "Closed")
     .map(c => ({ ...c, _solDays: dU(c.sol) }))
     .filter(c => c._solDays <= 90)
-    .sort((a, b) => a._solDays - b._solDays);
-  const solCritical = solCases.filter(c => c._solDays <= 30);
-  const solWarning = solCases.filter(c => c._solDays > 30 && c._solDays <= 90);
+    .sort((a, b) => a._solDays - b._solDays), [cases]);
   const sidebarCounts = { cases: cases.length, tasks: taskCount, solAlerts: solCases.length };
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: B.bg }}>
       {/* Mobile hamburger */}
       {isMobile && (
-        <button onClick={() => setSidebarOpen(o => !o)} style={{
+        <button onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle menu" style={{
           position: "fixed", top: 12, left: 12, zIndex: 200, width: 40, height: 40,
           borderRadius: 8, border: `1px solid ${B.bdr}`, background: B.card,
           color: B.gold, fontSize: 20, cursor: "pointer", display: "flex",
@@ -3266,7 +3266,7 @@ export default function DenhamStaffPortal() {
       <CommandBar open={cmdBarOpen} onClose={() => setCmdBarOpen(false)} onOpenCase={openCaseById} cases={cases} />
       <div style={{ marginLeft: isMobile ? 0 : 220, flex: 1, padding: isMobile ? "60px 16px 28px" : "28px 32px", maxWidth: 1200 }}>
         {/* Shimmer animation for skeletons */}
-        <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+        <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } } @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
         <ToastContainer />
         {/* Global Header Bar */}
         {!loading && user && (
