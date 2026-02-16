@@ -103,10 +103,27 @@ function ToastContainer() {
 }
 
 // ─── SOL Helpers ─────────────────────────────────────────────
-// SOL is "met" if case is in litigation, appraisal, settled, or closed
+// SOL is "met" if case is in litigation, settled, or closed
+// (Appraisal alone does NOT meet SOL)
 function solIsMet(status) {
   if (!status) return false;
-  return status.includes("Litigation") || status.includes("Appraisal") || status === "Settled" || status === "Closed";
+  return status.includes("Litigation") || status === "Settled" || status === "Closed";
+}
+
+// Check if a litigation case has filed complaint proof
+function hasFiledComplaint(c) {
+  if (!c) return false;
+  return !!(c.ld?.filedDate || c.ld?.docUrl);
+}
+
+// Detailed SOL met status: "met" | "pending_proof" | "not_met"
+function solMetStatus(c) {
+  if (!c?.status) return "not_met";
+  if (c.status === "Settled" || c.status === "Closed") return "met";
+  if (c.status.includes("Litigation")) {
+    return hasFiledComplaint(c) ? "met" : "pending_proof";
+  }
+  return "not_met";
 }
 
 // SOL Confirmation Status — human-in-the-loop confirmation tracking
@@ -145,9 +162,18 @@ function solBadge(sol, status, c) {
   }
   if (!sol) return null;
   if (solIsMet(status)) {
+    const sms = c ? solMetStatus(c) : "met";
+    if (sms === "pending_proof") {
+      return (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: B.goldBg, color: B.gold, border: `1px solid ${B.gold}30`, whiteSpace: "nowrap" }}>
+          ⚖️ In Litigation (no complaint on file)
+        </span>
+      );
+    }
+    const filedLabel = c?.ld?.filedDate ? ` — Filed ${fmtD(c.ld.filedDate)}` : "";
     return (
       <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: B.greenBg, color: B.green, border: `1px solid ${B.green}30`, whiteSpace: "nowrap" }}>
-        ✅ SOL Met
+        ✅ SOL Met{filedLabel}
       </span>
     );
   }
@@ -299,8 +325,9 @@ function calcRiskScore(c, litDetails) {
   }
   const isLit = (c.status || "").includes("Litigation");
   const ld = litDetails || {};
-  if (isLit && !ld.discovery_deadline) score += 15;
-  if (isLit && !ld.trial_date) score += 15;
+  if (isLit && !hasFiledComplaint(c)) score += 20; // No filed complaint proof
+  if (isLit && !ld.discovery_deadline && !c.ld?.discDeadline) score += 15;
+  if (isLit && !ld.trial_date && !c.ld?.trialDate) score += 15;
   if (c.dop) {
     const daysOpen = Math.ceil((now - new Date(c.dop + "T00:00:00")) / 86400000);
     if (daysOpen > 180 && !(c.totalRec > 0)) score += 10;
@@ -379,6 +406,7 @@ function sbToCase(row) {
       oppFirm: ld.opposing_firm, oppPhone: ld.opposing_phone,
       oppEmail: ld.opposing_email, trialDate: ld.trial_date,
       medDate: ld.mediation_date, discDeadline: ld.discovery_deadline,
+      docUrl: ld.doc_url,
     } : null,
     negs: (row.negotiations || []).map(n => ({
       id: n.id, date: n.date, type: n.type,
@@ -2432,6 +2460,7 @@ function ComplianceDash({ cases, onOpen }) {
     (c.status === "Presuit Demand" && c._daysOpen > 90)
   );
   const litMissing = caseData.filter(c => c._isLit);
+  const litNoComplaint = caseData.filter(c => c._isLit && !hasFiledComplaint(c));
 
   // SOL Needs Review: not_set or auto-estimated
   const solNeedsReview = caseData.filter(c => {
@@ -2448,13 +2477,14 @@ function ComplianceDash({ cases, onOpen }) {
       return aDate ? -1 : 1;
     });
 
-  const filtered = filter === "critical" ? critical : filter === "high" ? high : filter === "sol" ? solIssues : filter === "communication" ? commIssues : filter === "litigation" ? litMissing : filter === "solreview" ? solNeedsReview : caseData.filter(c => c._risk > 0);
+  const filtered = filter === "critical" ? critical : filter === "high" ? high : filter === "sol" ? solIssues : filter === "communication" ? commIssues : filter === "litigation" ? litMissing : filter === "nocomplaint" ? litNoComplaint : filter === "solreview" ? solNeedsReview : caseData.filter(c => c._risk > 0);
 
   const summaryCards = [
     { label: "Critical", count: critical.length, icon: "🔴", bg: B.dangerBg, t: B.danger, f: "critical" },
     { label: "High Risk", count: high.length, icon: "🟠", bg: "rgba(235,140,3,0.12)", t: "#eb8c03", f: "high" },
     { label: "SOL Review", count: solNeedsReview.length, icon: "🔍", bg: "rgba(235,176,3,0.15)", t: "#e0a050", f: "solreview" },
     { label: "SOL Alerts", count: solIssues.length, icon: "⏰", bg: B.goldBg, t: B.gold, f: "sol" },
+    { label: "No Complaint", count: litNoComplaint.length, icon: "📋", bg: "rgba(255,64,96,0.12)", t: "#ff4060", f: "nocomplaint" },
     { label: "Comm. Flags", count: commIssues.length, icon: "📞", bg: B.navyBg, t: "#6b6bff", f: "communication" },
     { label: "Litigation Gaps", count: litMissing.filter(c => c._risk >= 15).length, icon: "⚖️", bg: "rgba(124,92,191,0.12)", t: B.purple, f: "litigation" },
   ];
@@ -2467,7 +2497,7 @@ function ComplianceDash({ cases, onOpen }) {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 12, marginBottom: 24 }}>
         {summaryCards.map(s => (
           <div key={s.f} onClick={() => setFilter(f => f === s.f ? "all" : s.f)}
             style={{ ...S.card, padding: 16, cursor: "pointer", borderColor: filter === s.f ? s.t + "60" : B.bdr, textAlign: "center", transition: "border-color 0.15s" }}>
@@ -2577,6 +2607,34 @@ function ComplianceDash({ cases, onOpen }) {
         )}
       </div>
 
+      {/* Litigation Missing Filed Complaint */}
+      <div style={{ ...S.card, marginBottom: 20 }}>
+        <div style={S.secT}>📋 Litigation Cases Missing Filed Complaint</div>
+        <div style={{ fontSize: 12, color: B.txtM, marginBottom: 12 }}>Cases in litigation without proof of filed complaint. SOL cannot be confirmed as met without a complaint on file.</div>
+        {litNoComplaint.length === 0 ? (
+          <div style={{ padding: 20, textAlign: "center", color: B.green, fontSize: 13 }}>✅ All litigation cases have filed complaints</div>
+        ) : (
+          <table style={S.tbl}>
+            <thead><tr>
+              <th style={S.th}>Case</th><th style={S.th}>Status</th><th style={S.th}>SOL</th><th style={S.th}>Attorney</th><th style={S.th}>Risk</th>
+            </tr></thead>
+            <tbody>
+              {litNoComplaint.sort((a, b) => b._risk - a._risk).map(c => (
+                <tr key={c.id} onClick={() => onOpen(c)} style={{ cursor: "pointer" }}
+                  onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <td style={S.td}><div style={{ fontWeight: 600, fontSize: 13 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
+                  <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
+                  <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{c.sol ? fmtD(c.sol) : "—"}</td>
+                  <td style={{ ...S.td, fontSize: 12 }}>{c.attorney?.name || "—"}</td>
+                  <td style={S.td}><RiskBadge score={c._risk} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       {/* Litigation Missing Deadlines */}
       <div style={{ ...S.card, marginBottom: 20 }}>
         <div style={S.secT}>⚖️ Litigation Cases — Scheduling Order Compliance</div>
@@ -2642,6 +2700,79 @@ function ComplianceDash({ cases, onOpen }) {
 // ═══════════════════════════════════════════════════════════
 // CASE DETAIL - COMPLIANCE TAB
 // ═══════════════════════════════════════════════════════════
+function FiledComplaintSection({ c, onCaseUpdate }) {
+  const [filedDate, setFiledDate] = useState(c.ld?.filedDate || "");
+  const [caseNum, setCaseNum] = useState(c.ld?.caseNum || "");
+  const [court, setCourt] = useState(c.ld?.court || "");
+  const [docUrl, setDocUrl] = useState(c.ld?.docUrl || "");
+  const [saving, setSaving] = useState(false);
+  const hasFiled = hasFiledComplaint(c);
+
+  const handleSave = async () => {
+    if (!filedDate && !docUrl) { toast.error("Please enter a filed date or document link"); return; }
+    setSaving(true);
+    try {
+      await api.upsertLitigationDetails(c.id, {
+        filed_date: filedDate || null,
+        case_number: caseNum || null,
+        court: court || null,
+        doc_url: docUrl || null,
+      });
+      toast.success("Complaint info saved");
+      const updLd = { ...c.ld, filedDate: filedDate || c.ld?.filedDate, caseNum: caseNum || c.ld?.caseNum, court: court || c.ld?.court, docUrl: docUrl || c.ld?.docUrl };
+      if (onCaseUpdate) onCaseUpdate({ ...c, ld: updLd });
+    } catch (e) { toast.error("Failed to save: " + e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ ...S.card, marginBottom: 20, borderColor: hasFiled ? B.green + "40" : B.danger + "40" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={S.secT}>📋 Filed Complaint</div>
+        <span style={{ ...S.badge, background: hasFiled ? B.greenBg : B.dangerBg, color: hasFiled ? B.green : B.danger, fontSize: 11 }}>
+          {hasFiled ? "✅ On File" : "⚠️ Missing"}
+        </span>
+      </div>
+      {hasFiled ? (
+        <div>
+          <div style={{ padding: 12, borderRadius: 8, background: B.greenBg, border: `1px solid ${B.green}20`, fontSize: 13, color: B.green, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            ✅ Complaint filed {c.ld?.filedDate ? fmtD(c.ld.filedDate) : ""}{c.ld?.caseNum ? ` — ${c.ld.caseNum}` : ""}{c.ld?.court ? ` — ${c.ld.court}` : ""}
+            {c.ld?.docUrl && <a href={c.ld.docUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#5b8def", fontSize: 12, textDecoration: "underline" }}>View Document</a>}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div style={{ padding: 12, borderRadius: 8, background: B.dangerBg, border: `1px solid ${B.danger}20`, marginBottom: 12, fontSize: 13 }}>
+            <span style={{ color: B.danger, fontWeight: 600 }}>⚠️ No filed complaint on file.</span>
+            <span style={{ color: B.txtM }}> SOL cannot be confirmed as met without proof of filing.</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, color: B.txtD, marginBottom: 4 }}>Filed Date</div>
+              <input type="date" value={filedDate} onChange={e => setFiledDate(e.target.value)} style={{ ...S.input, width: "100%" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: B.txtD, marginBottom: 4 }}>Case Number</div>
+              <input type="text" value={caseNum} onChange={e => setCaseNum(e.target.value)} placeholder="e.g. 2024-CV-12345" style={{ ...S.input, width: "100%" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: B.txtD, marginBottom: 4 }}>Court</div>
+              <input type="text" value={court} onChange={e => setCourt(e.target.value)} placeholder="e.g. Harris County District Court" style={{ ...S.input, width: "100%" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: B.txtD, marginBottom: 4 }}>Document Link/URL</div>
+              <input type="text" value={docUrl} onChange={e => setDocUrl(e.target.value)} placeholder="https://..." style={{ ...S.input, width: "100%" }} />
+            </div>
+          </div>
+          <button onClick={handleSave} disabled={saving} style={{ ...S.btn, opacity: saving ? 0.6 : 1 }}>
+            {saving ? "Saving..." : "Save Complaint Info"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ComplianceTab({ c, onCaseUpdate }) {
   const score = calcRiskScore(c, {});
   const rc = riskColor(score);
@@ -2688,8 +2819,9 @@ function ComplianceTab({ c, onCaseUpdate }) {
     else if (sd <= 60) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 25, color: B.gold });
   }
   if (isLit) {
-    breakdown.push({ label: "No discovery deadline set", pts: 15, color: "#eb8c03" });
-    breakdown.push({ label: "No trial date set", pts: 15, color: "#eb8c03" });
+    if (!hasFiledComplaint(c)) breakdown.push({ label: "No filed complaint on file", pts: 20, color: B.danger });
+    if (!c.ld?.discDeadline) breakdown.push({ label: "No discovery deadline set", pts: 15, color: "#eb8c03" });
+    if (!c.ld?.trialDate) breakdown.push({ label: "No trial date set", pts: 15, color: "#eb8c03" });
   }
   if (daysOpen > 180 && !(c.totalRec > 0)) breakdown.push({ label: `Case open ${daysOpen} days, no recovery`, pts: 10, color: B.gold });
   if ((c.status === "Intake" || c.status === "New") && daysOpen > 30) breakdown.push({ label: `Intake stalled ${daysOpen} days`, pts: 10, color: B.gold });
@@ -2791,6 +2923,9 @@ function ComplianceTab({ c, onCaseUpdate }) {
           </div>
         )}
       </div>
+
+      {/* Filed Complaint */}
+      {isLit && <FiledComplaintSection c={c} onCaseUpdate={onCaseUpdate} />}
 
       {/* Litigation Dates */}
       {isLit && (
