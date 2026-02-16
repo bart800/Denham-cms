@@ -103,8 +103,21 @@ function ToastContainer() {
 }
 
 // ─── SOL Helpers ─────────────────────────────────────────────
-function solBadge(sol) {
+// SOL is "met" if case is in litigation, appraisal, settled, or closed
+function solIsMet(status) {
+  if (!status) return false;
+  return status.includes("Litigation") || status.includes("Appraisal") || status === "Settled" || status === "Closed";
+}
+
+function solBadge(sol, status) {
   if (!sol) return null;
+  if (solIsMet(status)) {
+    return (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: B.greenBg, color: B.green, border: `1px solid ${B.green}30`, whiteSpace: "nowrap" }}>
+        ✅ SOL Met
+      </span>
+    );
+  }
   const d = Math.ceil((new Date(sol + "T00:00:00") - new Date()) / 86400000);
   if (d > 90) return null;
   const expired = d < 0;
@@ -1225,7 +1238,7 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
   const my = useMemo(() => cases.filter(c => c.attorney?.id === user.id || c.support?.id === user.id), [cases, user.id]);
   const ac = useMemo(() => cases.filter(c => c.status !== "Settled" && c.status !== "Closed"), [cases]);
   const myActive = useMemo(() => my.filter(c => c.status !== "Settled" && c.status !== "Closed"), [my]);
-  const sol90 = useMemo(() => ac.filter(c => c.sol && dU(c.sol) < 90), [ac]);
+  const sol90 = useMemo(() => ac.filter(c => c.sol && !solIsMet(c.status) && dU(c.sol) < 90), [ac]);
   const rec = useMemo(() => cases.reduce((s, c) => s + c.totalRec, 0), [cases]);
   const sc = useMemo(() => { const m = {}; ac.forEach(c => { m[c.status] = (m[c.status] || 0) + 1; }); return m; }, [ac]);
   const insurerCounts = useMemo(() => { const m = {}; ac.forEach(c => { if (c.insurer) m[c.insurer] = (m[c.insurer] || 0) + 1; }); return m; }, [ac]);
@@ -1270,7 +1283,7 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
         </div>
         <div style={S.card}>
           <h3 style={S.secT}>Upcoming SOL Deadlines</h3>
-          {ac.filter(c => c.sol).sort((a, b) => new Date(a.sol) - new Date(b.sol)).slice(0, 6).map(c => {
+          {ac.filter(c => c.sol && !solIsMet(c.status)).sort((a, b) => new Date(a.sol) - new Date(b.sol)).slice(0, 6).map(c => {
             const d = dU(c.sol);
             return (
               <div key={c.id} onClick={() => onOpen(c)}
@@ -1669,7 +1682,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
                   <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{c.juris || c.jurisdiction}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtD(c.dop)}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, fontWeight: 600, color: sd != null ? (sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtM) : B.txtD }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{c.sol ? fmtD(c.sol) : "—"}{solBadge(c.sol)}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{c.sol ? fmtD(c.sol) : "—"}{solBadge(c.sol, c.status)}</div>
                   </td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 11, color: B.txtD }}>{getLastActivity(c)}</td>
                 </tr>
@@ -2269,7 +2282,7 @@ function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK }) {
                   onMouseEnter={e => e.currentTarget.style.background = B.cardH}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <div><div style={{ fontSize: 12, fontWeight: 500 }}>{c.client}</div><div style={{ fontSize: 10, color: B.txtD }}>{c.ref}</div></div>
-                  {solBadge(c.sol)}
+                  {solBadge(c.sol, c.status)}
                 </div>
               ))}
             </div>
@@ -3230,7 +3243,8 @@ export default function DenhamStaffPortal() {
   }, [cases]);
 
   // SOL alerts computation (must be before early returns to maintain hook order)
-  const solCases = useMemo(() => cases.filter(c => c.sol && c.status !== "Settled" && c.status !== "Closed")
+  // Exclude cases where SOL is met (litigation filed, appraisal, settled, closed)
+  const solCases = useMemo(() => cases.filter(c => c.sol && !solIsMet(c.status))
     .map(c => ({ ...c, _solDays: dU(c.sol) }))
     .filter(c => c._solDays <= 90) // includes negative (expired)
     .sort((a, b) => a._solDays - b._solDays), [cases]);

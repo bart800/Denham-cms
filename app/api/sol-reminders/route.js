@@ -20,7 +20,7 @@ export async function GET() {
         attorney:team_members!cases_attorney_id_fkey(id, name, initials, color),
         support:team_members!cases_support_id_fkey(id, name, initials, color)
       `)
-      .not("status", "in", '("Settled","Closed")')
+      .not("status", "in", '("Settled","Closed","Litigation - Filed","Appraisal")')
       .gte("statute_of_limitations", todayStr)
       .lte("statute_of_limitations", d90)
       .order("statute_of_limitations", { ascending: true });
