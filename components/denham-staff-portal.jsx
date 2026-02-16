@@ -109,7 +109,40 @@ function solIsMet(status) {
   return status.includes("Litigation") || status.includes("Appraisal") || status === "Settled" || status === "Closed";
 }
 
-function solBadge(sol, status) {
+// SOL Confirmation Status — human-in-the-loop confirmation tracking
+// Uses heuristic: if SOL === DOL + 365 days exactly, it was auto-estimated
+function solConfirmationStatus(c) {
+  if (!c.sol) return { status: "not_set", label: "SOL Not Set", color: B.danger };
+  if (c.dol) {
+    const dolDate = new Date(c.dol + "T00:00:00");
+    const autoDate = new Date(dolDate);
+    autoDate.setFullYear(autoDate.getFullYear() + 1);
+    const solDate = new Date(c.sol + "T00:00:00");
+    // Compare date strings to avoid timezone issues
+    const autoStr = autoDate.toISOString().slice(0, 10);
+    if (c.sol === autoStr) return { status: "auto", label: "SOL Auto-Estimated", color: B.gold };
+  }
+  return { status: "confirmed", label: "SOL Confirmed", color: B.green };
+}
+
+// Calculate auto-estimated SOL date from DOL (DOL + 1 year)
+function autoEstimateSol(dol) {
+  if (!dol) return null;
+  const d = new Date(dol + "T00:00:00");
+  d.setFullYear(d.getFullYear() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function solBadge(sol, status, c) {
+  // If case object passed, use confirmation status
+  const conf = c ? solConfirmationStatus(c) : null;
+  if (!sol && c) {
+    return (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: B.dangerBg, color: B.danger, border: `1px solid ${B.danger}30`, whiteSpace: "nowrap" }}>
+        🔴 NO SOL
+      </span>
+    );
+  }
   if (!sol) return null;
   if (solIsMet(status)) {
     return (
@@ -119,6 +152,16 @@ function solBadge(sol, status) {
     );
   }
   const d = Math.ceil((new Date(sol + "T00:00:00") - new Date()) / 86400000);
+  // Unconfirmed auto-estimate badge
+  if (conf && conf.status === "auto") {
+    const expired = d < 0;
+    const clr = expired ? "#ff4060" : B.gold;
+    return (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: B.goldBg, color: clr, border: `1px solid ${clr}30`, whiteSpace: "nowrap" }}>
+        🟡 SOL ~{Math.abs(d)}d (unconfirmed)
+      </span>
+    );
+  }
   if (d > 90) return null;
   const expired = d < 0;
   const critical = d <= 30;
@@ -224,7 +267,31 @@ function nLbl(t) { return (t || "").split("_").map(w => w.length > 0 ? w[0].toUp
 function calcRiskScore(c, litDetails) {
   let score = 0;
   const now = new Date();
-  if (c.sol && !solIsMet(c.status)) {
+  const conf = solConfirmationStatus(c);
+  if (conf.status === "not_set") {
+    // No SOL at all — critical risk
+    score += 30;
+    // If DOL exists, check proximity to 1-year floor
+    if (c.dol) {
+      const floorDate = autoEstimateSol(c.dol);
+      if (floorDate) {
+        const floorDays = dU(floorDate);
+        if (floorDays < 0) score += 20; // past the 1-year floor
+        else if (floorDays <= 30) score += 15;
+        else if (floorDays <= 60) score += 10;
+      }
+    }
+  } else if (conf.status === "auto") {
+    // Auto-estimated, not confirmed
+    score += 15;
+    if (!solIsMet(c.status)) {
+      const sd = dU(c.sol);
+      if (sd < 0) score += 50;
+      else if (sd <= 30) score += 40;
+      else if (sd <= 60) score += 25;
+    }
+  } else if (c.sol && !solIsMet(c.status)) {
+    // Confirmed SOL — existing proximity scoring
     const sd = dU(c.sol);
     if (sd < 0) score += 50;
     else if (sd <= 30) score += 40;
@@ -1721,7 +1788,7 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatc
                   <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{c.juris || c.jurisdiction}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtD(c.dop)}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, fontWeight: 600, color: sd != null ? (sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtM) : B.txtD }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{c.sol ? fmtD(c.sol) : "—"}{solBadge(c.sol, c.status)}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{c.sol ? fmtD(c.sol) : "—"}{solBadge(c.sol, c.status, c)}</div>
                   </td>
                   <td style={S.td}><RiskBadge score={calcRiskScore(c, {})} /></td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 11, color: B.txtD }}>{getLastActivity(c)}</td>
@@ -2330,7 +2397,7 @@ function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK, criti
                   onMouseEnter={e => e.currentTarget.style.background = B.cardH}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <div><div style={{ fontSize: 12, fontWeight: 500 }}>{c.client}</div><div style={{ fontSize: 10, color: B.txtD }}>{c.ref}</div></div>
-                  {solBadge(c.sol, c.status)}
+                  {solBadge(c.sol, c.status, c)}
                 </div>
               ))}
             </div>
@@ -2366,11 +2433,27 @@ function ComplianceDash({ cases, onOpen }) {
   );
   const litMissing = caseData.filter(c => c._isLit);
 
-  const filtered = filter === "critical" ? critical : filter === "high" ? high : filter === "sol" ? solIssues : filter === "communication" ? commIssues : filter === "litigation" ? litMissing : caseData.filter(c => c._risk > 0);
+  // SOL Needs Review: not_set or auto-estimated
+  const solNeedsReview = caseData.filter(c => {
+    const conf = solConfirmationStatus(c);
+    return conf.status === "not_set" || conf.status === "auto";
+  }).map(c => ({ ...c, _solConf: solConfirmationStatus(c) }))
+    .sort((a, b) => {
+      // not_set first, then auto
+      if (a._solConf.status !== b._solConf.status) return a._solConf.status === "not_set" ? -1 : 1;
+      // Then by proximity (cases closer to floor/SOL first)
+      const aDate = a.sol || autoEstimateSol(a.dol);
+      const bDate = b.sol || autoEstimateSol(b.dol);
+      if (aDate && bDate) return dU(aDate) - dU(bDate);
+      return aDate ? -1 : 1;
+    });
+
+  const filtered = filter === "critical" ? critical : filter === "high" ? high : filter === "sol" ? solIssues : filter === "communication" ? commIssues : filter === "litigation" ? litMissing : filter === "solreview" ? solNeedsReview : caseData.filter(c => c._risk > 0);
 
   const summaryCards = [
     { label: "Critical", count: critical.length, icon: "🔴", bg: B.dangerBg, t: B.danger, f: "critical" },
     { label: "High Risk", count: high.length, icon: "🟠", bg: "rgba(235,140,3,0.12)", t: "#eb8c03", f: "high" },
+    { label: "SOL Review", count: solNeedsReview.length, icon: "🔍", bg: "rgba(235,176,3,0.15)", t: "#e0a050", f: "solreview" },
     { label: "SOL Alerts", count: solIssues.length, icon: "⏰", bg: B.goldBg, t: B.gold, f: "sol" },
     { label: "Comm. Flags", count: commIssues.length, icon: "📞", bg: B.navyBg, t: "#6b6bff", f: "communication" },
     { label: "Litigation Gaps", count: litMissing.filter(c => c._risk >= 15).length, icon: "⚖️", bg: "rgba(124,92,191,0.12)", t: B.purple, f: "litigation" },
@@ -2384,7 +2467,7 @@ function ComplianceDash({ cases, onOpen }) {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 24 }}>
         {summaryCards.map(s => (
           <div key={s.f} onClick={() => setFilter(f => f === s.f ? "all" : s.f)}
             style={{ ...S.card, padding: 16, cursor: "pointer", borderColor: filter === s.f ? s.t + "60" : B.bdr, textAlign: "center", transition: "border-color 0.15s" }}>
@@ -2393,6 +2476,45 @@ function ComplianceDash({ cases, onOpen }) {
             <div style={{ fontSize: 11, color: B.txtM, marginTop: 2 }}>{s.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* SOL Needs Review */}
+      <div style={{ ...S.card, marginBottom: 20 }}>
+        <div style={S.secT}>🔍 SOL Needs Review — Human Confirmation Required</div>
+        {solNeedsReview.length === 0 ? (
+          <div style={{ padding: 20, textAlign: "center", color: B.green, fontSize: 13 }}>✅ All cases have confirmed SOL dates</div>
+        ) : (
+          <table style={S.tbl}>
+            <thead><tr>
+              <th style={S.th}>Case</th><th style={S.th}>Status</th><th style={S.th}>SOL Status</th><th style={S.th}>SOL / Estimate</th><th style={S.th}>Days Since Intake</th><th style={S.th}>Risk</th>
+            </tr></thead>
+            <tbody>
+              {solNeedsReview.map(c => {
+                const estSol = c.sol || autoEstimateSol(c.dol);
+                const estDays = estSol ? dU(estSol) : null;
+                return (
+                  <tr key={c.id} onClick={() => onOpen(c)} style={{ cursor: "pointer" }}
+                    onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <td style={S.td}><div style={{ fontWeight: 600, fontSize: 13 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
+                    <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
+                    <td style={S.td}>
+                      <span style={{ ...S.badge, background: c._solConf.status === "not_set" ? B.dangerBg : B.goldBg, color: c._solConf.color, fontSize: 10 }}>
+                        {c._solConf.status === "not_set" ? "🔴 Not Set" : "🟡 Unconfirmed"}
+                      </span>
+                    </td>
+                    <td style={{ ...S.td, ...S.mono, fontSize: 12, color: c._solConf.status === "not_set" ? B.txtD : B.txtM }}>
+                      {c.sol ? fmtD(c.sol) : estSol ? <span style={{ opacity: 0.5 }}>~{fmtD(estSol)}</span> : "—"}
+                      {estDays !== null && <span style={{ marginLeft: 6, fontSize: 10, color: estDays <= 30 ? B.danger : estDays <= 90 ? B.gold : B.txtD }}>({estDays}d)</span>}
+                    </td>
+                    <td style={{ ...S.td, ...S.mono, fontWeight: 600 }}>{c._daysOpen}d</td>
+                    <td style={S.td}><RiskBadge score={c._risk} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* SOL Timeline */}
@@ -2504,7 +2626,7 @@ function ComplianceDash({ cases, onOpen }) {
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <td style={S.td}><div style={{ fontWeight: 600 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
                   <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
-                  <td style={S.td}>{c.sol ? <>{fmtD(c.sol)} {solBadge(c.sol, c.status)}</> : "—"}</td>
+                  <td style={S.td}>{c.sol ? <>{fmtD(c.sol)} {solBadge(c.sol, c.status, c)}</> : "—"}</td>
                   <td style={{ ...S.td, ...S.mono }}>{c._daysOpen}d</td>
                   <td style={S.td}><RiskBadge score={c._risk} /></td>
                 </tr>
@@ -2520,15 +2642,47 @@ function ComplianceDash({ cases, onOpen }) {
 // ═══════════════════════════════════════════════════════════
 // CASE DETAIL - COMPLIANCE TAB
 // ═══════════════════════════════════════════════════════════
-function ComplianceTab({ c }) {
+function ComplianceTab({ c, onCaseUpdate }) {
   const score = calcRiskScore(c, {});
   const rc = riskColor(score);
   const sd = c.sol ? dU(c.sol) : null;
   const isLit = (c.status || "").includes("Litigation");
   const daysOpen = c.dop ? Math.ceil((new Date() - new Date(c.dop + "T00:00:00")) / 86400000) : 0;
+  const conf = solConfirmationStatus(c);
+  const estimatedSol = autoEstimateSol(c.dol);
+  const [solDate, setSolDate] = useState(c.sol || estimatedSol || "");
+  const [solSaving, setSolSaving] = useState(false);
+  const [solEditing, setSolEditing] = useState(false);
+
+  const handleConfirmSol = async () => {
+    if (!solDate) { toast.error("Please select a SOL date"); return; }
+    setSolSaving(true);
+    try {
+      await api.updateCase(c.id, { statute_of_limitations: solDate });
+      toast.success("SOL date confirmed and saved");
+      if (onCaseUpdate) onCaseUpdate({ ...c, sol: solDate });
+      setSolEditing(false);
+    } catch (e) { toast.error("Failed to save SOL: " + e.message); }
+    setSolSaving(false);
+  };
 
   const breakdown = [];
-  if (c.sol && !solIsMet(c.status)) {
+  if (conf.status === "not_set") {
+    breakdown.push({ label: "SOL Not Set — Critical Risk", pts: 30, color: B.danger });
+    if (estimatedSol) {
+      const floorDays = dU(estimatedSol);
+      if (floorDays < 0) breakdown.push({ label: `1-year floor PASSED ${Math.abs(floorDays)}d ago`, pts: 20, color: B.danger });
+      else if (floorDays <= 30) breakdown.push({ label: `1-year floor in ${floorDays}d`, pts: 15, color: B.danger });
+      else if (floorDays <= 60) breakdown.push({ label: `1-year floor in ${floorDays}d`, pts: 10, color: B.gold });
+    }
+  } else if (conf.status === "auto") {
+    breakdown.push({ label: "SOL Auto-Estimated — Needs Confirmation", pts: 15, color: B.gold });
+    if (c.sol && !solIsMet(c.status)) {
+      if (sd < 0) breakdown.push({ label: "SOL Expired — NOT MET", pts: 50, color: B.danger });
+      else if (sd <= 30) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 40, color: B.danger });
+      else if (sd <= 60) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 25, color: B.gold });
+    }
+  } else if (c.sol && !solIsMet(c.status)) {
     if (sd < 0) breakdown.push({ label: "SOL Expired — NOT MET", pts: 50, color: B.danger });
     else if (sd <= 30) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 40, color: B.danger });
     else if (sd <= 60) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 25, color: B.gold });
@@ -2565,19 +2719,76 @@ function ComplianceTab({ c }) {
         )}
       </div>
 
-      {/* SOL Status */}
-      <div style={{ ...S.card, marginBottom: 20 }}>
-        <div style={S.secT}>Statute of Limitations</div>
-        {c.sol ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ ...S.mono, fontSize: 14 }}>{fmtD(c.sol)}</div>
-            {solBadge(c.sol, c.status)}
-            {sd !== null && !solIsMet(c.status) && (
-              <div style={{ ...S.mono, fontSize: 20, fontWeight: 800, color: sd <= 30 ? B.danger : sd <= 60 ? B.gold : B.green }}>{sd}d</div>
+      {/* SOL Status with Confirmation */}
+      <div style={{ ...S.card, marginBottom: 20, borderColor: conf.status === "not_set" ? B.danger + "40" : conf.status === "auto" ? B.gold + "40" : B.green + "40" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={S.secT}>Statute of Limitations</div>
+          <span style={{ ...S.badge, background: conf.status === "not_set" ? B.dangerBg : conf.status === "auto" ? B.goldBg : B.greenBg, color: conf.color, fontSize: 11 }}>
+            {conf.status === "not_set" ? "🔴" : conf.status === "auto" ? "🟡" : "✅"} {conf.label}
+          </span>
+        </div>
+
+        {conf.status === "not_set" && (
+          <div>
+            <div style={{ padding: 12, borderRadius: 8, background: B.dangerBg, border: `1px solid ${B.danger}20`, marginBottom: 12, fontSize: 13 }}>
+              <span style={{ color: B.danger, fontWeight: 600 }}>⚠️ No SOL date set.</span>
+              {estimatedSol && (
+                <span style={{ color: B.txtM }}> DOL + 1 year suggests <span style={{ color: B.gold, fontWeight: 600, ...S.mono }}>{fmtD(estimatedSol)}</span>.</span>
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: B.txtM }}>Set SOL Date:</span>
+              <input type="date" value={solDate} onChange={e => setSolDate(e.target.value)} style={{ ...S.input, width: 180 }} />
+              <button onClick={handleConfirmSol} disabled={solSaving} style={{ ...S.btn, opacity: solSaving ? 0.6 : 1 }}>
+                {solSaving ? "Saving..." : "Confirm SOL"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {conf.status === "auto" && !solEditing && (
+          <div>
+            <div style={{ padding: 12, borderRadius: 8, background: B.goldBg, border: `1px solid ${B.gold}20`, marginBottom: 12, fontSize: 13 }}>
+              <span style={{ color: B.gold, fontWeight: 600 }}>⚠️ This SOL was auto-estimated (DOL + 1 year).</span>
+              <span style={{ color: B.txtM }}> Please verify and confirm the correct date.</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
+              <div style={{ ...S.mono, fontSize: 14, color: B.txtM }}>{fmtD(c.sol)}</div>
+              {solBadge(c.sol, c.status, c)}
+              {sd !== null && !solIsMet(c.status) && (
+                <div style={{ ...S.mono, fontSize: 20, fontWeight: 800, color: sd <= 30 ? B.danger : sd <= 60 ? B.gold : B.txtM }}>{sd}d</div>
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="date" value={solDate} onChange={e => setSolDate(e.target.value)} style={{ ...S.input, width: 180 }} />
+              <button onClick={handleConfirmSol} disabled={solSaving} style={{ ...S.btn, opacity: solSaving ? 0.6 : 1 }}>
+                {solSaving ? "Saving..." : "Confirm SOL"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {conf.status === "confirmed" && (
+          <div>
+            {!solEditing ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: B.green }}>✅ SOL Confirmed: <span style={S.mono}>{fmtD(c.sol)}</span></div>
+                {solBadge(c.sol, c.status, c)}
+                {sd !== null && !solIsMet(c.status) && (
+                  <div style={{ ...S.mono, fontSize: 20, fontWeight: 800, color: sd <= 30 ? B.danger : sd <= 60 ? B.gold : B.green }}>{sd}d</div>
+                )}
+                <button onClick={() => { setSolEditing(true); setSolDate(c.sol || ""); }} style={{ ...S.btnO, fontSize: 11, padding: "4px 10px", marginLeft: "auto" }}>Edit</button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="date" value={solDate} onChange={e => setSolDate(e.target.value)} style={{ ...S.input, width: 180 }} />
+                <button onClick={handleConfirmSol} disabled={solSaving} style={{ ...S.btn, opacity: solSaving ? 0.6 : 1 }}>
+                  {solSaving ? "Saving..." : "Save"}
+                </button>
+                <button onClick={() => setSolEditing(false)} style={S.btnO}>Cancel</button>
+              </div>
             )}
           </div>
-        ) : (
-          <div style={{ color: B.txtM, fontSize: 13 }}>No SOL date set — <span style={{ color: B.gold, cursor: "pointer" }}>Add SOL date in case details</span></div>
         )}
       </div>
 
@@ -3130,7 +3341,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "tasks" && <TasksPanel caseId={c.id} userId={user?.id} team={team} />}
       {tab === "docs" && <DocumentBrowser clientName={c.client} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
-      {tab === "compliance" && <ComplianceTab c={c} />}
+      {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
     </div>
   );
 }
