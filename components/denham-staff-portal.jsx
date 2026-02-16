@@ -511,6 +511,56 @@ function sbToCase(row) {
   };
 }
 
+function DocBrowser(){
+const[clients,setClients]=useState([]);const[selClient,setSelClient]=useState(null);
+const[categories,setCategories]=useState([]);const[selCat,setSelCat]=useState(null);
+const[files,setFiles]=useState([]);const[search,setSearch]=useState("");const[loading,setLoading]=useState(true);
+useEffect(()=>{fetch("/api/docs").then(r=>r.json()).then(d=>{setClients(d.clients||[]);setLoading(false);}).catch(()=>setLoading(false));},[]);
+const loadCase=async(client)=>{setSelClient(client);setSelCat(null);setFiles([]);
+  const subs=await fetch(`/api/docs?client=${encodeURIComponent(client)}`).then(r=>r.json());
+  if(subs.cases&&subs.cases.length>0){
+    const caseFolder=subs.cases[0];
+    const cats=await fetch(`/api/docs?client=${encodeURIComponent(client)}&case=${encodeURIComponent(caseFolder)}`).then(r=>r.json());
+    setCategories(cats.categories||[]);
+  }
+};
+const loadFiles=async(cat)=>{setSelCat(cat);
+  const client=selClient;
+  const subs=await fetch(`/api/docs?client=${encodeURIComponent(client)}`).then(r=>r.json());
+  const caseFolder=subs.cases?.[0]||"";
+  const f=await fetch(`/api/docs?client=${encodeURIComponent(client)}&case=${encodeURIComponent(caseFolder)}&category=${encodeURIComponent(cat)}`).then(r=>r.json());
+  setFiles(f.files||[]);
+};
+const fClients=clients.filter(c=>!search||c.toLowerCase().includes(search.toLowerCase()));
+const extIcon=ext=>({".pdf":"📄",".docx":"📝",".doc":"📝",".xlsx":"📊",".jpg":"🖼️",".jpeg":"🖼️",".png":"🖼️",".zip":"📦",".esx":"📐"}[ext]||"📎");
+return(<div>
+<h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Documents <span style={{fontSize:14,color:B.txtD,fontWeight:400}}>({clients.length} clients)</span></h2>
+<div style={{display:"flex",gap:16}}>
+{/* Client list */}
+<div style={{width:280,...S.card,padding:0,maxHeight:"70vh",overflow:"auto"}}>
+<div style={{padding:12,borderBottom:`1px solid ${B.bdr}`}}><input placeholder="Search clients..." value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,fontSize:12}}/></div>
+{loading?<div style={{padding:20,textAlign:"center",color:B.txtM}}>Loading...</div>:
+fClients.slice(0,100).map(c=>(<div key={c} onClick={()=>loadCase(c)} style={{padding:"10px 16px",fontSize:13,cursor:"pointer",borderBottom:`1px solid ${B.bdr}06`,background:selClient===c?`${B.gold}15`:"transparent",color:selClient===c?B.gold:B.txt,fontWeight:selClient===c?600:400}} onMouseEnter={e=>{if(selClient!==c)e.currentTarget.style.background=B.cardH;}} onMouseLeave={e=>{if(selClient!==c)e.currentTarget.style.background="transparent";}}>{c}</div>))}
+</div>
+{/* Categories + Files */}
+<div style={{flex:1}}>
+{selClient&&<div style={{marginBottom:16}}>
+<div style={{fontSize:14,fontWeight:600,color:B.gold,marginBottom:12}}>{selClient}</div>
+<div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+{categories.map(cat=>(<button key={cat} onClick={()=>loadFiles(cat)} style={{...S.badge,background:selCat===cat?`${B.gold}25`:B.cardH,color:selCat===cat?B.gold:B.txtM,cursor:"pointer",border:`1px solid ${selCat===cat?B.gold+"40":B.bdr}`,padding:"6px 14px",fontSize:12,fontWeight:500,borderRadius:6}}>{cat}</button>))}
+</div></div>}
+{selCat&&<div style={S.card}>
+<h3 style={S.secT}>{selCat} <span style={{fontSize:12,color:B.txtD,fontWeight:400}}>({files.length} files)</span></h3>
+{files.length===0?<div style={{color:B.txtM,fontSize:13}}>No files in this category</div>:
+files.map((f,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<files.length-1?`1px solid ${B.bdr}06`:"none"}}>
+<span style={{fontSize:18}}>{extIcon(f.ext)}</span>
+<div style={{flex:1}}><div style={{fontSize:13,fontWeight:500}}>{f.name}</div><div style={{fontSize:11,color:B.txtD}}>{f.size?Math.round(f.size/1024)+"KB":"—"}</div></div>
+</div>))}
+</div>}
+{!selClient&&<div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:40,marginBottom:16}}>📁</div><div style={{fontSize:14,color:B.txtM}}>Select a client to browse their documents</div><div style={{fontSize:12,color:B.txtD,marginTop:8}}>373 clients · 89,791 documents indexed from Clio</div></div>}
+</div></div></div>);
+}
+
 export default function DenhamStaffPortal(){
 const[user,setUser]=useState(null);const[page,setPage]=useState("dashboard");const[selCase,setSelCase]=useState(null);const[statusFilter,setStatusFilter]=useState("All");
 const[cases,setCases]=useState([]);
@@ -533,9 +583,11 @@ useEffect(()=>{
   })();
 }, []);
 
-// Load cases: try Supabase first, fall back to genData
+// Load cases from Supabase
+const[loadError,setLoadError]=useState(null);
+const[loading,setLoading]=useState(true);
 useEffect(()=>{
-  if (!supabase) { setCases(genData()); return; }
+  if (!supabase) { setLoadError("Supabase not configured"); setLoading(false); return; }
   let cancelled = false;
   (async () => {
     try {
@@ -545,12 +597,13 @@ useEffect(()=>{
         setCases(rows.map(sbToCase));
         setUsingSupabase(true);
       } else {
-        // No data in Supabase yet, use mock
-        setCases(genData());
+        setLoadError("No cases found in database");
       }
     } catch (e) {
-      console.warn("Supabase load failed, using mock data:", e);
-      if (!cancelled) setCases(genData());
+      console.warn("Supabase load failed:", e);
+      if (!cancelled) setLoadError("Failed to connect to database: " + e.message);
+    } finally {
+      if (!cancelled) setLoading(false);
     }
   })();
   return () => { cancelled = true; };
@@ -574,17 +627,68 @@ const updateCase=useCallback(async(id,updates)=>{
 
 const navTo=(p,cs,sf)=>{const state={page:p,caseId:cs?.id||null,statusFilter:sf||"All"};window.history.pushState(state,"",window.location.pathname);setPage(p);setSelCase(cs||null);setStatusFilter(sf||"All");};
 useEffect(()=>{const handler=e=>{const st=e.state;if(st){setPage(st.page||"dashboard");setSelCase(st.caseId?cases.find(c=>c.id===st.caseId)||null:null);setStatusFilter(st.statusFilter||"All");}else{setPage("dashboard");setSelCase(null);setStatusFilter("All");}};window.addEventListener("popstate",handler);window.history.replaceState({page:"dashboard",caseId:null,statusFilter:"All"},"",window.location.pathname);return()=>window.removeEventListener("popstate",handler);},[cases]);
+const[cmdOpen,setCmdOpen]=useState(false);
+const[cmdQuery,setCmdQuery]=useState("");
+const[cmdResults,setCmdResults]=useState(null);
+const[cmdLoading,setCmdLoading]=useState(false);
+
+// Cmd+K handler
+useEffect(()=>{
+  const handler=e=>{if((e.metaKey||e.ctrlKey)&&e.key==="k"){e.preventDefault();setCmdOpen(o=>!o);setCmdQuery("");setCmdResults(null);}if(e.key==="Escape")setCmdOpen(false);};
+  window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler);
+},[]);
+
+const runAiQuery=async(q)=>{
+  if(!q.trim())return;
+  setCmdLoading(true);
+  try{
+    const res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q,action:"command"})});
+    const data=await res.json();
+    setCmdResults(data);
+  }catch(e){setCmdResults({error:e.message});}
+  finally{setCmdLoading(false);}
+};
+
 if(!user)return<Login onLogin={setUser} team={team}/>;
+if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:B.bg}}><div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:B.gold,marginBottom:8}}>Loading cases...</div><div style={{fontSize:13,color:B.txtM}}>Connecting to Supabase</div></div></div>);
+if(loadError)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:B.bg}}><div style={{...S.card,padding:40,textAlign:"center",maxWidth:500}}><div style={{fontSize:40,marginBottom:16}}>⚠️</div><div style={{fontSize:18,fontWeight:700,color:B.danger,marginBottom:8}}>Database Error</div><div style={{fontSize:13,color:B.txtM}}>{loadError}</div></div></div>);
 const openC=c=>{navTo("caseDetail",c);};
 const backC=()=>{window.history.back();};
 const filterByStatus=st=>{navTo("cases",null,st);};
 return(<div style={{display:"flex",minHeight:"100vh",background:B.bg}}>
 <Side user={user} active={page==="caseDetail"?"cases":page} onNav={p=>{navTo(p,null,"All");}} onOut={()=>setUser(null)}/>
 <div style={{marginLeft:220,flex:1,padding:"28px 32px",maxWidth:1200}}>
+{/* AI Command Bar hint */}
+<div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+<button onClick={()=>setCmdOpen(true)} style={{...S.btnO,fontSize:12,padding:"6px 14px",display:"flex",alignItems:"center",gap:8}}>
+<span>🤖 AI Search</span><kbd style={{background:B.bg,padding:"2px 6px",borderRadius:4,fontSize:10,border:`1px solid ${B.bdr}`,color:B.txtD}}>⌘K</kbd>
+</button></div>
 {page==="dashboard"&&<Dash user={user} cases={cases} onOpen={openC} onFilterStatus={filterByStatus}/>}
 {page==="cases"&&<Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={()=>setStatusFilter("All")}/>}
 {page==="caseDetail"&&selCase&&<CaseDetail c={selCase} onUpdate={updateCase} onBack={backC}/>}
 {page==="tasks"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Tasks</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global tasks view — coming soon</div></div></div>}
-{page==="docs"&&<div><h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Documents</h2><div style={{...S.card,padding:40,textAlign:"center"}}><div style={{fontSize:14,color:B.txtM}}>Global documents view — coming soon</div></div></div>}
-</div></div>);}
+{page==="docs"&&<DocBrowser/>}
+</div>
+{/* AI Command Bar Modal */}
+{cmdOpen&&<div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:"15vh"}} onClick={()=>setCmdOpen(false)}>
+<div style={{width:600,...S.card,padding:0,maxHeight:"60vh",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+<div style={{padding:"16px 20px",borderBottom:`1px solid ${B.bdr}`,display:"flex",alignItems:"center",gap:12}}>
+<span style={{fontSize:18}}>🤖</span>
+<input autoFocus placeholder="Ask anything... e.g. 'State Farm cases in litigation' or 'SOL expiring in 60 days'" value={cmdQuery} onChange={e=>setCmdQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")runAiQuery(cmdQuery);if(e.key==="Escape")setCmdOpen(false);}} style={{...S.input,border:"none",background:"transparent",padding:0,fontSize:15}}/>
+</div>
+{cmdLoading&&<div style={{padding:24,textAlign:"center",color:B.txtM}}>Searching...</div>}
+{cmdResults&&!cmdResults.error&&<div style={{padding:16,maxHeight:"45vh",overflow:"auto"}}>
+<div style={{fontSize:13,color:B.green,marginBottom:12,fontWeight:500}}>{cmdResults.description}</div>
+{(cmdResults.cases||[]).map(c=>(<div key={c.id} onClick={()=>{const full=cases.find(x=>x.id===c.id);if(full){openC(full);setCmdOpen(false);}}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 12px",borderRadius:8,cursor:"pointer",marginBottom:4}} onMouseEnter={e=>e.currentTarget.style.background=B.cardH} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+<div><div style={{fontSize:13,fontWeight:600}}>{c.client}</div><div style={{fontSize:11,color:B.txtD}}>{c.ref} · {c.insurer}</div></div>
+<span style={{...S.badge,...(()=>{const sc=stClr(c.status);return{background:sc.bg,color:sc.t};})()}}>{c.status}</span>
+</div>))}
+</div>}
+{cmdResults&&cmdResults.error&&<div style={{padding:24,color:B.danger,fontSize:13}}>{cmdResults.error}</div>}
+{!cmdResults&&!cmdLoading&&<div style={{padding:24}}>
+<div style={{fontSize:12,color:B.txtD,marginBottom:12}}>Try asking:</div>
+{["Show me all State Farm cases","Cases with SOL in the next 90 days","Active cases in Kentucky","Settled cases this year","Cases in litigation"].map(q=>(<div key={q} onClick={()=>{setCmdQuery(q);runAiQuery(q);}} style={{padding:"8px 12px",fontSize:13,color:B.txtM,cursor:"pointer",borderRadius:6}} onMouseEnter={e=>e.currentTarget.style.background=B.cardH} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>💡 {q}</div>))}
+</div>}
+</div></div>}
+</div>);}
 

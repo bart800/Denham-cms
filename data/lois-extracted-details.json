@@ -1,0 +1,303 @@
+{
+  "extractedAt": "2026-02-16T03:30:00.000Z",
+  "source": "LOIS AI sidebar on Drabo v. Homesite intake page",
+  "cases": [
+    {
+      "name": "Drabo, James v. Homesite",
+      "filevineId": "12363455",
+      "typeOfLoss": "Hail",
+      "dateOfLoss": "03/15/2025",
+      "propertyAddress": "8502 MOODY RD LOUISVILLE, KY 40219",
+      "propertyState": "Kentucky",
+      "propertyZip": "40219",
+      "causeOfLoss": "Hail",
+      "policyNumber": "41728662",
+      "claimNumber": "01-008-805582",
+      "dateOfIntake": "05/06/2025",
+      "insurer": "Homesite",
+      "adjuster": "John Ghitalla",
+      "adjusterEmail": "john.ghitalla@afics.com",
+      "clientName": "James Drabo",
+      "clientPhone": "5025330524",
+      "clientEmail": "jamesdrabo@gmail.com",
+      "claimStatus": "Unknown",
+      "attorney": "Bart Denham",
+      "solDate": "2026-04-02",
+      "demandAmount": 35670,
+      "outstandingAmount": 12379.26,
+      "notes": "Homesite initially denied claim May 2025. Later covered roof replacement for dwelling and detached garage. Not covering gutters, downspouts, soffit repair, kitchen ceiling damage citing cosmetic exclusions."
+    },
+    {
+      "name": "Abernathy v. State Farm",
+      "filevineId": "12363506",
+      "typeOfLoss": "Wind",
+      "dateOfLoss": "09/27/2024",
+      "propertyAddress": "510 20th St. NE, Cleveland, TN 37311",
+      "propertyState": "Tennessee",
+      "causeOfLoss": "Wind",
+      "claimNumber": "42-74K4-95F",
+      "insurer": "State Farm",
+      "demandAmount": 125000,
+      "clientBottomLine": 75000,
+      "caseNumber": "1:25-cv-00186",
+      "court": "Eastern District of Tennessee",
+      "notes": "Federal case. Settlement offer $125k sent 9/8/2025, expired 10/3/2025. Client bottom line $75k. Discovery ongoing."
+    },
+    {
+      "name": "Simard v. USAA",
+      "filevineId": "12363601",
+      "typeOfLoss": "Wind/Hail & Water",
+      "dateOfLoss": "03/20/2022",
+      "insurer": "USAA",
+      "causeOfLoss": "Water line leak under slab",
+      "claimDeniedDate": "06/03/2022",
+      "dateOfIntake": "05/09/2024",
+      "demandAmount": 300000,
+      "court": "Montana state court",
+      "trialDate": "2026-04-14",
+      "notes": "Water line broke in NW corner of basement. USAA denied. Lawsuit filed 8/21/2024. Trial set April 14-17, 2026. USAA filed Motion for Partial Summary Judgment on statute of limitations."
+    },
+    {
+      "name": "Dorsett v. USAA",
+      "filevineId": "12363396",
+      "typeOfLoss": "Water",
+      "dateOfLoss": "01/21/2024",
+      "insurer": "USAA General Indemnity Company",
+      "causeOfLoss": "Burst pipes",
+      "court": "Montana Eleventh Judicial District Court",
+      "caseNumber": "DV-15-2025-0000011-BC",
+      "solDate": "2032-01-24",
+      "trialDate": "2026-09-14",
+      "attorney": "Bart Denham",
+      "notes": "Client wanted $1M, attorney discussed $850k range. Expenses: Williams Investigation $75, E-Filing $126."
+    },
+    {
+      "name": "Duncan, Erick v. Westfield Insurance",
+      "filevineId": "12363413",
+      "typeOfLoss": "Hail/Wind",
+      "dateOfLoss": "05/26/2024",
+      "insurer": "Westfield Insurance",
+      "caseNumber": "5:25-cv-00060-BJB",
+      "court": "Federal",
+      "contractSigned": "03/24/2025",
+      "solDate": "2025-05-26",
+      "settlementOffer": 400000,
+      "clientBottomLine": 250000,
+      "notes": "Bad faith evidence: adjuster denied wind damage despite audio recording proving otherwise. Discovery served 8/12/2025."
+    },
+    {
+      "name": "Tedesco, Matthew and Jan v. State Farm and Old Republic",
+      "filevineId": "12363528",
+      "typeOfLoss": "Water",
+      "dateOfLoss": "02/03/2024",
+      "insurer": "State Farm",
+      "claimNumber": "26-65T4-70M",
+      "notes": "GE appliance warranty issue. Client contacted agent Jon Miller from 2/13/2024. Formal claim opened 4/5/2024."
+    },
+    {
+      "name": "Wielawski v. State Farm",
+      "filevineId": null,
+      "typeOfLoss": "Wind",
+      "insurer": "State Farm",
+      "notes": "Claim under $75k. Motion to remand to state court. Client reports accumulating damages from delayed repairs."
+    },
+    {
+      "name": "Hanbali v. [Insurer]",
+      "filevineId": "12363537",
+      "settlementAmount": 275000,
+      "attorneyFee": 68750,
+      "caseCosts": 4579.70,
+      "publicAdjusterFee": 27500,
+      "netToClient": 174170.30,
+      "notes": "Settlement check mailed 2/4/2026. Arnold Roofing A/A/O."
+    },
+    {
+      "name": "Heritage Place Property Owners Assoc. v. State Farm",
+      "filevineId": "12453885",
+      "typeOfLoss": "Hail",
+      "dateOfLoss": "06/15/2023",
+      "insurer": "State Farm Fire and Casualty Company",
+      "caseNumber": "8:25-cv-05308-TMC",
+      "court": "District of South Carolina",
+      "demandAmount": 850000,
+      "badFaithDemand": 5360000,
+      "notes": "HOA case. Wohlscheid Civil Engineering confirmed hail as proximate cause. Multiple units with post-storm leaks."
+    },
+    {
+      "name": "Church of God Prophecy v. Brotherhood Mutual",
+      "filevineId": "13103295",
+      "insurer": "Brotherhood Mutual Insurance Company",
+      "claimNumber": "0666910",
+      "policyNumber": "13M5A0414341",
+      "demandAmount": 137587.48,
+      "settlementOffer": 20000,
+      "solDate": "2026-07-15",
+      "estimateAmount": 87383.09,
+      "deductible": 5000,
+      "notes": "Counter at $117,587.48 sent 12/15/2025. Brotherhood reviewing. Sean Aiello substituted as counsel."
+    },
+    {
+      "name": "Peel, William Greg v. Tennessee Farmers Mutual",
+      "filevineId": "12363608",
+      "insurer": "Tennessee Farmers Mutual Insurance Company",
+      "caseNumber": "V-25-482",
+      "court": "Bradley County Circuit Court",
+      "demandAmount": 143130.16,
+      "alePayments": "9000/month through Oct 2025",
+      "notes": "TN Farmers filed frivolous counterclaim. Sanction request filed. Campbell & Campbell representing defense."
+    },
+    {
+      "name": "Jensen, Erin v. Foremost",
+      "filevineId": "12461020",
+      "insurer": "Foremost Insurance",
+      "settlementOffer": 55000,
+      "demandAmount": 128358.16,
+      "solDate": "2026-07-13",
+      "notes": "Adjuster Shane Gamradt discussing client claim with other clients. Bad faith evidence. Client works for Farmers Insurance, threatened termination."
+    },
+    {
+      "name": "Cates, Patricia v. Kentucky Farm Bureau",
+      "filevineId": "12945835",
+      "insurer": "Kentucky Farm Bureau Insurance",
+      "demandAmount": 197728.93,
+      "solDate": "2026-05-16",
+      "notes": "Proof of loss signed 11/4/2025. Demand sent same day. Farm Bureau denied wind/hail damage, offered engineer inspection."
+    },
+    {
+      "name": "Everett Crossing HOA v. QBE Insurance",
+      "filevineId": "12363420",
+      "insurer": "QBE Insurance Corporation",
+      "typeOfLoss": "Hail",
+      "dateOfLoss": "05/06/2022",
+      "notes": "HOA case. Adjuster Zach Murray from QBE."
+    },
+    {
+      "name": "Rooks v. Kentucky Housing Corp.",
+      "filevineId": null,
+      "notes": "Settlement complete. Client paid, bonus disbursed. Christopher seeking approval to close file."
+    },
+    {
+      "name": "Lee, Christina v. National General",
+      "filevineId": "12795179",
+      "typeOfLoss": "Fire",
+      "dateOfLoss": "06/26/2025",
+      "insurer": "National General Insurance (NGIC)",
+      "notes": "Total loss fire claim. Martin Lee is first responder. Family displaced. NGIC paid nothing despite EUOs completed. Final demand sent 11/20/2025."
+    },
+    {
+      "name": "Harper, Teresa v. American Bankers",
+      "filevineId": null,
+      "insurer": "American Bankers",
+      "notes": "Denial letter dated 9/5/2024."
+    },
+    {
+      "name": "Lake Village at Landis Lake v. Erie",
+      "filevineId": "12363505",
+      "typeOfLoss": "Hail",
+      "dateOfLoss": "07/17/2023",
+      "insurer": "Erie",
+      "claimNumber": "A00005384606",
+      "policyNumber": "Q61 0237097",
+      "notes": "19 properties. EFI Global expert Kyle Meehan for defense. Subpoena for documents served."
+    },
+    {
+      "name": "Hart, Ian and Kelsi v. State Farm",
+      "filevineId": null,
+      "typeOfLoss": "Water",
+      "dateOfLoss": "09/27/2022",
+      "insurer": "State Farm",
+      "policyNumber": "42-ED-F560-6",
+      "propertyAddress": "3935 Vesta Rd., Lebanon, TN 37090",
+      "estimateAmount": 103716.87,
+      "notes": "State Farm never inspected property despite claim filed 7/4/2024. Noble Public Adjusting estimate $103,716.87."
+    },
+    {
+      "name": "Homeowners of Pinecrest Townhomes v. Grange Insurance",
+      "filevineId": null,
+      "insurer": "Grange Insurance Company",
+      "claimNumber": "ZBZ003546320",
+      "typeOfLoss": "Wind/Hail",
+      "dateOfLoss": "03/07/2023",
+      "notes": "Discovery dispute about proof of loss."
+    },
+    {
+      "name": "Wright, Penny v. Allstate",
+      "filevineId": "12403757",
+      "insurer": "Allstate",
+      "adjuster": "Tiffany Gibbs",
+      "notes": "Prior eviction lawsuit with Mark and Ashley Ellis."
+    },
+    {
+      "name": "Mayberry Street Church of Christ v. State Farm",
+      "filevineId": null,
+      "insurer": "State Farm Fire and Casualty Company",
+      "propertyAddress": "4031 Fayetteville Hwy, Petersburg, TN",
+      "agent": "Chris Sexton",
+      "notes": "Defense: Daniel C. Headrick and Matthew J. Evans, Knoxville."
+    },
+    {
+      "name": "Rajendran, Bryson",
+      "filevineId": "12670353",
+      "solDate": "2026-06-18",
+      "demandAmount": 22356,
+      "feePreLit": "33%",
+      "feePostLit": "40%",
+      "notes": "Tree damage case. Multiple defendants: Eastside Revitalization I, II, III L.P."
+    },
+    {
+      "name": "Arnold Roofing A/A/O Wenwood Towns Association v. State Farm",
+      "filevineId": "12543799",
+      "typeOfLoss": "Wind/Hail",
+      "dateOfLoss": "05/08/2024",
+      "insurer": "State Farm",
+      "claimNumber": "40-71Z2-66G",
+      "policyNumber": "99-CH-Y162-0",
+      "propertyAddress": "101-1506 Wenwood Circle, Greenville, SC",
+      "caseNumber": "6:25-cv-01497-JDA",
+      "court": "District of South Carolina, Greenville Division",
+      "dateOfIntake": "07/10/2025",
+      "settlementOffer": 550000,
+      "clientBottomLine": 300000,
+      "notes": "Arnold Roofing assignee. 75/25 fee split with local counsel William B. Jung. Buildings 500,600,800,1200,1500 roofs replaced."
+    },
+    {
+      "name": "Richmond, Roy v. Farmers Insurance",
+      "filevineId": "12710720",
+      "typeOfLoss": "Hail",
+      "dateOfLoss": "09/24/2024",
+      "insurer": "Farmers Insurance (Truck Insurance Exchange)",
+      "propertyAddress": "257 Stone Edge Cir, Kingsport, TN 37660",
+      "caseNumber": "C45114(S)",
+      "notes": "Farmers denied claim saying no hail damage. 8 neighbors got new roofs from same storm. Public adjuster Alexis Morrissette from Victory Claims Services."
+    },
+    {
+      "name": "Verstreet v. Tennessee Farm Bureau",
+      "filevineId": "12795184",
+      "typeOfLoss": "Fire",
+      "dateOfLoss": "03/17/2025",
+      "insurer": "Tennessee Farmers Insurance Companies",
+      "policyNumber": "HP 1646859",
+      "claimNumber": "10000681464",
+      "adjuster": "Katie Poling",
+      "propertyAddress": "111 Second Ave E, Mount Pleasant, TN 38474",
+      "solDate": "2026-03-17",
+      "contractSigned": "08/22/2025",
+      "feePreLit": "33%",
+      "feePostLit": "40%",
+      "notes": "TN Farm Bureau denied claim alleging misrepresentation. Concerns about EUO bankruptcy disclosures and contents inventory."
+    },
+    {
+      "name": "MHF&O LLC v. Encova Insurance",
+      "filevineId": null,
+      "notes": "Referenced in LOIS sidebar"
+    },
+    {
+      "name": "Stiles v. Rock Ridge/American Reliable",
+      "filevineId": null,
+      "typeOfLoss": "Wind",
+      "dateOfLoss": "03/03/2023",
+      "insurer": "Rock Ridge Insurance / American Reliable Insurance",
+      "notes": "Farm properties - North Cleveland Road and Hunterstown Road. Run-in sheds damaged. Adjuster Traci Anderson closed claims before estimates obtained."
+    }
+  ]
+}

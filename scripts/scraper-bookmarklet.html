@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head><title>Filevine Data Extractor</title>
+<style>
+body { font-family: system-ui; background: #1a1a2e; color: #eee; padding: 40px; max-width: 800px; margin: 0 auto; }
+h1 { color: #ebb003; }
+.btn { background: #000066; color: #ebb003; border: 2px solid #ebb003; padding: 16px 32px; font-size: 18px; cursor: pointer; border-radius: 8px; margin: 20px 0; display: block; }
+.btn:hover { background: #000088; }
+pre { background: #111; padding: 16px; border-radius: 8px; overflow: auto; max-height: 400px; font-size: 13px; }
+#status { color: #386f4a; font-size: 18px; margin: 20px 0; }
+.warn { color: #ff6b6b; }
+code { background: #333; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>🐩 Filevine → Denham CMS Extractor</h1>
+<p>This extracts case details from Filevine. <strong class="warn">READ-ONLY — nothing is modified in Filevine.</strong></p>
+
+<h2>Instructions</h2>
+<ol>
+<li>Open <a href="https://denhamlaw.filevineapp.com" target="_blank" style="color:#ebb003">Filevine</a> in another tab and make sure you're logged in</li>
+<li>Come back here and click the button below</li>
+<li>A new window will open on Filevine and start scraping case details</li>
+<li>When done, a JSON file will automatically download</li>
+<li>The scraper visits each case's intake page — takes ~10 min for 305 cases</li>
+</ol>
+
+<button class="btn" onclick="startScrape()">🚀 Start Extraction (305 Property Casualty Cases)</button>
+
+<div id="status"></div>
+<pre id="log"></pre>
+
+<script>
+// All 305 Property Casualty project IDs
+const PROJECT_IDS = ["12363462","12363397","12363425","12363437","12363488","13098097","12363559","12363363","12363573","12653077","12451315","12363481","12363474","12363608","12363409","13102386","12363478","12363492","12846232","12363373","12363331","12363332","13263142","12363374","12363349","12363581","13107370","12802444","12363392","12653074","12650731","13329315","13098298","12363560","12363579","12401751","12846345","12803460","13354883","12363328","12453885","12363398","12722070","13079140","12461020","12543798","12363593","13136580","12653075","12978568","12572758","12454033","12363552","13050698","13354879","12735135","12363458","12978521","12363598","13459550","12363336","12363554","13089789","12363455","12847561","12795184","13083109","12363477","13403414","12363494","12363609","12363382","12380880","12363459","12363596","12693188","12543799","12363556","12363431","12847515","12982877","12363471","12363505","12375858","13098119","12363372","12363578","12363355","12401478","12363468","12363341","12981593","12363553","12363566","12363343","13081710","12382652","12710720","12363325","13407246","12363424","13403415","12363348","12804848","13098120","13102208","13076989","12363384","13089795","12363570","12795187","12872950","12363499","12363569","12363524","13374897","12847456","12384842","12363370","12363610","12379693","12454837","12363345","12363439","13251812","12363337","13221445","12459762","12363428","13468255","12363483","12977901","12363486","12363584","12648211","12363447","12363564","13098604","13104682","12363399","12453591","13506409","12380566","12363405","13631408","13245988","12363463","12543592","12653076","12401273","12795183","13462253","13407492","13138051","13476234","13406490","13403418","12363557","12363335","12363571","12543213","12363544","13255786","13640751","12942674","12363605","12363453","12363586","13054506","12785921","12733761","12574702","13360531","13418204","12363402","12983265","12671107","13227673","13245986","12363534","12363514","12672802","13576276","12363387","12668521","13485005","12363466","12363484","12668522","12843290","12945835","13571458","12363612","12363537","13103295","13218166","12363395","13577541","13238202","13103780","13263555","13593558","13360530","12572727","12379772","12363457","13263141","13485010","12363506","12363396","12543729","13595804","12722075","12363461","12363434","13654203","12363420","12380970","12363432","13438635","12384841","13102210","13502242","12363563","13447635","12545579","12363367","12722071","13459551","12363532","13098121","13646378","13098617","13403417","12363470","13221437","13229643","12363503","12363607","12363469","12544593","12403757","12368874","12363327","12363592","12363407","12363344","12363380","13219277","12363401","12573643","13645531","12744845","13098908","12363464","12382666","12363416","13485006","13672823","13476235","13089802","12545558","12795179","13505030","13374186","13672824","12415534","12669184","12363528","12403756","12877900","13412652","13654218","13485122","12650735","12363418","13571419","12363465","13251844","12403755","13098596","12363482","13595795","13652912","12944086","13593554","13571445","12670353","13674236","12363595","13677954","12877897","13594978","13680561","12453884","12461022","13595162","12877896","12363413","13572708","12363585","12384844","12363426","12363567","12363551"];
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.textContent += msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+async function startScrape() {
+  setStatus('Opening Filevine...');
+  log('Starting extraction of ' + PROJECT_IDS.length + ' cases...');
+  
+  // Open Filevine in a popup window
+  const fvWin = window.open('https://denhamlaw.filevineapp.com/#/tasks', 'filevine_scraper', 'width=1200,height=800');
+  
+  if (!fvWin) {
+    setStatus('❌ Popup blocked! Allow popups for this page.');
+    return;
+  }
+  
+  // Wait for it to load
+  await new Promise(r => setTimeout(r, 3000));
+  
+  const results = [];
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  
+  for (let i = 0; i < PROJECT_IDS.length; i++) {
+    const pid = PROJECT_IDS[i];
+    setStatus(`Scraping ${i+1}/${PROJECT_IDS.length}: Project ${pid}`);
+    log(`[${i+1}/${PROJECT_IDS.length}] Project ${pid}...`);
+    
+    try {
+      // Navigate to intake section
+      fvWin.location.hash = `#/project/${pid}/custom/intake33651`;
+      await delay(2500);
+      
+      const data = { projectId: pid };
+      const doc = fvWin.document;
+      
+      // Extract form fields
+      doc.querySelectorAll('input, select, textarea').forEach(el => {
+        let label = '';
+        const parent = el.closest('.form-group, .field-wrapper, .section-field, [class*=field]');
+        if (parent) {
+          const labelEl = parent.querySelector('label, .field-label, [class*=label]');
+          if (labelEl) label = labelEl.textContent.trim();
+        }
+        if (!label) label = el.name || el.placeholder || el.getAttribute('aria-label') || '';
+        
+        if (label && el.value && el.value !== 'Unknown' && el.value !== 'on' && el.value !== '') {
+          const key = label.replace(/[0-9/]+\s*$/, '').trim();
+          if (key && key.length < 100) data[key] = el.value;
+        }
+      });
+      
+      // Project name
+      const h1 = doc.querySelector('h1');
+      if (h1) data.projectName = h1.textContent.trim();
+      
+      // Contact info
+      const phoneLink = doc.querySelector('a[href^="tel:"]');
+      if (phoneLink) data.clientPhone = phoneLink.textContent.trim();
+      const emailLink = doc.querySelector('a[href^="mailto:"]');
+      if (emailLink) data.clientEmail = emailLink.textContent.trim();
+      
+      results.push(data);
+      log(`  ✓ ${data.projectName || pid}: ${Object.keys(data).length} fields`);
+    } catch (e) {
+      log(`  ✗ Error: ${e.message}`);
+      results.push({ projectId: pid, error: e.message });
+    }
+    
+    // Brief pause every 10 cases
+    if (i % 10 === 9) {
+      log('  (brief pause...)');
+      await delay(2000);
+    }
+  }
+  
+  // Download results
+  const blob = new Blob([JSON.stringify(results, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'filevine-detailed-data.json';
+  document.body.appendChild(a);
+  a.click();
+  
+  setStatus(`✅ Done! ${results.length} cases extracted. File downloaded.`);
+  log(`\nComplete! ${results.length} cases extracted.`);
+  
+  // Also store globally
+  window._extractedData = results;
+}
+</script>
+</body>
+</html>

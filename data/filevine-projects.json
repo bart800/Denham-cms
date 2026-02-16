@@ -1,0 +1,3124 @@
+{
+  "extractedAt": "2026-02-16T03:18:07.108Z",
+  "source": "Filevine Project Hub",
+  "orgId": 9152,
+  "total": 346,
+  "propertyCasualty": 305,
+  "personalInjury": 41,
+  "projects": [
+    {
+      "name": "Evenson v. Papa Murphy's Pizza",
+      "id": "12363572",
+      "phase": "Settlement Decision",
+      "primary": "Bart Denham",
+      "lastActivity": "5 months ago",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Kerby v. Erie",
+      "id": "12363462",
+      "phase": "Appraisal",
+      "primary": "Bart Denham",
+      "lastActivity": "4 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Soulette v. USAA",
+      "id": "12363397",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "4 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Franklin Crossroads Church v. Church Mutual",
+      "id": "12363425",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "4 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Gryphon Executive LLC v. Harper",
+      "id": "12363437",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "4 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "JTL JR 1999 Investment Trust v. Germania Insurance Co",
+      "id": "12363488",
+      "phase": "Referred",
+      "primary": "Chad Robinson",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Attar, Jim and Nazila v. General Ins. Co. of America",
+      "id": "13098097",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "3 months ago",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hillard, Rex v. Auto-Owners Insurance",
+      "id": "12363559",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Oberholtzer v. State Farm",
+      "id": "12363363",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hyserman v. Bold and Grit Construction",
+      "id": "12363573",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "McCoy, Donnie v. Shelter Insurance",
+      "id": "12653077",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "3 months ago",
+      "created": "Jul 31, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Richards, Nancy v. Liberty Mutual",
+      "id": "12451315",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "3 months ago",
+      "created": "Jun 30, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Huddleston, Jonathan v. Auto Owners",
+      "id": "12363481",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Todd v. Nationwide",
+      "id": "12363474",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Peel v. Farm Bureau",
+      "id": "12363608",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Overbey, Edna (Stradley) v. USAA",
+      "id": "12363409",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hart, Ian and Kelsi v. State Farm Fire and Casualty Company",
+      "id": "13102386",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "3 months ago",
+      "created": "Oct 17, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Estate of Eckert v. Auto-Owners Insurance",
+      "id": "12363417",
+      "phase": "Settlement Decision",
+      "primary": "Bart Denham",
+      "lastActivity": "3 months ago",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Walbridge v. Battlecreek Insurance",
+      "id": "12363478",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kerr v. Kentucky Farm Bureau",
+      "id": "12363492",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Todesco, Jared v. State Farm",
+      "id": "12846232",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "2 months ago",
+      "created": "Sep 4, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Harris, Chad v. State Farm Fire & Casualty",
+      "id": "12363373",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Traeger v. State Farm",
+      "id": "12363331",
+      "phase": "Referred",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Wielawski v. State Farm",
+      "id": "12363332",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Janet Lyu",
+      "id": "13263142",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "2 months ago",
+      "created": "Nov 20, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hunter v. American Reliable Insurance Company",
+      "id": "12363374",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Mejia v. Kemper Insurance",
+      "id": "12363349",
+      "phase": "Referred",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "SmartHome Roofing v. Holsclaw",
+      "id": "12363581",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kelly M Freeman v. Nationwide",
+      "id": "13107370",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "2 months ago",
+      "created": "Oct 23, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Audubon Loans I LLC v. Encova Insurance",
+      "id": "12802444",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Aug 27, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Complete Automotive Repair v. CSU, Central Insurance, and Snap-On",
+      "id": "12363392",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Equestrian Properties LLC",
+      "id": "12653074",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Jul 31, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Gawel, Gregory v. USLI",
+      "id": "12650731",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Jul 30, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jamie Hamilton",
+      "id": "13329315",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Nov 21, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Christopher Stubblefield v. Travelers",
+      "id": "13098298",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "2 months ago",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Beckner, Richard v. Liberty Mutual",
+      "id": "12363560",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jump, Sidney v. Shelter",
+      "id": "12363579",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Barnard, Chadwick v. Homesite",
+      "id": "12401751",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Jun 18, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "McDonald, Jennifer v. State Farm",
+      "id": "12846345",
+      "phase": "Referred",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Sep 4, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Shawn \"Tyler\" and Hannah Scott v. Shelter Insurance",
+      "id": "12803460",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "2 months ago",
+      "created": "Aug 28, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kevin Kaelin",
+      "id": "13354883",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Nov 26, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Milby v. Allstate",
+      "id": "12363328",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Arnold Roofing A/A/O Heritage Place Property Owners Assoc. of Pendleton",
+      "id": "12453885",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Jul 2, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Newton v. State Farm",
+      "id": "12363398",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Brummett, Jimmie v. Homesite",
+      "id": "12722070",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Aug 14, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Luzier, Raymond and Aspen B. v. Allstate Vehicle and Property Ins. Co.",
+      "id": "13079140",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "2 months ago",
+      "created": "Oct 7, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jensen, Erin v. Foremost",
+      "id": "12461020",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Jul 10, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Arnold Roofing A/A/O Leeward Landing HOA",
+      "id": "12543798",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Jul 15, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Haire, Steven v. Allstate",
+      "id": "12363593",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Rhonda Alexander",
+      "id": "13136580",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Oct 29, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Chaplin Baptist Church Inc. v. Auto Owners Insurance",
+      "id": "12653075",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Jul 31, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cindric, Vinko v. Nationwide",
+      "id": "12978568",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Sep 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Barnett, Alan v. State Farm",
+      "id": "12572758",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "2 months ago",
+      "created": "Jul 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hunt, Travis v Travelers Personal Insurance Company",
+      "id": "12454033",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Jul 2, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Muller v. Flathead Mutual Insurance",
+      "id": "12363552",
+      "phase": "Appraisal",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Autumn Gardens Condominium Council Inc.",
+      "id": "13050698",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Oct 1, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Champion Sports LLC",
+      "id": "13354879",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Nov 26, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Taylor, Angeline v. Erie",
+      "id": "12735135",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "2 months ago",
+      "created": "Aug 19, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Raymer v. Foremost",
+      "id": "12363458",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Prime Six Properties",
+      "id": "12978521",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Sep 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Homeowners of Pinecrest Townhomes, Inc. v. Grange Insurance Company",
+      "id": "12363598",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kimberly McClendon",
+      "id": "13459550",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Dec 18, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Maffitt v. Amana",
+      "id": "12363336",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Precision Metal Works, Inc. v. Travelers",
+      "id": "12363554",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "406 Cleanup, Inc v. Nelson",
+      "id": "12573644",
+      "phase": "Case Monitoring",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Jul 23, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Harper, Teresa v. American Bankers",
+      "id": "13089789",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "Oct 13, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Drabo, James v. Homesite",
+      "id": "12363455",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Bunger, Kristen v. State Farm",
+      "id": "12847561",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "Sep 5, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Verstreet, Janice v. Tennessee Farm Bureau",
+      "id": "12795184",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "Aug 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Lighthouse Ministries of Antioch TN, Inc. v. Guide One Mutual Insurance Company",
+      "id": "13083109",
+      "phase": "Settlement",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "Oct 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Rolon, Joan v. State Farm",
+      "id": "12363477",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Katherine Moniz v. Allstate",
+      "id": "13403414",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "Dec 8, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Applegate, Rebecca v. Allstate",
+      "id": "12363494",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ashcraft, William v. Assurant",
+      "id": "12363609",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Patrick, Cheri v. Nationwide",
+      "id": "12363382",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "King, Patrick v. State Farm",
+      "id": "12380880",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Jun 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Boone, Jamie v. State Farm",
+      "id": "12363459",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Marshall, Taylor v. Shelter",
+      "id": "12363596",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hakala, Patty v. USAA",
+      "id": "12693188",
+      "phase": "Pre-Suit",
+      "primary": "Chad Robinson",
+      "lastActivity": "a month ago",
+      "created": "Aug 12, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Arnold Roofing A/A/O Wenwood Towns Association Inc",
+      "id": "12543799",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Jul 15, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Odell, Rebecca v. Republic Waste Mgt/Alacrity Solutions",
+      "id": "12363556",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Veloudis, George v. American Reliable Insurance Company (Claim 2) (wind)",
+      "id": "12363431",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ordover, Eileen v. Homesite",
+      "id": "12847515",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "Sep 5, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Gohrmann, Brett v. GM",
+      "id": "12982877",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Sep 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Dubach v. Allstate",
+      "id": "12363471",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Zimmerman v. Green and McGraw",
+      "id": "12363515",
+      "phase": "Case Monitoring",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Lake Village at Landis Lake v. Erie",
+      "id": "12363505",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Goodnight, Diane v. Pure",
+      "id": "12375858",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Jun 2, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jim Powell Tipton",
+      "id": "13098119",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Harris v. State Farm 9-16-2024",
+      "id": "12363372",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "West, Seth v. Garrison",
+      "id": "12363578",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hoel, Bob v. National Specialty Insurance Company and Carter Coatings LLC",
+      "id": "12363355",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "William Roberts v. Countryway Insurance Company",
+      "id": "12401478",
+      "phase": "Settlement",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "Jun 18, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kotok, Yuliia",
+      "id": "12982813",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "Sep 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Kotok, Alina v. TBDKotok, Alina v. TBDAlina Kotok",
+      "id": "12944296",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "Sep 18, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "O'Dell v. Progressive",
+      "id": "12363456",
+      "phase": "Case Monitoring",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Smith, Jeffrey v. Everett Cash Insurance",
+      "id": "12363468",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Parker v. Houghton",
+      "id": "12363341",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "First Church of God, Inc.",
+      "id": "12981593",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Sep 24, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Pinny Coleman v. Turner General",
+      "id": "12363553",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cameron Smith",
+      "id": "13245987",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Nov 12, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Finn v. Everett Cash Mutual Insurance Company",
+      "id": "12363566",
+      "phase": "Appraisal",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jones, Autumn v. KFB",
+      "id": "12363343",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Vester, Lydia and Jared v.",
+      "id": "13081710",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "Oct 8, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Nash Grooming School",
+      "id": "12382652",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Jun 11, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Richmond, Roy v. Farmers Insurance",
+      "id": "12710720",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "a month ago",
+      "created": "Aug 13, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "453 Laurel Rd. Holdings LLC v. State Farm",
+      "id": "12363325",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Bryanna Monzon-Alvarado",
+      "id": "13216266",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Nov 3, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Henry Walker",
+      "id": "13407246",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "Dec 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Whitaker, Frank v. Erie Insurance",
+      "id": "12363424",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "a month ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hubbard, Tai",
+      "id": "13076988",
+      "phase": "Demand and Negotiation",
+      "primary": "Christopher",
+      "lastActivity": "a month ago",
+      "created": "Oct 6, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Velymchanytsia, Nina",
+      "id": "12991678",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "30 days ago",
+      "created": "Sep 26, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Thomas Noonan v. Homesite",
+      "id": "13403415",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "30 days ago",
+      "created": "Dec 8, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Delancy, Betty v. State Farm",
+      "id": "12363348",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "30 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hudnall, Taylor v. Liberty Mutual",
+      "id": "12804848",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "30 days ago",
+      "created": "Aug 29, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Coomes, Danaly v. Esurance Insurance Company",
+      "id": "13098120",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "30 days ago",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Mayberry Street Church of Christ v. State Farm Fire and Casualty Company",
+      "id": "13102208",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "30 days ago",
+      "created": "Oct 17, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kurz, Megan v. American Strategic",
+      "id": "13076989",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "29 days ago",
+      "created": "Oct 6, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Frazier, Chris v. State Farm",
+      "id": "12363384",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "27 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Nolan, Melissa v. State Farm",
+      "id": "13089795",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "27 days ago",
+      "created": "Oct 13, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Sun v. Liberty Mutual",
+      "id": "12363570",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "27 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Linnik, Jessica",
+      "id": "12981698",
+      "phase": "Settlement Decision",
+      "primary": "Christopher",
+      "lastActivity": "27 days ago",
+      "created": "Sep 24, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Atkins, Samantha",
+      "id": "12945832",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "27 days ago",
+      "created": "Sep 19, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Whippo, Sheila v. Progressive",
+      "id": "12795187",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "27 days ago",
+      "created": "Aug 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hudson, Bradley",
+      "id": "12382663",
+      "phase": "Settlement Decision",
+      "primary": "Christopher",
+      "lastActivity": "27 days ago",
+      "created": "Jun 11, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Mabe, Dovie v. American Strategic Insurance Corp",
+      "id": "12872950",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "27 days ago",
+      "created": "Sep 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "McMahon v. Premier Pools",
+      "id": "12363499",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "27 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Halsey v. Morphis, State Farm, and National General Insurance Company",
+      "id": "12363540",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "27 days ago",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Rhodus v. State Farm",
+      "id": "12363569",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "27 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Whaley v. Definitive Roofing",
+      "id": "12363524",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "26 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Piedmont Roofing LLC",
+      "id": "13374897",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "26 days ago",
+      "created": "Dec 3, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Plante, Dennis v. Duke Energy",
+      "id": "12847456",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "26 days ago",
+      "created": "Sep 5, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Coriell, Jim v. State Farm",
+      "id": "12384842",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "26 days ago",
+      "created": "Jun 13, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ciolek, Catherine v. State Farm",
+      "id": "12363370",
+      "phase": "Settlement",
+      "primary": "Christopher",
+      "lastActivity": "25 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Buckner v. National General",
+      "id": "12363338",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "25 days ago",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "McCoy v. Farmers",
+      "id": "12363610",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "25 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Robert \"Bob\" Brewer v. State Farm",
+      "id": "12379693",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "24 days ago",
+      "created": "Jun 6, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Alexakos, Nicholas v. Auto-Owners Insurance",
+      "id": "12454837",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "24 days ago",
+      "created": "Jul 3, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Murilla, Barbara v. Safeco Insurance",
+      "id": "12363345",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "23 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Taylor v. Safeco",
+      "id": "12363439",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "23 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Abel Eduarte Enriquez",
+      "id": "13251812",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "20 days ago",
+      "created": "Nov 14, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Alicia Gossett",
+      "id": "13459549",
+      "phase": "Case Intake and Investigation",
+      "primary": "Chad Robinson",
+      "lastActivity": "19 days ago",
+      "created": "Dec 18, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Buckner v. Assurant and Foremost",
+      "id": "12363337",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "19 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Nicklous Smith",
+      "id": "13221445",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "19 days ago",
+      "created": "Nov 5, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kimberling, Eric v. Allstate",
+      "id": "12459762",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "19 days ago",
+      "created": "Jul 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Dorsey v. Allstate",
+      "id": "12363428",
+      "phase": "Referred",
+      "primary": "Bart Denham",
+      "lastActivity": "19 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Drake Turpin",
+      "id": "13468255",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "19 days ago",
+      "created": "Dec 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jeong v. State Farm",
+      "id": "12363483",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "19 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Schirmer, Suzanne v. Westfield",
+      "id": "12977901",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "19 days ago",
+      "created": "Sep 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Honshul v. Hopper Construction",
+      "id": "12363486",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "19 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "SmartHome Roofing v. Spalding",
+      "id": "12363584",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "19 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Purcell, Bryan v. Collins and Company",
+      "id": "12648211",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "19 days ago",
+      "created": "Jul 28, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Spencer v. Curtis Jerrall & Woodline Custon Fencing",
+      "id": "12363447",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "19 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Stulz v. Grange Insurance",
+      "id": "12363564",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "19 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Osborne, Daniel v. Grange Insurance",
+      "id": "13098604",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "19 days ago",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Harrison, Beverly",
+      "id": "12693189",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "19 days ago",
+      "created": "Aug 12, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Shaylee Green",
+      "id": "13104682",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "19 days ago",
+      "created": "Oct 21, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Gomez, Alain",
+      "id": "13146631",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "18 days ago",
+      "created": "Oct 31, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Bassel v . Farler Construction",
+      "id": "12363399",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "18 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Roxann Acton v. American National",
+      "id": "12453591",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "18 days ago",
+      "created": "Jul 2, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Lori Hanson",
+      "id": "13506409",
+      "phase": "Pre-Suit",
+      "primary": "Chad Robinson",
+      "lastActivity": "18 days ago",
+      "created": "Jan 9, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Lee, Rick v. Erie",
+      "id": "12380566",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "18 days ago",
+      "created": "Jun 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Adamson v. State Farm",
+      "id": "12363405",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "18 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jacobus, Elizabeth",
+      "id": "13104255",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "18 days ago",
+      "created": "Oct 20, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Kelly Josey",
+      "id": "13631408",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "17 days ago",
+      "created": "Jan 26, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cynthia Boger",
+      "id": "13245988",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "17 days ago",
+      "created": "Nov 12, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Siercks, Jason v. KFB",
+      "id": "12363463",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "17 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Megan Summers v. State Farm",
+      "id": "12543592",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "17 days ago",
+      "created": "Jul 15, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Compton, Eric v. KFB and Colonial Claims",
+      "id": "12653076",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "16 days ago",
+      "created": "Jul 31, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Pischke, Kevin v. Sentry H2O and Assurant",
+      "id": "12401273",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "16 days ago",
+      "created": "Jun 18, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Dunn, Evan v. USAA",
+      "id": "12795183",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "16 days ago",
+      "created": "Aug 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Galilee Restaurant",
+      "id": "13462253",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "16 days ago",
+      "created": "Dec 19, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Phyllis Dittman",
+      "id": "13407492",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "16 days ago",
+      "created": "Dec 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jesus Mejia v. Progressive",
+      "id": "13138051",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "16 days ago",
+      "created": "Oct 29, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Fox, Elizabeth et al. v. Stillwater",
+      "id": "13476234",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "16 days ago",
+      "created": "Dec 26, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Michael Gentry",
+      "id": "13406490",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "16 days ago",
+      "created": "Dec 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Diamond Shane Ward",
+      "id": "13403418",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "16 days ago",
+      "created": "Dec 8, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Fitzpatrick v. State Farm",
+      "id": "12363557",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "16 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Merrell v. Farmers",
+      "id": "12363335",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "16 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ezzell v. State Farm",
+      "id": "12363571",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "16 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hart, Troy v. Progressive",
+      "id": "12543213",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "16 days ago",
+      "created": "Jul 15, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Montana Cow Company v. State Farm",
+      "id": "12363544",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "16 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Murray, Tyler v. State Farm",
+      "id": "13255786",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "16 days ago",
+      "created": "Nov 17, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Yve Carrell",
+      "id": "13640751",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "16 days ago",
+      "created": "Jan 30, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jacobus v. Kinslow, Progressive",
+      "id": "12363476",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "16 days ago",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Colley, Carissa V. Kentucky Farm Bureau",
+      "id": "12942674",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "15 days ago",
+      "created": "Sep 17, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hammond v. Chubb",
+      "id": "12363605",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "13 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Coleman, James v. State Farm",
+      "id": "12363453",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "13 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Snell, Stacey v. State Farm",
+      "id": "12363586",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "13 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Gavin Bundt v. National General Insurance",
+      "id": "13054506",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "13 days ago",
+      "created": "Oct 3, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Stallons, Brandi v. Hopkinsville Surface and Stormwater Utility",
+      "id": "12785921",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "13 days ago",
+      "created": "Aug 20, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Shirley Hudson",
+      "id": "12733761",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "13 days ago",
+      "created": "Aug 18, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Woods, Brandy v. Erie",
+      "id": "12574702",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "13 days ago",
+      "created": "Jul 24, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Stephen Cosby",
+      "id": "13360531",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "13 days ago",
+      "created": "Nov 28, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Taylor Hoisington",
+      "id": "13418204",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "13 days ago",
+      "created": "Dec 11, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "West, David v. Lighthouse Estates LLC and Red Door Legacy LLC",
+      "id": "12363402",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "13 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Tao, Ying v. Graeter's Ice Cream",
+      "id": "12649399",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "12 days ago",
+      "created": "Jul 29, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Ledbetter, Chris",
+      "id": "12983265",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "12 days ago",
+      "created": "Sep 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jeyaraj, Selvi v. USAA",
+      "id": "12671107",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "12 days ago",
+      "created": "Aug 6, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Lavetta Crumble v. Homesite",
+      "id": "13227673",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "12 days ago",
+      "created": "Nov 6, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Richard Grunstad",
+      "id": "13245986",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "12 days ago",
+      "created": "Nov 12, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Meyer v. Allstate",
+      "id": "12363534",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "12 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Zimmerman v. USAA",
+      "id": "12363514",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "12 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Moore, Eugene v. AT&T and Sedgwick",
+      "id": "12672802",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "12 days ago",
+      "created": "Aug 7, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ian Halton",
+      "id": "13576276",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "Jan 14, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Haney v. Western Guaranty Association",
+      "id": "12363387",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ilham Bacha LLC v. Grange Insurance",
+      "id": "12668521",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "11 days ago",
+      "created": "Aug 4, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Linda Johnson",
+      "id": "13485005",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "Dec 30, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Molchanovych, Nastia",
+      "id": "12944304",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "11 days ago",
+      "created": "Sep 18, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Halsey v. State Farm",
+      "id": "12363466",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "11 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cannon v. Fortress Realty",
+      "id": "12363484",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "11 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hyatt, Billy Joe Jr. v. The Johnson Inn",
+      "id": "12871426",
+      "phase": "Case Intake and Investigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "11 days ago",
+      "created": "Sep 8, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Iglesia Apóstoles y Profetas",
+      "id": "12668522",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "11 days ago",
+      "created": "Aug 4, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Aguirre, Daniel v. Homesite",
+      "id": "12843290",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "Sep 3, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cates, Patricia v. Kentucky Farm Bureau",
+      "id": "12945835",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "Sep 19, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jeff Liles",
+      "id": "13571458",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "Jan 12, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Zetta Smith v. Allstate",
+      "id": "12363612",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "11 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ronald Burgess",
+      "id": "13506433",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "Jan 9, 2026",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Brittany Burgess",
+      "id": "13506410",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "Jan 9, 2026",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "MHF&O LLC v. Encova Insurance",
+      "id": "12363537",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "11 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Church of God Prophecy",
+      "id": "13103295",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Oct 17, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Tiffany Rupert",
+      "id": "13218166",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "10 days ago",
+      "created": "Nov 4, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Humphrey, Brian v. KFB",
+      "id": "12363395",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Keith Yingling",
+      "id": "13577541",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Jan 15, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Adnan Bajrektarevic",
+      "id": "13238202",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Nov 10, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Dejuan Daniels",
+      "id": "13103780",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "10 days ago",
+      "created": "Oct 20, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "David  Goes By (blake) Jones",
+      "id": "13263555",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Nov 20, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Paula Payne",
+      "id": "13593558",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Jan 22, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kadisha Boutique LLC",
+      "id": "13360530",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Nov 28, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Carpenter, Greg v. Progressive",
+      "id": "12572727",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Jul 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Freitas v. State Farm and Jason Ruggles",
+      "id": "12379772",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Jun 6, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Harper v. Progressive and ServiceMasters",
+      "id": "12363457",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "10 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Lisa Worthy",
+      "id": "13263141",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "10 days ago",
+      "created": "Nov 20, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Holt Real Estate Holdings LLC",
+      "id": "13485010",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "Dec 30, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Abernathy v. State Farm",
+      "id": "12363506",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "10 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Dorsett v. USAA",
+      "id": "12363396",
+      "phase": "Appraisal",
+      "primary": "Bart Denham",
+      "lastActivity": "10 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Earl Edens v. State Farm",
+      "id": "12543729",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "10 days ago",
+      "created": "Jul 15, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Chris Tedja",
+      "id": "13595804",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "9 days ago",
+      "created": "Jan 23, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Hicks, Kathy v. Progressive",
+      "id": "12722075",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "9 days ago",
+      "created": "Aug 14, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Gathof v. Auto Owners",
+      "id": "12363461",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "9 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "DeSimone v. NJM and GMD Improvements v. Liberty Mutual",
+      "id": "12363434",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "9 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Mike Talis",
+      "id": "13654203",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "9 days ago",
+      "created": "Feb 5, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Everett Crossing Homeowners Association, Inc v. QBE Insurance",
+      "id": "12363420",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "9 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Darling v. Homesite Insurance Company of the Midwest",
+      "id": "12380970",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "9 days ago",
+      "created": "Jun 9, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Veloudis v. Rock Ridge Insurance Company (1)",
+      "id": "12363432",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "9 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Marwan Salah",
+      "id": "13438635",
+      "phase": "Pre-Suit",
+      "primary": "Chad Robinson",
+      "lastActivity": "8 days ago",
+      "created": "Dec 15, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Thomas Mullins v. Allstate",
+      "id": "12384841",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "6 days ago",
+      "created": "Jun 13, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ennab, Ennab v. State Farm Fire and Casualty Company",
+      "id": "13102210",
+      "phase": "Settlement",
+      "primary": "Joey Tisone",
+      "lastActivity": "6 days ago",
+      "created": "Oct 17, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Bill Conley",
+      "id": "13502242",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "6 days ago",
+      "created": "Jan 7, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Nora Towery",
+      "id": "13351231",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "6 days ago",
+      "created": "Nov 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Blakely v. State Farm",
+      "id": "12363563",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "6 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Joseph Newman",
+      "id": "13447635",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "6 days ago",
+      "created": "Dec 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Geerlings v. Bright Futures Academy",
+      "id": "12648105",
+      "phase": "Settlement Decision",
+      "primary": "Christopher",
+      "lastActivity": "6 days ago",
+      "created": "Jul 28, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Bruner, Melisa v. Kentucky Growers",
+      "id": "12545579",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "6 days ago",
+      "created": "Jul 17, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Marks, Candie v. KFB",
+      "id": "12363367",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "6 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Olech, Jeff v. SF, Bespoke LLC, and Happy Meadows LLC",
+      "id": "12722071",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "6 days ago",
+      "created": "Aug 14, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "BJ Flores",
+      "id": "13459551",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "6 days ago",
+      "created": "Dec 18, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Bruner v. Erie Insurance",
+      "id": "12363532",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "6 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Mikelle Pellegrino",
+      "id": "13098121",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "6 days ago",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Greg Vassar",
+      "id": "13646378",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "6 days ago",
+      "created": "Feb 2, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cochran, Cameron v. KFB",
+      "id": "12543797",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "6 days ago",
+      "created": "Jul 15, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Teresa Williams",
+      "id": "13098617",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "6 days ago",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Brian Barton",
+      "id": "13403417",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "6 days ago",
+      "created": "Dec 8, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Breed, Jennifer v. State Farm",
+      "id": "12363470",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "6 days ago",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Bishop, Jacob v. Liberty",
+      "id": "13221437",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "6 days ago",
+      "created": "Nov 5, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Lynette Morgan",
+      "id": "13229643",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "Last Tuesday",
+      "created": "Nov 7, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Saylor, Kristal v. State Farm",
+      "id": "12363503",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Schubert, Wendy v. KFB",
+      "id": "12363607",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Coughlin v. Harrodsburg Square Condominium, Inc.",
+      "id": "12363469",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Machauer Investment Properties, LLC v. Farm Bureau",
+      "id": "12544593",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "Last Tuesday",
+      "created": "Jul 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Wright, Penny v. Allstate",
+      "id": "12403757",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "Last Tuesday",
+      "created": "Jun 19, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kiser, Mark v. Progressive",
+      "id": "12368874",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Tuesday",
+      "created": "May 30, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Branscum, Allen v. Liberty Mutual",
+      "id": "12363327",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Gaynor v. Progressive",
+      "id": "12363592",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Dials, Dustin v. Jigsaw Enterprises Inc. & RW Logging",
+      "id": "12363407",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Dials, Avonell v. Jigsaw Enterprises, LLC and RW Logging",
+      "id": "12363344",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kemper, Chasity v. Allstate",
+      "id": "12363380",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Subarna Jamin",
+      "id": "13219277",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Tuesday",
+      "created": "Nov 4, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cox, David v. Shelter",
+      "id": "12363401",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Tuesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cobb, Karen v. Allstate",
+      "id": "12573643",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "Last Tuesday",
+      "created": "Jul 23, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Brennen Miller",
+      "id": "13645531",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Tuesday",
+      "created": "Feb 2, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Bowman v. State Farm et al.",
+      "id": "12461021",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Tuesday",
+      "created": "Jul 10, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Claycomb, Larry v. Cincinnati Insurance",
+      "id": "12744845",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Tuesday",
+      "created": "Aug 19, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Dakota Smith v. Kentucky Farm Bureau Mutual Insurance Company",
+      "id": "13098908",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Tuesday",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jayne Tiff & Terry's v. USLI",
+      "id": "12363464",
+      "phase": "Settlement",
+      "primary": "Chad Robinson",
+      "lastActivity": "Last Wednesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Stacy, Billy v. Jigsaw Enterprises, LLC & RW Logging",
+      "id": "12382666",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Wednesday",
+      "created": "Jun 11, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Estate of G. Wilson v. Westfield Insurance",
+      "id": "12363416",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Wednesday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Samantha Fowble",
+      "id": "13485006",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Dec 30, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Misty Keys",
+      "id": "13672823",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Feb 10, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Rezac Land & Livestock Inc.",
+      "id": "13476235",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Dec 26, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Johanson, Jacob v. Allstate",
+      "id": "13089802",
+      "phase": "Litigation",
+      "primary": "Joey Tisone",
+      "lastActivity": "Last Wednesday",
+      "created": "Oct 13, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Harry Cole",
+      "id": "13227674",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Nov 6, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Grant Stephenson",
+      "id": "12545558",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Jul 17, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Lee, Christina v. National General",
+      "id": "12795179",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Aug 22, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Jeffrey Sims",
+      "id": "13505030",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Jan 8, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Brian Fain",
+      "id": "13374186",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Dec 3, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Steinle, Roxanne v. Henke & Progressive",
+      "id": "12461025",
+      "phase": "Case Monitoring",
+      "primary": "Christopher",
+      "lastActivity": "Last Wednesday",
+      "created": "Jul 10, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Mark Spencer",
+      "id": "13672824",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Wednesday",
+      "created": "Feb 10, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Love, Taylor v. State Farm",
+      "id": "12415534",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "Last Thursday",
+      "created": "Jun 26, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Henderson, Michael v. Progressive",
+      "id": "12669184",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "Last Thursday",
+      "created": "Aug 4, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Tedesco, Matthew and Jan Tedesco v. State Farm and Old Republic",
+      "id": "12363528",
+      "phase": "Settlement",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Tillman, James v. Travelers and American Water",
+      "id": "12403756",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "Jun 19, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Beatty, Michelle V. Allstate",
+      "id": "12877900",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "Last Thursday",
+      "created": "Sep 11, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Carter v. Auto-Owners Insurance",
+      "id": "12363393",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Thursday",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Jason Pointer",
+      "id": "13412652",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "Dec 10, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Christopher Mclendon",
+      "id": "13654218",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "Feb 5, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Reed, Joey v. Mark Reed and State Farm",
+      "id": "12945761",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Thursday",
+      "created": "Sep 19, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Jeffery Gertiser",
+      "id": "13485122",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "Dec 30, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Crane, Mylinda v. State Farm and Kody Bennett Browning",
+      "id": "12650735",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "Last Thursday",
+      "created": "Jul 30, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Estate of Murphy Buganski v. Liberty Mutual",
+      "id": "12363418",
+      "phase": "Appraisal",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Joel Nwigwe",
+      "id": "13571419",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "Jan 12, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ben Burnett",
+      "id": "13576275",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "Jan 14, 2026",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Miles, Jeff v. Shelter",
+      "id": "12363465",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Thursday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Austin Webb",
+      "id": "13251844",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "Nov 14, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Whitmer, Steve v. State Farm",
+      "id": "12403755",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Thursday",
+      "created": "Jun 19, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Curtis Foote v. Erie Insurance",
+      "id": "13098596",
+      "phase": "Pre-Suit",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "Oct 16, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Patrick v. Jigsaw Enterprises, LLC & RW Logging",
+      "id": "12363482",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Nancy Anderson",
+      "id": "13595795",
+      "phase": "Pre-Suit",
+      "primary": "Chad Robinson",
+      "lastActivity": "Last Friday",
+      "created": "Jan 23, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Mark Ribott",
+      "id": "13652912",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Feb 4, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Johnson, Measia v. TBD",
+      "id": "12944086",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "Last Friday",
+      "created": "Sep 18, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Stephanie McDermott",
+      "id": "13593554",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Jan 22, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Michael Crump",
+      "id": "13571445",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Jan 12, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Rajendran, Bryson",
+      "id": "12670353",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Aug 5, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Scot Orloff",
+      "id": "13674236",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Feb 10, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Backen, Toni-Lynn v. USAA and Stephen J. Allen",
+      "id": "12722061",
+      "phase": "Case Monitoring",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "Aug 14, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Park, Steven v. Brian Adams and BA Contracting",
+      "id": "12363595",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Josh Ayers",
+      "id": "13677954",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Feb 11, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Amber Black",
+      "id": "13640750",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Jan 30, 2026",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Martin, Robert v. Erie",
+      "id": "12877897",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Sep 11, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "James Cable",
+      "id": "13594978",
+      "phase": "Pre-Suit",
+      "primary": "Joey Tisone",
+      "lastActivity": "Last Friday",
+      "created": "Jan 23, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Ronald Holland",
+      "id": "13680561",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Feb 12, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Kenner v. Safeco",
+      "id": "12453884",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "Jul 2, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Horton, Charles v. KFB",
+      "id": "12404545",
+      "phase": "Case Intake and Investigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "Jun 20, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Sivaram v. Allstate",
+      "id": "12461022",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "Jul 10, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Sara Mckiernan",
+      "id": "13595162",
+      "phase": "Pre-Suit",
+      "primary": "Bart Denham",
+      "lastActivity": "Last Friday",
+      "created": "Jan 23, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Collett, Wayne v. Allstate American Insurance Company",
+      "id": "12877896",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "Sep 11, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Duncan, Erick v. Westfield Insurance",
+      "id": "12363413",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Maureen Bucko",
+      "id": "13572708",
+      "phase": "Pre-Suit",
+      "primary": "Chad Robinson",
+      "lastActivity": "Last Friday",
+      "created": "Jan 12, 2026",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Martin, Stacey v. KFB",
+      "id": "12363585",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Thomas, Diane v. State Farm",
+      "id": "12384844",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Last Friday",
+      "created": "Jun 13, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Huffman, Gary v. Nationwide",
+      "id": "12363426",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Yesterday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Cornerstone Foundation LLC v. Farmers Union Mutual Insurance",
+      "id": "12363567",
+      "phase": "Litigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Yesterday",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    },
+    {
+      "name": "Tisdale, Laura v. RML Services LLCTisdale, Laura",
+      "id": "12877902",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Today",
+      "created": "Sep 11, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Beard v. Pavlovich and Allstate",
+      "id": "12363536",
+      "phase": "Demand and Negotiation",
+      "primary": "Bart Denham",
+      "lastActivity": "Today",
+      "created": "May 25, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Nick Quesenberry",
+      "id": "13090184",
+      "phase": "Case Intake and Investigation",
+      "primary": "Bart Denham",
+      "lastActivity": "Today",
+      "created": "Oct 13, 2025",
+      "type": "Personal Injury"
+    },
+    {
+      "name": "Medley v. State Farm",
+      "id": "12363551",
+      "phase": "Litigation",
+      "primary": "Christopher",
+      "lastActivity": "Today",
+      "created": "May 25, 2025",
+      "type": "Property Casualty"
+    }
+  ]
+}
