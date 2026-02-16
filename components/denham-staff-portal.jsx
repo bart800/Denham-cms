@@ -64,15 +64,29 @@ function nLbl(t){return t.split("_").map(w=>w[0].toUpperCase()+w.slice(1)).join(
 function aIcon(t){return{note:"\u270d\ufe0f",call:"\ud83d\udcde",email:"\u2709\ufe0f",task:"\u2705",document:"\ud83d\udcc4",negotiation:"\ud83d\udcb0",pleading:"\u2696\ufe0f",estimate:"\ud83d\udcca",status_change:"\ud83d\udd04",deadline:"\u23f0"}[t]||"\u2022";}
 
 function Login({onLogin, team}){
-const[e,setE]=useState("");const[p,setP]=useState("");
+const[e,setE]=useState("");const[p,setP]=useState("");const[err,setErr]=useState("");const[loading,setLoading]=useState(false);
+const handleSignIn=async()=>{
+  if(!e||!p){setErr("Enter email and password");return;}
+  setLoading(true);setErr("");
+  try{
+    const {user:authUser}=await api.signIn(e,p);
+    // Find matching team member by email
+    const t=(team||TEAM);
+    const member=t.find(m=>m.email?.toLowerCase()===e.toLowerCase())||t.find(m=>m.name.toLowerCase().includes(e.split("@")[0].toLowerCase()));
+    if(member){onLogin(member);}
+    else{onLogin({id:authUser.id,name:authUser.user_metadata?.name||e.split("@")[0],role:"Staff",title:"Staff",ini:e.substring(0,2).toUpperCase(),clr:"#888"});}
+  }catch(ex){setErr(ex.message||"Sign in failed");}
+  finally{setLoading(false);}
+};
 return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:`radial-gradient(ellipse at 30% 20%,${B.navyBg} 0%,${B.bg} 70%)`}}>
 <div style={{width:380,...S.card,padding:40,textAlign:"center"}}>
 <div style={{width:56,height:56,borderRadius:14,background:`linear-gradient(135deg,${B.navy},${B.gold})`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",fontSize:22,fontWeight:800,color:"#fff"}}>D</div>
 <h1 style={{fontSize:20,fontWeight:700,marginBottom:4}}>DENHAM LAW</h1>
 <p style={{fontSize:13,color:B.txtM,marginBottom:28}}>Staff Portal</p>
-<div style={{marginBottom:12}}><input placeholder="Email" value={e} onChange={x=>setE(x.target.value)} style={S.input}/></div>
-<div style={{marginBottom:20}}><input placeholder="Password" type="password" value={p} onChange={x=>setP(x.target.value)} style={S.input}/></div>
-<button style={{...S.btn,width:"100%",padding:"10px 0"}}>Sign In</button>
+<div style={{marginBottom:12}}><input placeholder="Email" value={e} onChange={x=>setE(x.target.value)} style={S.input} onKeyDown={x=>x.key==="Enter"&&handleSignIn()}/></div>
+<div style={{marginBottom:20}}><input placeholder="Password" type="password" value={p} onChange={x=>setP(x.target.value)} style={S.input} onKeyDown={x=>x.key==="Enter"&&handleSignIn()}/></div>
+{err&&<p style={{fontSize:12,color:"#e05050",marginBottom:12}}>{err}</p>}
+<button onClick={handleSignIn} disabled={loading} style={{...S.btn,width:"100%",padding:"10px 0",opacity:loading?0.6:1}}>{loading?"Signing in...":"Sign In"}</button>
 <p style={{fontSize:11,color:B.txtD,marginTop:24,marginBottom:12}}>Demo — click to login as:</p>
 <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center"}}>
 {(team||TEAM).slice(0,8).map(t=>(<button key={t.id} onClick={()=>onLogin(t)} style={{background:`${t.clr}15`,border:`1px solid ${t.clr}30`,borderRadius:6,padding:"4px 10px",fontSize:11,color:t.clr,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{t.name.split(" ")[0]}</button>))}
