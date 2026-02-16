@@ -678,8 +678,9 @@ function Login({ onLogin, team }) {
 function Side({ user, active, onNav, onOut, onCmdK }) {
   const nav = [
     { id: "dashboard", label: "Dashboard", icon: "⬡" },
-    { id: "cases", label: "My Cases", icon: "◈" },
+    { id: "cases", label: "Cases", icon: "◈" },
     { id: "tasks", label: "Tasks", icon: "☐" },
+    { id: "calendar", label: "Calendar", icon: "📅" },
     { id: "docs", label: "Documents", icon: "◇" },
   ];
 
@@ -1016,21 +1017,27 @@ function TasksPanel({ caseId, userId, team, showCaseColumn }) {
 // ═══════════════════════════════════════════════════════════
 function Dash({ user, cases, onOpen, onFilterStatus }) {
   const my = cases.filter(c => c.attorney?.id === user.id || c.support?.id === user.id);
-  const ac = my.filter(c => c.status !== "Settled" && c.status !== "Closed");
+  const allActive = cases.filter(c => c.status !== "Settled" && c.status !== "Closed");
+  const ac = allActive;
+  const myActive = my.filter(c => c.status !== "Settled" && c.status !== "Closed");
   const sol90 = ac.filter(c => c.sol && dU(c.sol) < 90);
-  const rec = my.reduce((s, c) => s + c.totalRec, 0);
+  const rec = cases.reduce((s, c) => s + c.totalRec, 0);
   const sc = {};
   ac.forEach(c => { sc[c.status] = (sc[c.status] || 0) + 1; });
+  // Insurer breakdown
+  const insurerCounts = {};
+  ac.forEach(c => { if (c.insurer) insurerCounts[c.insurer] = (insurerCounts[c.insurer] || 0) + 1; });
 
   return (
     <div>
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>Welcome back, {user.name.split(" ")[0]}</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 16, marginBottom: 24 }}>
         {[
-          { l: "Active Cases", v: ac.length, c: B.gold },
+          { l: "All Active Cases", v: ac.length, c: B.gold },
+          { l: "My Cases", v: myActive.length, c: "#5b8def" },
           { l: "Total Recoveries", v: fmt(rec), c: B.green },
           { l: "SOL < 90 Days", v: sol90.length, c: sol90.length > 0 ? B.danger : B.txtD },
-          { l: "My Cases Total", v: my.length, c: "#5b8def" },
+          { l: "Total Cases", v: cases.length, c: B.txtM },
         ].map((x, i) => (
           <div key={i} style={S.card}>
             <div style={{ fontSize: 11, color: B.txtM, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600 }}>{x.l}</div>
@@ -1043,7 +1050,7 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
         <SolRemindersPanel onOpen={onOpen} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
         <div style={S.card}>
           <h3 style={S.secT}>Cases by Status</h3>
           {Object.entries(sc).sort((a, b) => b[1] - a[1]).map(([st, ct]) => {
@@ -1076,6 +1083,87 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
           })}
         </div>
       </div>
+
+      {/* Insurer Breakdown */}
+      <div style={{ ...S.card, marginBottom: 24 }}>
+        <h3 style={S.secT}>🏢 Cases by Insurer</h3>
+        {Object.entries(insurerCounts).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([ins, ct]) => {
+          const maxCt = Math.max(...Object.values(insurerCounts));
+          return (
+            <div key={ins} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+              <div style={{ width: 160, fontSize: 12, color: B.txtM, textAlign: "right", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ins}</div>
+              <div style={{ flex: 1, height: 22, background: `${B.bdr}40`, borderRadius: 4, position: "relative", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${(ct / maxCt) * 100}%`, background: `${B.navy}60`, borderRadius: 4, borderRight: `3px solid ${B.gold}` }} />
+                <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: B.gold, ...S.mono }}>{ct}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Recent Activity */}
+      <div style={{ ...S.card, marginBottom: 24 }}>
+        <h3 style={S.secT}>📋 Recent Activity</h3>
+        {(() => {
+          const allActs = my.flatMap(cs => (cs.acts || []).map(a => ({ ...a, caseRef: cs.ref, caseClient: cs.client, caseId: cs.id }))).sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 8);
+          return allActs.length === 0 ? (
+            <div style={{ padding: 20, textAlign: "center", color: B.txtD, fontSize: 13 }}>No recent activity</div>
+          ) : allActs.map((a, i) => (
+            <div key={i} onClick={() => { const cs = cases.find(x => x.id === a.caseId); if (cs) onOpen(cs); }}
+              style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: i < allActs.length - 1 ? `1px solid ${B.bdr}06` : "none", cursor: "pointer" }}
+              onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: a.aClr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{a.aIni || "?"}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
+                  <span style={{ fontWeight: 600 }}>{a.actor}</span>
+                  <span>{aIcon(a.type)}</span>
+                  <span style={{ color: B.txtM }}>{a.title}</span>
+                  <span style={{ ...S.mono, fontSize: 10, color: B.gold, marginLeft: "auto", flexShrink: 0 }}>{a.caseRef}</span>
+                </div>
+                {a.desc && <div style={{ fontSize: 11, color: B.txtD, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.desc}</div>}
+              </div>
+              <div style={{ ...S.mono, fontSize: 10, color: B.txtD, flexShrink: 0 }}>{fmtD(a.date)}</div>
+            </div>
+          ));
+        })()}
+      </div>
+
+      {/* Cases Needing Attention */}
+      {(() => {
+        const stale = ac.filter(c => {
+          const lastAct = (c.acts || []).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          if (!lastAct) return true;
+          return (new Date() - new Date(lastAct.date)) / 86400000 > 30;
+        }).slice(0, 10);
+        return stale.length > 0 ? (
+          <div style={{ ...S.card, borderColor: `${B.gold}30` }}>
+            <h3 style={{ ...S.secT, display: "flex", alignItems: "center", gap: 8 }}>
+              <span>👀</span> Cases Needing Attention
+              <span style={{ ...S.badge, background: B.goldBg, color: B.gold }}>{stale.length}</span>
+            </h3>
+            <div style={{ fontSize: 11, color: B.txtD, marginBottom: 12 }}>No activity in 30+ days</div>
+            {stale.map(c => {
+              const lastAct = (c.acts || []).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+              const days = lastAct ? Math.floor((new Date() - new Date(lastAct.date)) / 86400000) : null;
+              return (
+                <div key={c.id} onClick={() => onOpen(c)}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", marginBottom: 4, borderRadius: 6, cursor: "pointer", background: `${B.gold}06`, border: `1px solid ${B.gold}15` }}
+                  onMouseEnter={e => e.currentTarget.style.background = `${B.gold}12`}
+                  onMouseLeave={e => e.currentTarget.style.background = `${B.gold}06`}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{c.client}</div>
+                    <div style={{ fontSize: 11, color: B.txtD }}>{c.ref} · {c.insurer} · {c.status}</div>
+                  </div>
+                  <div style={{ ...S.mono, fontSize: 12, color: B.gold, fontWeight: 600 }}>
+                    {days != null ? `${days}d ago` : "No activity"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null;
+      })()}
     </div>
   );
 }
@@ -1087,22 +1175,26 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter }) {
   const [search, setSearch] = useState("");
   const [fSt, setFSt] = useState(initialStatus || "All");
   const [fJ, setFJ] = useState("All");
+  const [fIns, setFIns] = useState("All");
+  const [scope, setScope] = useState("all"); // "all" or "mine"
   const [sBy, setSBy] = useState("dop");
   const [sDir, setSDir] = useState("desc");
+  const [pg, setPg] = useState(0);
+  const PG_SIZE = 30;
   const [aiResults, setAiResults] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const searchTimeout = useRef(null);
 
-  // Smart search: detect natural language and use AI endpoint
+  // Get unique insurers for filter
+  const insurers = [...new Set(cases.map(c => c.insurer).filter(Boolean))].sort();
+
   const handleSearch = (val) => {
     setSearch(val);
     setAiResults(null);
-
-    // Heuristic: if search looks like natural language (>3 words or contains keywords), use AI
+    setPg(0);
     const words = val.trim().split(/\s+/);
     const nlKeywords = ["show", "find", "get", "list", "all", "with", "in", "cases", "where", "who", "what"];
     const isNL = words.length > 3 || words.some(w => nlKeywords.includes(w.toLowerCase()));
-
     if (isNL && val.trim().length > 10) {
       clearTimeout(searchTimeout.current);
       searchTimeout.current = setTimeout(async () => {
@@ -1121,17 +1213,25 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter }) {
     }
   };
 
-  const my = cases.filter(c => c.attorney?.id === user.id || c.support?.id === user.id);
-  const fl = my.filter(c => {
+  const pool = scope === "mine" ? cases.filter(c => c.attorney?.id === user.id || c.support?.id === user.id) : cases;
+  const fl = pool.filter(c => {
     if (search && !aiResults) {
       const q = search.toLowerCase();
-      if (!c.client?.toLowerCase().includes(q) && !c.ref?.toLowerCase().includes(q) && !c.insurer?.toLowerCase().includes(q)) return false;
+      if (!c.client?.toLowerCase().includes(q) && !c.ref?.toLowerCase().includes(q) && !c.insurer?.toLowerCase().includes(q)
+        && !(c.attorney?.name || "").toLowerCase().includes(q)) return false;
     }
     if (fSt !== "All" && c.status !== fSt) return false;
     if (fJ !== "All" && c.juris !== fJ) return false;
+    if (fIns !== "All" && c.insurer !== fIns) return false;
     return true;
   }).sort((a, b) => {
-    let va = a[sBy] || "", vb = b[sBy] || "";
+    let va, vb;
+    if (sBy === "attorney") { va = a.attorney?.name || ""; vb = b.attorney?.name || ""; }
+    else if (sBy === "lastAct") {
+      const aActs = (a.acts || []).sort((x, y) => new Date(y.date) - new Date(x.date));
+      const bActs = (b.acts || []).sort((x, y) => new Date(y.date) - new Date(x.date));
+      va = aActs[0]?.date || ""; vb = bActs[0]?.date || "";
+    } else { va = a[sBy] || ""; vb = b[sBy] || ""; }
     if (typeof va === "string") va = va.toLowerCase();
     if (typeof vb === "string") vb = vb.toLowerCase();
     if (va < vb) return sDir === "asc" ? -1 : 1;
@@ -1139,31 +1239,52 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter }) {
     return 0;
   });
 
-  // If AI returned results, show those instead
   const displayCases = aiResults ? aiResults.cases : fl;
+  const totalPages = Math.ceil(displayCases.length / PG_SIZE);
+  const paged = aiResults ? displayCases : fl.slice(pg * PG_SIZE, (pg + 1) * PG_SIZE);
+
+  const getLastActivity = (c) => {
+    const acts = (c.acts || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+    return acts[0] ? fmtD(acts[0].date) : "—";
+  };
 
   return (
     <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>
-        My Cases <span style={{ fontSize: 14, color: B.txtD, fontWeight: 400 }}>({displayCases.length})</span>
-      </h2>
-      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-        <div style={{ position: "relative", maxWidth: 400, flex: 1 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>
+          Cases <span style={{ fontSize: 14, color: B.txtD, fontWeight: 400 }}>({displayCases.length})</span>
+        </h2>
+        <div style={{ display: "flex", gap: 4, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 8, padding: 2 }}>
+          {[["all", "All Cases"], ["mine", "My Cases"]].map(([k, l]) => (
+            <button key={k} onClick={() => { setScope(k); setPg(0); }} style={{
+              padding: "6px 14px", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
+              background: scope === k ? B.gold : "transparent", color: scope === k ? "#000" : B.txtM,
+              fontFamily: "'DM Sans',sans-serif",
+            }}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ position: "relative", maxWidth: 360, flex: 1 }}>
           <input
-            placeholder="Search or ask in natural language..."
+            placeholder="Search cases, clients, insurers, attorneys..."
             value={search}
             onChange={e => handleSearch(e.target.value)}
             style={S.input}
           />
           {aiLoading && <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: B.gold }}>🔍</span>}
         </div>
-        <select value={fSt} onChange={e => setFSt(e.target.value)} style={{ ...S.input, width: 180 }}>
+        <select value={fSt} onChange={e => { setFSt(e.target.value); setPg(0); }} style={{ ...S.input, width: 180 }}>
           <option value="All">All Statuses</option>
           {CSTATS.map(x => <option key={x} value={x}>{x}</option>)}
         </select>
-        <select value={fJ} onChange={e => setFJ(e.target.value)} style={{ ...S.input, width: 100 }}>
+        <select value={fJ} onChange={e => { setFJ(e.target.value); setPg(0); }} style={{ ...S.input, width: 100 }}>
           <option value="All">All States</option>
           {JURIS.map(x => <option key={x} value={x}>{x}</option>)}
+        </select>
+        <select value={fIns} onChange={e => { setFIns(e.target.value); setPg(0); }} style={{ ...S.input, width: 180 }}>
+          <option value="All">All Insurers</option>
+          {insurers.map(x => <option key={x} value={x}>{x}</option>)}
         </select>
       </div>
 
@@ -1177,14 +1298,14 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter }) {
       <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
         <table style={S.tbl}>
           <thead><tr>
-            {[["ref", "Case #"], ["client", "Client"], ["type", "Type"], ["status", "Status"], ["juris", "State"], ["insurer", "Insurer"], ["dop", "Opened"], ["sol", "SOL"]].map(([c, l]) => (
-              <th key={c} onClick={() => { if (sBy === c) setSDir(d => d === "asc" ? "desc" : "asc"); else { setSBy(c); setSDir("desc"); } }} style={{ ...S.th, cursor: "pointer" }}>
+            {[["ref", "Case #"], ["client", "Client"], ["status", "Status"], ["insurer", "Insurer"], ["attorney", "Attorney"], ["juris", "State"], ["dop", "Opened"], ["sol", "SOL"], ["lastAct", "Last Activity"]].map(([c, l]) => (
+              <th key={c} onClick={() => { if (sBy === c) setSDir(d => d === "asc" ? "desc" : "asc"); else { setSBy(c); setSDir("desc"); } }} style={{ ...S.th, cursor: "pointer", userSelect: "none" }}>
                 {l}{sBy === c ? (sDir === "asc" ? " ↑" : " ↓") : ""}
               </th>
             ))}
           </tr></thead>
           <tbody>
-            {(aiResults ? displayCases : fl.slice(0, 50)).map(c => {
+            {paged.map(c => {
               const sc = stClr(c.status);
               const sd = c.sol ? dU(c.sol) : null;
               return (
@@ -1193,19 +1314,39 @@ function Cases({ user, cases, onOpen, initialStatus, onClearFilter }) {
                   onMouseEnter={e => e.currentTarget.style.background = B.cardH}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.gold, fontWeight: 500 }}>{c.ref}</td>
-                  <td style={{ ...S.td, fontWeight: 500 }}>{c.client}</td>
-                  <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{c.type}</td>
+                  <td style={{ ...S.td, fontWeight: 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.client}</td>
                   <td style={S.td}><span style={{ ...S.badge, background: sc.bg, color: sc.t }}>{c.status}</span></td>
+                  <td style={{ ...S.td, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.insurer}</td>
+                  <td style={S.td}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {c.attorney?.ini && <div style={{ width: 22, height: 22, borderRadius: "50%", background: c.attorney.clr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.attorney.ini}</div>}
+                      <span style={{ fontSize: 12 }}>{c.attorney?.name?.split(" ")[0] || "—"}</span>
+                    </div>
+                  </td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{c.juris || c.jurisdiction}</td>
-                  <td style={{ ...S.td, fontSize: 12 }}>{c.insurer}</td>
-                  <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtD(c.dop || c.dateOfLoss)}</td>
+                  <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtD(c.dop)}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, fontWeight: 600, color: sd != null ? (sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtM) : B.txtD }}>{c.sol ? fmtD(c.sol) : "—"}</td>
+                  <td style={{ ...S.td, ...S.mono, fontSize: 11, color: B.txtD }}>{getLastActivity(c)}</td>
                 </tr>
               );
             })}
+            {paged.length === 0 && (
+              <tr><td colSpan={9} style={{ ...S.td, textAlign: "center", padding: 40, color: B.txtD }}>No cases match your filters</td></tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 16 }}>
+          <button onClick={() => setPg(Math.max(0, pg - 1))} disabled={pg === 0}
+            style={{ ...S.btnO, fontSize: 12, padding: "6px 12px", opacity: pg === 0 ? 0.4 : 1 }}>← Prev</button>
+          <span style={{ ...S.mono, fontSize: 12, color: B.txtM }}>Page {pg + 1} of {totalPages}</span>
+          <button onClick={() => setPg(Math.min(totalPages - 1, pg + 1))} disabled={pg >= totalPages - 1}
+            style={{ ...S.btnO, fontSize: 12, padding: "6px 12px", opacity: pg >= totalPages - 1 ? 0.4 : 1 }}>Next →</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1515,10 +1656,159 @@ function Pleadings({ c }) {
 // ═══════════════════════════════════════════════════════════
 // CASE DETAIL
 // ═══════════════════════════════════════════════════════════
+function AddNoteModal({ caseId, user, onClose, onSaved }) {
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      const now = new Date();
+      await api.createActivity({
+        case_id: caseId,
+        type: "note",
+        title: "Note added",
+        description: text.trim(),
+        actor_name: user?.name || "Unknown",
+        actor_initials: user?.ini || "?",
+        actor_color: user?.clr || "#888",
+        date: now.toISOString().split("T")[0],
+        time: now.toTimeString().slice(0, 5),
+      });
+      onSaved();
+      onClose();
+    } catch (err) { console.error("Failed to save note:", err); }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div style={{ width: 520, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 24, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+          <span>✍️</span> Add Note
+        </h3>
+        <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Enter your note..." rows={5}
+          style={{ ...S.input, resize: "vertical", minHeight: 100, marginBottom: 16 }} autoFocus />
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={S.btnO}>Cancel</button>
+          <button onClick={save} disabled={saving || !text.trim()} style={{ ...S.btn, opacity: saving || !text.trim() ? 0.5 : 1 }}>
+            {saving ? "Saving..." : "Save Note"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CaseOverview({ c }) {
+  const d = c.cd || {};
+  const negs = (c.negs || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const ests = c.ests || [];
+  const hiEst = ests.length > 0 ? Math.max(...ests.map(e => e.amount)) : 0;
+  const loEst = ests.length > 0 ? Math.min(...ests.map(e => e.amount)) : 0;
+
+  return (
+    <div>
+      {/* Claim snapshot */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
+        <div style={S.card}>
+          <div style={{ fontSize: 11, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 12 }}>📋 Claim Info</div>
+          {[
+            ["Claim #", d.claimNumber], ["Policy #", d.policyNumber], ["Insurer", d.insurer],
+            ["Cause of Loss", d.causeOfLoss], ["Property", d.propAddr],
+          ].map(([l, v], i) => v ? (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 12 }}>
+              <span style={{ color: B.txtD }}>{l}</span>
+              <span style={{ color: B.txt, fontWeight: 500, ...S.mono, textAlign: "right", maxWidth: "60%" }}>{v}</span>
+            </div>
+          ) : null)}
+        </div>
+        <div style={S.card}>
+          <div style={{ fontSize: 11, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 12 }}>👤 Adjuster</div>
+          {d.adjuster ? <>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{d.adjuster}</div>
+            {d.adjPhone && <div style={{ fontSize: 12, marginBottom: 4 }}><a href={`tel:${d.adjPhone}`} style={{ color: B.gold, textDecoration: "none" }}>📞 {d.adjPhone}</a></div>}
+            {d.adjEmail && <div style={{ fontSize: 12 }}><a href={`mailto:${d.adjEmail}`} style={{ color: B.gold, textDecoration: "none" }}>✉️ {d.adjEmail}</a></div>}
+          </> : <div style={{ fontSize: 12, color: B.txtD }}>No adjuster on file</div>}
+        </div>
+        <div style={S.card}>
+          <div style={{ fontSize: 11, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 12 }}>📊 Estimates</div>
+          {ests.length > 0 ? <>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
+              <span style={{ color: B.txtD }}>Highest</span>
+              <span style={{ ...S.mono, color: B.green, fontWeight: 600 }}>{fmt(hiEst)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
+              <span style={{ color: B.txtD }}>Lowest</span>
+              <span style={{ ...S.mono, color: B.danger, fontWeight: 600 }}>{fmt(loEst)}</span>
+            </div>
+            <div style={{ fontSize: 11, color: B.txtD, marginTop: 4 }}>{ests.length} estimate{ests.length !== 1 ? "s" : ""} on file</div>
+          </> : <div style={{ fontSize: 12, color: B.txtD }}>No estimates yet</div>}
+        </div>
+      </div>
+
+      {/* Litigation summary if in litigation */}
+      {c.ld && (
+        <div style={{ ...S.card, marginBottom: 20, borderColor: `${B.purple}30` }}>
+          <div style={{ fontSize: 11, color: B.purple, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>⚖️</span> Litigation
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16 }}>
+            {[
+              ["Case #", c.ld.caseNum], ["Court", c.ld.court], ["Judge", c.ld.judge],
+              ["Trial", c.ld.trialDate ? `${fmtD(c.ld.trialDate)} (${dU(c.ld.trialDate)}d)` : "Not set"],
+            ].map(([l, v], i) => (
+              <div key={i}>
+                <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>{l}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: B.txt, ...S.mono }}>{v || "—"}</div>
+              </div>
+            ))}
+          </div>
+          {c.ld.oppCounsel && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${B.bdr}`, fontSize: 12, color: B.txtM }}>
+              Opposing: <span style={{ color: B.txt, fontWeight: 500 }}>{c.ld.oppCounsel}</span>
+              {c.ld.oppFirm && <span> ({c.ld.oppFirm})</span>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Negotiation timeline */}
+      {negs.length > 0 && (
+        <div style={{ ...S.card }}>
+          <div style={{ fontSize: 11, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>💰</span> Negotiation Timeline
+          </div>
+          <div style={{ position: "relative", paddingLeft: 20 }}>
+            <div style={{ position: "absolute", left: 7, top: 4, bottom: 4, width: 2, background: B.bdr }} />
+            {negs.map((n, i) => (
+              <div key={i} style={{ position: "relative", paddingBottom: i < negs.length - 1 ? 16 : 0, paddingLeft: 20 }}>
+                <div style={{ position: "absolute", left: -17, top: 4, width: 10, height: 10, borderRadius: "50%", background: nClr(n.type), border: `2px solid ${B.card}` }} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <div>
+                    <span style={{ ...S.badge, background: `${nClr(n.type)}18`, color: nClr(n.type), marginRight: 8 }}>{nLbl(n.type)}</span>
+                    {n.type !== "denial" && <span style={{ ...S.mono, fontSize: 14, fontWeight: 700, color: nClr(n.type) }}>{fmt(n.amount)}</span>}
+                  </div>
+                  <span style={{ ...S.mono, fontSize: 11, color: B.txtD }}>{fmtD(n.date)}</span>
+                </div>
+                {n.notes && <div style={{ fontSize: 12, color: B.txtM, marginTop: 4 }}>{n.notes}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CaseDetail({ c, onBack, onUpdate, user, team }) {
-  const [tab, setTab] = useState("activity");
+  const [tab, setTab] = useState("overview");
+  const [noteModal, setNoteModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const tabs = [
-    { id: "activity", l: "Activity Feed" }, { id: "claim", l: "Claim Details" },
+    { id: "overview", l: "Overview" }, { id: "activity", l: "Activity Feed" },
+    { id: "claim", l: "Claim Details" },
     { id: "litigation", l: "Litigation" }, { id: "negotiations", l: "Negotiations" },
     { id: "estimates", l: "Estimates" }, { id: "pleadings", l: "Pleadings" },
     { id: "tasks", l: "Tasks" }, { id: "docs", l: "Documents" },
@@ -1591,7 +1881,15 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
         ))}
       </div>
 
-      {tab === "activity" && <ActivityFeed c={c} />}
+      {/* Add Note button */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16, marginTop: -8 }}>
+        <button onClick={() => setNoteModal(true)} style={{ ...S.btn, fontSize: 12, padding: "6px 14px" }}>✍️ Add Note</button>
+      </div>
+
+      {noteModal && <AddNoteModal caseId={c.id} user={user} onClose={() => setNoteModal(false)} onSaved={() => setRefreshKey(k => k + 1)} />}
+
+      {tab === "overview" && <CaseOverview c={c} />}
+      {tab === "activity" && <ActivityFeed c={c} key={refreshKey} />}
       {tab === "claim" && <ClaimDetails c={c} />}
       {tab === "litigation" && <LitDetails c={c} />}
       {tab === "negotiations" && <Negotiations c={c} />}
@@ -1600,6 +1898,273 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
       {tab === "tasks" && <TasksPanel caseId={c.id} userId={user?.id} team={team} />}
       {tab === "docs" && <DocumentBrowser clientName={c.client} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// TASKS KANBAN (grouped by time)
+// ═══════════════════════════════════════════════════════════
+function TasksKanban({ userId, team, cases }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", due_date: "", priority: "normal" });
+  const [saving, setSaving] = useState(false);
+  const [view, setView] = useState("board"); // board or list
+
+  const loadTasks = async () => {
+    setLoading(true);
+    try {
+      const t = await api.listTasks({});
+      setTasks((t || []).filter(t => t.status !== "completed"));
+    } catch { setTasks([]); }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadTasks(); }, [userId]);
+
+  const createTask = async () => {
+    if (!form.title.trim()) return;
+    setSaving(true);
+    try {
+      await api.createTask({
+        title: form.title, description: form.description || null,
+        assigned_to: form.assigned_to || userId, created_by: userId,
+        due_date: form.due_date || null, priority: form.priority,
+      });
+      setForm({ title: "", description: "", assigned_to: "", due_date: "", priority: "normal" });
+      setShowForm(false);
+      loadTasks();
+    } catch (err) { console.error(err); }
+    setSaving(false);
+  };
+
+  const toggleDone = async (task) => {
+    try {
+      await api.updateTask(task.id, { status: "completed", completed_at: new Date().toISOString() });
+      loadTasks();
+    } catch (err) { console.error(err); }
+  };
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
+
+  const groups = [
+    { key: "overdue", label: "🔴 Overdue", color: B.danger, items: tasks.filter(t => t.due_date && new Date(t.due_date + "T00:00:00") < today) },
+    { key: "today", label: "🟡 Today", color: B.gold, items: tasks.filter(t => { if (!t.due_date) return false; const d = new Date(t.due_date + "T00:00:00"); return d >= today && d < new Date(today.getTime() + 86400000); }) },
+    { key: "week", label: "🔵 This Week", color: "#5b8def", items: tasks.filter(t => { if (!t.due_date) return false; const d = new Date(t.due_date + "T00:00:00"); return d >= new Date(today.getTime() + 86400000) && d <= endOfWeek; }) },
+    { key: "later", label: "⚪ Later / No Date", color: B.txtM, items: tasks.filter(t => !t.due_date || new Date(t.due_date + "T00:00:00") > endOfWeek) },
+  ];
+
+  const priClr = p => ({ urgent: B.danger, high: "#e0a050", normal: B.txtM, low: B.txtD }[p] || B.txtM);
+
+  const caseRef = (caseId) => { const c = (cases || []).find(x => x.id === caseId); return c ? c.ref : null; };
+
+  const TaskCard = ({ t }) => (
+    <div style={{ ...S.card, padding: "12px 16px", marginBottom: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <span onClick={() => toggleDone(t)} style={{ cursor: "pointer", fontSize: 16, flexShrink: 0, marginTop: 2 }}>⬜</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{t.title}</div>
+        {t.description && <div style={{ fontSize: 11, color: B.txtD, marginBottom: 4 }}>{t.description}</div>}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {t.case_id && caseRef(t.case_id) && <span style={{ ...S.mono, fontSize: 10, color: B.gold, background: B.goldBg, padding: "1px 6px", borderRadius: 10 }}>{caseRef(t.case_id)}</span>}
+          <span style={{ ...S.badge, fontSize: 10, background: `${priClr(t.priority)}18`, color: priClr(t.priority) }}>{t.priority}</span>
+          {t.due_date && <span style={{ ...S.mono, fontSize: 10, color: B.txtD }}>{fmtD(t.due_date)}</span>}
+          {t.assigned && <span style={{ fontSize: 10, color: B.txtM }}>{t.assigned.name?.split(" ")[0]}</span>}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading) return <div style={{ ...S.card, padding: 40, textAlign: "center", color: B.txtM }}>Loading tasks...</div>;
+
+  if (tasks.length === 0) return (
+    <div style={{ ...S.card, padding: 60, textAlign: "center" }}>
+      <div style={{ fontSize: 48, marginBottom: 12 }}>☐</div>
+      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No Active Tasks</div>
+      <div style={{ fontSize: 13, color: B.txtM, marginBottom: 20 }}>Tasks you create will appear here, grouped by due date.</div>
+      <button onClick={() => setShowForm(true)} style={S.btn}>+ Create First Task</button>
+      {showForm && (
+        <div style={{ ...S.card, marginTop: 20, textAlign: "left" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ gridColumn: "1/-1" }}><input placeholder="Task title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} style={S.input} /></div>
+            <input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} style={S.input} />
+            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} style={S.input}>
+              <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option>
+            </select>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={createTask} disabled={saving} style={{ ...S.btn, opacity: saving ? 0.5 : 1 }}>{saving ? "Saving..." : "Create"}</button>
+              <button onClick={() => setShowForm(false)} style={S.btnO}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
+        <button onClick={() => setShowForm(!showForm)} style={S.btn}>+ New Task</button>
+        <button onClick={() => setView(v => v === "board" ? "list" : "board")} style={S.btnO}>{view === "board" ? "List View" : "Board View"}</button>
+        <div style={{ marginLeft: "auto", fontSize: 12, color: B.txtD }}>{tasks.length} active task{tasks.length !== 1 ? "s" : ""}</div>
+      </div>
+
+      {showForm && (
+        <div style={{ ...S.card, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ gridColumn: "1/-1" }}><input placeholder="Task title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} style={S.input} /></div>
+            <div style={{ gridColumn: "1/-1" }}><input placeholder="Description (optional)" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={S.input} /></div>
+            <select value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })} style={S.input}>
+              <option value="">Assign to...</option>
+              {(team || []).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} style={S.input} />
+            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} style={S.input}>
+              <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option>
+            </select>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={createTask} disabled={saving} style={{ ...S.btn, opacity: saving ? 0.5 : 1 }}>{saving ? "Saving..." : "Create"}</button>
+              <button onClick={() => setShowForm(false)} style={S.btnO}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {view === "board" ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, alignItems: "flex-start" }}>
+          {groups.map(g => (
+            <div key={g.key}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: g.color, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                {g.label}
+                <span style={{ ...S.mono, fontSize: 10, background: `${g.color}18`, padding: "1px 6px", borderRadius: 10 }}>{g.items.length}</span>
+              </div>
+              {g.items.length === 0 ? (
+                <div style={{ padding: 20, textAlign: "center", fontSize: 12, color: B.txtD, background: `${B.card}80`, borderRadius: 8, border: `1px dashed ${B.bdr}` }}>None</div>
+              ) : g.items.map(t => <TaskCard key={t.id} t={t} />)}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <TasksPanel userId={userId} team={team} showCaseColumn />
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALENDAR VIEW
+// ═══════════════════════════════════════════════════════════
+function CalendarView({ cases, onOpen }) {
+  const [month, setMonth] = useState(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
+
+  const year = month.getFullYear();
+  const mo = month.getMonth();
+  const daysInMonth = new Date(year, mo + 1, 0).getDate();
+  const startDay = new Date(year, mo, 1).getDay();
+  const moName = month.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  // Gather all deadlines
+  const deadlines = [];
+  cases.forEach(c => {
+    if (c.status === "Settled" || c.status === "Closed") return;
+    if (c.sol) deadlines.push({ date: c.sol, type: "SOL", label: `SOL: ${c.client}`, color: B.danger, case: c });
+    if (c.ld?.trialDate) deadlines.push({ date: c.ld.trialDate, type: "Trial", label: `Trial: ${c.client}`, color: B.purple, case: c });
+    if (c.ld?.medDate) deadlines.push({ date: c.ld.medDate, type: "Mediation", label: `Med: ${c.client}`, color: "#5b8def", case: c });
+    if (c.ld?.discDeadline) deadlines.push({ date: c.ld.discDeadline, type: "Discovery", label: `Disc: ${c.client}`, color: B.gold, case: c });
+  });
+
+  const getDeadlinesForDay = (day) => {
+    const dateStr = `${year}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return deadlines.filter(d => d.date === dateStr);
+  };
+
+  const today = new Date();
+  const isToday = (day) => today.getFullYear() === year && today.getMonth() === mo && today.getDate() === day;
+
+  // Upcoming deadlines (next 90 days)
+  const now = new Date(); now.setHours(0,0,0,0);
+  const upcoming = deadlines.filter(d => {
+    const dt = new Date(d.date + "T00:00:00");
+    const diff = (dt - now) / 86400000;
+    return diff >= 0 && diff <= 90;
+  }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Calendar</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
+        {/* Calendar Grid */}
+        <div style={S.card}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <button onClick={() => setMonth(new Date(year, mo - 1, 1))} style={S.btnO}>← Prev</button>
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{moName}</h3>
+            <button onClick={() => setMonth(new Date(year, mo + 1, 1))} style={S.btnO}>Next →</button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+              <div key={d} style={{ padding: "8px 4px", textAlign: "center", fontSize: 11, color: B.txtD, fontWeight: 600, textTransform: "uppercase" }}>{d}</div>
+            ))}
+            {Array.from({ length: startDay }, (_, i) => (
+              <div key={`e${i}`} style={{ padding: 8, minHeight: 80 }} />
+            ))}
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const dls = getDeadlinesForDay(day);
+              return (
+                <div key={day} style={{
+                  padding: 6, minHeight: 80, background: isToday(day) ? `${B.gold}10` : "transparent",
+                  border: `1px solid ${isToday(day) ? B.gold + "40" : B.bdr + "40"}`, borderRadius: 6,
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: isToday(day) ? 700 : 400, color: isToday(day) ? B.gold : B.txtM, marginBottom: 4 }}>{day}</div>
+                  {dls.slice(0, 3).map((dl, j) => (
+                    <div key={j} onClick={() => onOpen(dl.case)}
+                      style={{ fontSize: 10, padding: "2px 4px", marginBottom: 2, borderRadius: 3, background: `${dl.color}18`, color: dl.color, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {dl.label}
+                    </div>
+                  ))}
+                  {dls.length > 3 && <div style={{ fontSize: 9, color: B.txtD }}>+{dls.length - 3} more</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Upcoming Deadlines Sidebar */}
+        <div>
+          <div style={S.card}>
+            <h3 style={{ ...S.secT, display: "flex", alignItems: "center", gap: 8 }}>
+              ⏰ Upcoming Deadlines
+              <span style={{ ...S.badge, background: B.dangerBg, color: B.danger }}>{upcoming.length}</span>
+            </h3>
+            <div style={{ maxHeight: 500, overflowY: "auto" }}>
+              {upcoming.length === 0 ? (
+                <div style={{ padding: 20, textAlign: "center", color: B.txtD, fontSize: 13 }}>No deadlines in next 90 days</div>
+              ) : upcoming.map((dl, i) => {
+                const days = Math.ceil((new Date(dl.date + "T00:00:00") - now) / 86400000);
+                return (
+                  <div key={i} onClick={() => onOpen(dl.case)}
+                    style={{ padding: "10px 0", borderBottom: i < upcoming.length - 1 ? `1px solid ${B.bdr}06` : "none", cursor: "pointer" }}
+                    onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <span style={{ ...S.badge, background: `${dl.color}18`, color: dl.color, marginRight: 8 }}>{dl.type}</span>
+                        <span style={{ fontSize: 13, fontWeight: 500 }}>{dl.case.client}</span>
+                      </div>
+                      <span style={{ ...S.mono, fontSize: 12, fontWeight: 600, color: days < 14 ? B.danger : days < 30 ? B.gold : B.txtM }}>{days}d</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: B.txtD, marginTop: 2 }}>
+                      {dl.case.ref} · {fmtD(dl.date)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1778,9 +2343,10 @@ export default function DenhamStaffPortal() {
         {!loading && page === "dashboard" && <Dash user={user} cases={cases} onOpen={openC} onFilterStatus={filterByStatus} />}
         {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={() => setStatusFilter("All")} />}
         {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} />}
+        {!loading && page === "calendar" && <CalendarView cases={cases} onOpen={openC} />}
         {!loading && page === "tasks" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Tasks</h2>
-            <TasksPanel userId={user.id} team={team} showCaseColumn /></div>
+            <TasksKanban userId={user.id} team={team} cases={cases} /></div>
         )}
         {!loading && page === "docs" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Documents</h2>
