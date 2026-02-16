@@ -107,10 +107,13 @@ function solBadge(sol) {
   if (!sol) return null;
   const d = Math.ceil((new Date(sol + "T00:00:00") - new Date()) / 86400000);
   if (d > 90) return null;
+  const expired = d < 0;
   const critical = d <= 30;
+  const bg = expired ? "rgba(224,64,80,0.25)" : critical ? B.dangerBg : B.goldBg;
+  const clr = expired ? "#ff4060" : critical ? B.danger : B.gold;
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: critical ? B.dangerBg : B.goldBg, color: critical ? B.danger : B.gold, border: `1px solid ${critical ? B.danger : B.gold}30`, whiteSpace: "nowrap" }}>
-      {critical ? "🔴" : "🟡"} SOL {d}d
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: bg, color: clr, border: `1px solid ${clr}30`, whiteSpace: "nowrap" }}>
+      {expired ? "⛔" : critical ? "🔴" : "🟡"} {expired ? `EXPIRED ${Math.abs(d)}d ago` : `SOL ${d}d`}
     </span>
   );
 }
@@ -1285,19 +1288,35 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
 
       {/* Insurer Breakdown */}
       <div style={{ ...S.card, marginBottom: 24 }}>
-        <h3 style={S.secT}>🏢 Cases by Insurer</h3>
-        {Object.entries(insurerCounts).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([ins, ct]) => {
-          const maxCt = Math.max(...Object.values(insurerCounts));
-          return (
-            <div key={ins} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-              <div style={{ width: 160, fontSize: 12, color: B.txtM, textAlign: "right", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ins}</div>
-              <div style={{ flex: 1, height: 22, background: `${B.bdr}40`, borderRadius: 4, position: "relative", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${(ct / maxCt) * 100}%`, background: `${B.navy}60`, borderRadius: 4, borderRight: `3px solid ${B.gold}` }} />
-                <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: B.gold, ...S.mono }}>{ct}</span>
+        <h3 style={S.secT}>🏢 Cases by Insurer <span style={{ fontSize: 11, color: B.txtD, fontWeight: 400 }}>({Object.keys(insurerCounts).length} insurers, {ac.length} active cases)</span></h3>
+        {(() => {
+          const sorted = Object.entries(insurerCounts).sort((a, b) => b[1] - a[1]);
+          const maxCt = sorted[0]?.[1] || 1;
+          const showAll = sorted.length <= 20;
+          const displayed = showAll ? sorted : sorted.slice(0, 20);
+          const rest = showAll ? [] : sorted.slice(20);
+          const restTotal = rest.reduce((s, [, v]) => s + v, 0);
+          return (<>
+            {displayed.map(([ins, ct]) => (
+              <div key={ins} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+                <div style={{ width: 180, fontSize: 11, color: B.txtM, textAlign: "right", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ins}</div>
+                <div style={{ flex: 1, height: 20, background: `${B.bdr}40`, borderRadius: 4, position: "relative", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${(ct / maxCt) * 100}%`, background: `${B.navy}60`, borderRadius: 4, borderRight: `3px solid ${B.gold}` }} />
+                  <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: B.gold, ...S.mono }}>{ct}</span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            ))}
+            {restTotal > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, paddingTop: 6, borderTop: `1px solid ${B.bdr}` }}>
+                <div style={{ width: 180, fontSize: 11, color: B.txtD, textAlign: "right", fontStyle: "italic" }}>+{rest.length} others</div>
+                <div style={{ flex: 1, height: 20, background: `${B.bdr}40`, borderRadius: 4, position: "relative", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${(restTotal / maxCt) * 100}%`, background: `${B.bdr}80`, borderRadius: 4 }} />
+                  <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: B.txtD, ...S.mono }}>{restTotal}</span>
+                </div>
+              </div>
+            )}
+          </>);
+        })()}
       </div>
 
       {/* Recent Activity */}
@@ -3213,7 +3232,7 @@ export default function DenhamStaffPortal() {
   // SOL alerts computation (must be before early returns to maintain hook order)
   const solCases = useMemo(() => cases.filter(c => c.sol && c.status !== "Settled" && c.status !== "Closed")
     .map(c => ({ ...c, _solDays: dU(c.sol) }))
-    .filter(c => c._solDays <= 90)
+    .filter(c => c._solDays <= 90) // includes negative (expired)
     .sort((a, b) => a._solDays - b._solDays), [cases]);
   const sidebarCounts = { cases: cases.length, tasks: taskCount, solAlerts: solCases.length };
 
