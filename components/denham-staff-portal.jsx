@@ -658,14 +658,6 @@ function Login({ onLogin, team }) {
         <div style={{ marginBottom: 20 }}><input placeholder="Password" type="password" value={p} onChange={x => setP(x.target.value)} style={S.input} onKeyDown={x => x.key === "Enter" && handleSignIn()} /></div>
         {err && <p style={{ fontSize: 12, color: "#e05050", marginBottom: 12 }}>{err}</p>}
         <button onClick={handleSignIn} disabled={loading} style={{ ...S.btn, width: "100%", padding: "10px 0", opacity: loading ? 0.6 : 1 }}>{loading ? "Signing in..." : "Sign In"}</button>
-        <p style={{ fontSize: 11, color: B.txtD, marginTop: 24, marginBottom: 12 }}>Demo — click to login as:</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-          {team.slice(0, 8).map(t => (
-            <button key={t.id} onClick={() => onLogin(t)} style={{ background: `${t.clr}15`, border: `1px solid ${t.clr}30`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: t.clr, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>
-              {t.name.split(" ")[0]}
-            </button>
-          ))}
-        </div>
         <p style={{ fontSize: 10, color: B.txtD, marginTop: 28 }}>859-900-BART · denham.law</p>
       </div>
     </div>
