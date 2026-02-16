@@ -667,7 +667,7 @@ function Login({ onLogin, team }) {
 // ═══════════════════════════════════════════════════════════
 // SIDEBAR
 // ═══════════════════════════════════════════════════════════
-function Side({ user, active, onNav, onOut, onCmdK }) {
+function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile }) {
   const nav = [
     { id: "dashboard", label: "Dashboard", icon: "⬡" },
     { id: "cases", label: "Cases", icon: "◈" },
@@ -677,7 +677,12 @@ function Side({ user, active, onNav, onOut, onCmdK }) {
   ];
 
   return (
-    <div style={{ width: 220, minHeight: "100vh", background: B.card, borderRight: `1px solid ${B.bdr}`, display: "flex", flexDirection: "column", position: "fixed", left: 0, top: 0, zIndex: 100 }}>
+    <>
+    {/* Mobile overlay */}
+    {mobileOpen && <div onClick={onToggleMobile} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 99, display: "none" }}
+      className="mobile-overlay" />}
+    <div style={{ width: 220, minHeight: "100vh", background: B.card, borderRight: `1px solid ${B.bdr}`, display: "flex", flexDirection: "column", position: "fixed", left: 0, top: 0, zIndex: 100, transition: "transform 0.2s ease", transform: mobileOpen ? "translateX(0)" : undefined }}
+      className="sidebar-panel">
       <div style={{ padding: "20px 16px", borderBottom: `1px solid ${B.bdr}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: `linear-gradient(135deg,${B.navy},${B.gold})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff" }}>D</div>
@@ -716,9 +721,10 @@ function Side({ user, active, onNav, onOut, onCmdK }) {
             <div style={{ fontSize: 10, color: B.txtD }}>{user.title}</div>
           </div>
         </div>
-        <button onClick={onOut} style={{ ...S.btnO, width: "100%", fontSize: 11, padding: "6px 0" }}>Sign Out</button>
+        <button onClick={() => { onOut(); if (onToggleMobile) onToggleMobile(); }} style={{ ...S.btnO, width: "100%", fontSize: 11, padding: "6px 0" }}>Sign Out</button>
       </div>
     </div>
+    </>
   );
 }
 
@@ -1798,6 +1804,45 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
   const [tab, setTab] = useState("overview");
   const [noteModal, setNoteModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  const startEdit = () => {
+    setEditForm({
+      jurisdiction: c.juris || "", insurer: c.insurer || "",
+      claim_number: c.cn || "", policy_number: c.pn || "",
+      date_of_loss: c.dol || "", statute_of_limitations: c.sol || "",
+      client_phone: c.clientPhone || "", client_email: c.clientEmail || "",
+    });
+    setEditing(true);
+    setFeedback(null);
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    setFeedback(null);
+    try {
+      await api.updateCase(c.id, editForm);
+      // Update local state
+      if (onUpdate) {
+        onUpdate(c.id, {
+          juris: editForm.jurisdiction, insurer: editForm.insurer,
+          cn: editForm.claim_number, pn: editForm.policy_number,
+          dol: editForm.date_of_loss, sol: editForm.statute_of_limitations,
+          clientPhone: editForm.client_phone, clientEmail: editForm.client_email,
+        });
+      }
+      setEditing(false);
+      setFeedback({ type: "success", msg: "Case updated successfully" });
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (err) {
+      setFeedback({ type: "error", msg: "Failed to save: " + err.message });
+    }
+    setSaving(false);
+  };
+
   const tabs = [
     { id: "overview", l: "Overview" }, { id: "activity", l: "Activity Feed" },
     { id: "claim", l: "Claim Details" },
@@ -1842,6 +1887,54 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
         </div>
       </div>
 
+      {/* Feedback toast */}
+      {feedback && (
+        <div style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, fontSize: 13, fontWeight: 500,
+          background: feedback.type === "success" ? B.greenBg : B.dangerBg,
+          color: feedback.type === "success" ? B.green : B.danger,
+          border: `1px solid ${feedback.type === "success" ? B.green : B.danger}30`,
+        }}>
+          {feedback.type === "success" ? "✅" : "❌"} {feedback.msg}
+        </div>
+      )}
+
+      {/* Inline Edit Panel */}
+      {editing && (
+        <div style={{ ...S.card, marginBottom: 20, borderColor: `${B.gold}40` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: B.gold, margin: 0 }}>✏️ Edit Case Details</h3>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setEditing(false)} style={S.btnO}>Cancel</button>
+              <button onClick={saveEdit} disabled={saving} style={{ ...S.btn, opacity: saving ? 0.5 : 1 }}>{saving ? "Saving..." : "💾 Save Changes"}</button>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
+            {[
+              { k: "jurisdiction", l: "Jurisdiction", type: "select", opts: JURIS },
+              { k: "insurer", l: "Insurer" },
+              { k: "claim_number", l: "Claim Number" },
+              { k: "policy_number", l: "Policy Number" },
+              { k: "date_of_loss", l: "Date of Loss", type: "date" },
+              { k: "statute_of_limitations", l: "Statute of Limitations", type: "date" },
+              { k: "client_phone", l: "Client Phone" },
+              { k: "client_email", l: "Client Email" },
+            ].map(f => (
+              <div key={f.k}>
+                <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{f.l}</div>
+                {f.type === "select" ? (
+                  <select value={editForm[f.k] || ""} onChange={e => setEditForm({ ...editForm, [f.k]: e.target.value })} style={S.input}>
+                    <option value="">—</option>
+                    {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                ) : (
+                  <input type={f.type || "text"} value={editForm[f.k] || ""} onChange={e => setEditForm({ ...editForm, [f.k]: e.target.value })} style={S.input} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
         {[
           { l: "Attorney", v: c.attorney?.name?.split(" ")[0] || "—", c: c.attorney?.clr || "#888" },
@@ -1873,8 +1966,9 @@ function CaseDetail({ c, onBack, onUpdate, user, team }) {
         ))}
       </div>
 
-      {/* Add Note button */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16, marginTop: -8 }}>
+      {/* Action buttons */}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 16, marginTop: -8 }}>
+        {!editing && <button onClick={startEdit} style={{ ...S.btnO, fontSize: 12, padding: "6px 14px" }}>✏️ Edit Details</button>}
         <button onClick={() => setNoteModal(true)} style={{ ...S.btn, fontSize: 12, padding: "6px 14px" }}>✍️ Add Note</button>
       </div>
 
@@ -2174,6 +2268,16 @@ export default function DenhamStaffPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cmdBarOpen, setCmdBarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Cmd+K handler
   useEffect(() => {
@@ -2239,14 +2343,10 @@ export default function DenhamStaffPortal() {
   const updateCase = useCallback(async (id, updates) => {
     setCases(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     if (selCase && selCase.id === id) setSelCase(prev => ({ ...prev, ...updates }));
-    if (supabase) {
+    // Only do DB write for status changes from the dropdown (other fields are saved directly in CaseDetail)
+    if (supabase && updates.status !== undefined && Object.keys(updates).length === 1) {
       try {
-        const dbUpdates = {};
-        if (updates.status !== undefined) dbUpdates.status = updates.status;
-        if (updates.client !== undefined) dbUpdates.client_name = updates.client;
-        if (Object.keys(dbUpdates).length > 0) {
-          await api.updateCase(id, dbUpdates);
-        }
+        await api.updateCase(id, { status: updates.status });
       } catch (e) { console.error("Failed to update case in Supabase:", e); }
     }
   }, [selCase]);
@@ -2318,9 +2418,28 @@ export default function DenhamStaffPortal() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: B.bg }}>
-      <Side user={user} active={page === "caseDetail" ? "cases" : page} onNav={p => navTo(p, null, "All")} onOut={() => { setUser(null); if (supabase) api.signOut().catch(() => {}); }} onCmdK={() => setCmdBarOpen(true)} />
+      {/* Mobile hamburger */}
+      {isMobile && (
+        <button onClick={() => setSidebarOpen(o => !o)} style={{
+          position: "fixed", top: 12, left: 12, zIndex: 200, width: 40, height: 40,
+          borderRadius: 8, border: `1px solid ${B.bdr}`, background: B.card,
+          color: B.gold, fontSize: 20, cursor: "pointer", display: "flex",
+          alignItems: "center", justifyContent: "center",
+        }}>☰</button>
+      )}
+      {/* Mobile overlay */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 99 }} />
+      )}
+      <div style={isMobile && !sidebarOpen ? { position: "fixed", left: 0, top: 0, zIndex: 100, transform: "translateX(-100%)", transition: "transform 0.2s ease" } : isMobile ? { position: "fixed", left: 0, top: 0, zIndex: 100, transform: "translateX(0)", transition: "transform 0.2s ease" } : {}}>
+        <Side user={user} active={page === "caseDetail" ? "cases" : page}
+          onNav={p => { navTo(p, null, "All"); if (isMobile) setSidebarOpen(false); }}
+          onOut={() => { setUser(null); setSidebarOpen(false); if (supabase) api.signOut().catch(() => {}); }}
+          onCmdK={() => { setCmdBarOpen(true); if (isMobile) setSidebarOpen(false); }}
+          mobileOpen={isMobile ? sidebarOpen : true} onToggleMobile={() => setSidebarOpen(false)} />
+      </div>
       <CommandBar open={cmdBarOpen} onClose={() => setCmdBarOpen(false)} onOpenCase={openCaseById} cases={cases} />
-      <div style={{ marginLeft: 220, flex: 1, padding: "28px 32px", maxWidth: 1200 }}>
+      <div style={{ marginLeft: isMobile ? 0 : 220, flex: 1, padding: isMobile ? "60px 16px 28px" : "28px 32px", maxWidth: 1200 }}>
         {loading && (
           <div style={{ padding: 60, textAlign: "center" }}>
             <div style={{ fontSize: 24, marginBottom: 12 }}>⏳</div>

@@ -1,9 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin, supabase as supabaseAnon } from "../../../lib/supabase";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://amyttoowrroajffqubpd.supabase.co";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFteXR0b293cnJvYWpmZnF1YnBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwOTQwOTYsImV4cCI6MjA4NjY3MDA5Nn0.tp97U9MmMG1Lz6-XaYg5WIqbaUrbC7V2LcqlJXgw1jM";
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Use admin client (bypasses RLS) if available, fall back to anon
+const supabase = supabaseAdmin || supabaseAnon;
 
 export async function POST(request) {
   try {
