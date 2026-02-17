@@ -3964,7 +3964,7 @@ export default function DenhamStaffPortal() {
 
   if (!user) return <Login onLogin={setUser} team={team} />;
 
-  const openC = c => { window.location.href = `/cases/${c.id}`; };
+  const openC = c => { navTo("caseDetail", c); };
   const backC = () => { window.history.back(); };
   const filterByStatus = st => { navTo("cases", null, st); };
   const handleCaseCreated = (row) => {
