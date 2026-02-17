@@ -1030,12 +1030,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
   ];
 
   return (
-    <>
-    {/* Mobile overlay */}
-    {mobileOpen && <div onClick={onToggleMobile} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 99, display: "none" }}
-      className="mobile-overlay" />}
-    <div style={{ width: 220, minHeight: "100vh", background: B.card, borderRight: `1px solid ${B.bdr}`, display: "flex", flexDirection: "column", position: "fixed", left: 0, top: 0, zIndex: 100, transition: "transform 0.2s ease", transform: mobileOpen ? "translateX(0)" : undefined }}
-      className="sidebar-panel">
+    <div style={{ width: 220, minHeight: "100vh", background: B.card, borderRight: `1px solid ${B.bdr}`, display: "flex", flexDirection: "column" }}>
       <div style={{ padding: "20px 16px", borderBottom: `1px solid ${B.bdr}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: `linear-gradient(135deg,${B.navy},${B.gold})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff" }}>D</div>
@@ -1079,7 +1074,6 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
         <button onClick={() => { onOut(); if (onToggleMobile) onToggleMobile(); }} style={{ ...S.btnO, width: "100%", fontSize: 11, padding: "6px 0" }}>Sign Out</button>
       </div>
     </div>
-    </>
   );
 }
 
@@ -4244,7 +4238,7 @@ export default function DenhamStaffPortal() {
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 99 }} />
       )}
-      <div style={isMobile && !sidebarOpen ? { position: "fixed", left: 0, top: 0, zIndex: 100, transform: "translateX(-100%)", transition: "transform 0.2s ease" } : isMobile ? { position: "fixed", left: 0, top: 0, zIndex: 100, transform: "translateX(0)", transition: "transform 0.2s ease" } : {}}>
+      <div style={isMobile && !sidebarOpen ? { position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100, transform: "translateX(-100%)", transition: "transform 0.2s ease" } : isMobile ? { position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100, transform: "translateX(0)", transition: "transform 0.2s ease", overflowY: "auto" } : {}}>
         <Side user={user} active={page === "caseDetail" ? "cases" : page}
           onNav={p => { navTo(p, null, "All"); if (isMobile) setSidebarOpen(false); }}
           onOut={() => { setUser(null); setSidebarOpen(false); if (supabase) api.signOut().catch(() => {}); }}
