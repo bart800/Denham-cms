@@ -778,198 +778,230 @@ function AiSummaryPanel({ caseId }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// DOCUMENT BROWSER (Clio / OneDrive)
+// DOCUMENT BROWSER (Supabase Storage)
 // ═══════════════════════════════════════════════════════════
-function DocumentBrowser({ clientName }) {
-  const [clients, setClients] = useState([]);
-  const [selectedClient, setSelectedClient] = useState(clientName || null);
-  const [cases, setCasesLocal] = useState([]);
-  const [selectedCase, setSelectedCase] = useState(null);
+function DocumentBrowser({ caseId, clientName }) {
+  const [documents, setDocuments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
 
-  const fetchDocs = async (params) => {
+  const fetchDocs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      const params = {};
+      if (caseId) params.case_id = caseId;
+      if (selectedCategory) params.category = selectedCategory;
+      if (search) params.search = search;
       const qs = new URLSearchParams(params).toString();
       const resp = await fetch(`/api/docs?${qs}`);
       const data = await resp.json();
-      if (data.error) {
-        setError(data.error);
-        return null;
-      }
-      return data;
-    } catch (err) {
-      setError(err.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (data.error) { setError(data.error); return; }
+      setDocuments(data.documents || []);
+      // Extract unique categories
+      const cats = {};
+      (data.documents || []).forEach(d => { const c = d.category || "Uncategorized"; cats[c] = (cats[c] || 0) + 1; });
+      setCategories(Object.entries(cats).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)));
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  }, [caseId, selectedCategory, search]);
 
-  useEffect(() => {
-    (async () => {
-      const data = await fetchDocs({});
-      if (data) setClients(data.clients || []);
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedClient) return;
-    (async () => {
-      const data = await fetchDocs({ client: selectedClient });
-      if (data) setCasesLocal(data.cases || []);
-    })();
-  }, [selectedClient]);
-
-  useEffect(() => {
-    if (!selectedClient || !selectedCase) return;
-    (async () => {
-      const data = await fetchDocs({ client: selectedClient, case: selectedCase });
-      if (data) setCategories(data.categories || []);
-    })();
-  }, [selectedClient, selectedCase]);
-
-  useEffect(() => {
-    if (!selectedClient || !selectedCase || !selectedCategory) return;
-    (async () => {
-      const data = await fetchDocs({ client: selectedClient, case: selectedCase, category: selectedCategory });
-      if (data) setFiles(data.files || []);
-    })();
-  }, [selectedClient, selectedCase, selectedCategory]);
+  useEffect(() => { fetchDocs(); }, [fetchDocs]);
 
   const fileIcon = ext => {
-    if ([".pdf"].includes(ext)) return "📕";
-    if ([".doc", ".docx"].includes(ext)) return "📘";
-    if ([".xls", ".xlsx"].includes(ext)) return "📗";
-    if ([".jpg", ".jpeg", ".png", ".gif", ".webp", ".tiff"].includes(ext)) return "🖼️";
-    if ([".msg", ".eml"].includes(ext)) return "📧";
+    if (["pdf"].includes(ext)) return "📕";
+    if (["doc", "docx"].includes(ext)) return "📘";
+    if (["xls", "xlsx"].includes(ext)) return "📗";
+    if (["jpg", "jpeg", "png", "gif", "webp", "tiff"].includes(ext)) return "🖼️";
+    if (["msg", "eml"].includes(ext)) return "📧";
     return "📄";
   };
 
-  const Breadcrumb = () => (
-    <div style={{ display: "flex", gap: 4, alignItems: "center", marginBottom: 16, fontSize: 12, color: B.txtM, flexWrap: "wrap" }}>
-      <span onClick={() => { setSelectedClient(null); setSelectedCase(null); setSelectedCategory(null); setFiles([]); }}
-        style={{ cursor: "pointer", color: B.gold }}>📁 Clio</span>
-      {selectedClient && <>
-        <span style={{ color: B.txtD }}>/</span>
-        <span onClick={() => { setSelectedCase(null); setSelectedCategory(null); setFiles([]); }}
-          style={{ cursor: "pointer", color: B.gold }}>{selectedClient}</span>
-      </>}
-      {selectedCase && <>
-        <span style={{ color: B.txtD }}>/</span>
-        <span onClick={() => { setSelectedCategory(null); setFiles([]); }}
-          style={{ cursor: "pointer", color: B.gold }}>{selectedCase}</span>
-      </>}
-      {selectedCategory && <>
-        <span style={{ color: B.txtD }}>/</span>
-        <span style={{ color: B.txt }}>{selectedCategory}</span>
-      </>}
-    </div>
-  );
+  const handleDownload = async (doc) => {
+    try {
+      const resp = await fetch(`/api/docs?id=${doc.id}`);
+      const data = await resp.json();
+      if (data.download_url) {
+        const a = document.createElement("a");
+        a.href = data.download_url;
+        a.download = doc.filename;
+        a.target = "_blank";
+        a.click();
+      } else {
+        toast.error("Could not generate download link");
+      }
+    } catch (err) { toast.error(err.message); }
+  };
 
-  if (error === "Path not found") {
-    return (
-      <div style={S.card}>
-        <Breadcrumb />
-        <div style={{ padding: 40, textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📂</div>
-          <div style={{ fontSize: 14, color: B.txtM }}>Clio folder not found on this machine.</div>
-          <div style={{ fontSize: 12, color: B.txtD, marginTop: 8 }}>Documents are available when running locally with OneDrive synced.</div>
-        </div>
-      </div>
-    );
-  }
+  const handleUpload = async (files, category) => {
+    if (!caseId) { toast.error("Select a case first"); return; }
+    setUploading(true);
+    let uploaded = 0;
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("case_id", caseId);
+        formData.append("category", category || selectedCategory || "Uncategorized");
+        const resp = await fetch("/api/docs", { method: "POST", body: formData });
+        const data = await resp.json();
+        if (data.error) toast.error(`${file.name}: ${data.error}`);
+        else uploaded++;
+      } catch (err) { toast.error(`${file.name}: ${err.message}`); }
+    }
+    if (uploaded > 0) {
+      toast.success(`Uploaded ${uploaded} file${uploaded > 1 ? "s" : ""}`);
+      fetchDocs();
+    }
+    setUploading(false);
+  };
+
+  const handleDelete = async (doc) => {
+    if (!confirm(`Delete "${doc.filename}"?`)) return;
+    try {
+      const resp = await fetch(`/api/docs?id=${doc.id}`, { method: "DELETE" });
+      const data = await resp.json();
+      if (data.error) toast.error(data.error);
+      else { toast.success("Deleted"); fetchDocs(); }
+    } catch (err) { toast.error(err.message); }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) handleUpload(files);
+  };
+
+  const filteredDocs = selectedCategory
+    ? documents.filter(d => (d.category || "Uncategorized") === selectedCategory)
+    : documents;
+
+  const aiStatusBadge = (status) => {
+    const colors = { pending: { bg: B.goldBg, c: B.gold }, processing: { bg: B.navyBg, c: "#5b8def" }, extracted: { bg: B.greenBg, c: B.green }, failed: { bg: B.dangerBg, c: B.danger } };
+    const s = colors[status] || colors.pending;
+    return <span style={{ ...S.badge, background: s.bg, color: s.c }}>{status}</span>;
+  };
 
   return (
-    <div>
-      <Breadcrumb />
-      {loading && <div style={{ padding: 20, textAlign: "center", color: B.txtM }}>Loading...</div>}
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      style={dragOver ? { border: `2px dashed ${B.gold}`, borderRadius: 10, padding: 4 } : {}}
+    >
+      {/* Header with search and upload */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <input
+            type="text" placeholder="Search documents..." value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ ...S.input, maxWidth: 300 }}
+          />
+        </div>
+        {caseId && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <input type="file" ref={fileInputRef} multiple style={{ display: "none" }}
+              onChange={e => handleUpload(Array.from(e.target.files))} />
+            <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+              style={{ ...S.btn, opacity: uploading ? 0.5 : 1 }}>
+              {uploading ? "Uploading..." : "📤 Upload"}
+            </button>
+          </div>
+        )}
+      </div>
 
-      {/* Client list */}
-      {!selectedClient && !loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-          {clients.map(c => (
-            <div key={c} onClick={() => setSelectedClient(c)}
-              style={{ ...S.card, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = B.gold}
-              onMouseLeave={e => e.currentTarget.style.borderColor = B.bdr}>
-              <span style={{ fontSize: 16 }}>👤</span>
-              <span style={{ fontSize: 13, fontWeight: 500 }}>{c}</span>
-            </div>
+      {/* Category pills */}
+      {categories.length > 0 && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+          <span onClick={() => setSelectedCategory(null)}
+            style={{ ...S.badge, cursor: "pointer", background: !selectedCategory ? B.gold : "transparent", color: !selectedCategory ? "#000" : B.txtM, border: `1px solid ${!selectedCategory ? B.gold : B.bdr}` }}>
+            All ({documents.length})
+          </span>
+          {categories.map(cat => (
+            <span key={cat.name} onClick={() => setSelectedCategory(cat.name)}
+              style={{ ...S.badge, cursor: "pointer", background: selectedCategory === cat.name ? B.gold : "transparent", color: selectedCategory === cat.name ? "#000" : B.txtM, border: `1px solid ${selectedCategory === cat.name ? B.gold : B.bdr}` }}>
+              {cat.name} ({cat.count})
+            </span>
           ))}
-          {clients.length === 0 && !error && (
-            <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: B.txtD }}>No clients found</div>
-          )}
         </div>
       )}
 
-      {/* Case list */}
-      {selectedClient && !selectedCase && !loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-          {cases.map(c => (
-            <div key={c} onClick={() => setSelectedCase(c)}
-              style={{ ...S.card, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = B.gold}
-              onMouseLeave={e => e.currentTarget.style.borderColor = B.bdr}>
-              <span style={{ fontSize: 16 }}>📁</span>
-              <span style={{ fontSize: 13, fontWeight: 500, ...S.mono }}>{c}</span>
-            </div>
-          ))}
-          {cases.length === 0 && <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: B.txtD }}>No case folders found</div>}
-        </div>
-      )}
+      {loading && <div style={{ padding: 20, textAlign: "center", color: B.txtM }}>Loading documents...</div>}
 
-      {/* Category list */}
-      {selectedCase && !selectedCategory && !loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-          {categories.map(c => (
-            <div key={c} onClick={() => setSelectedCategory(c)}
-              style={{ ...S.card, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = B.gold}
-              onMouseLeave={e => e.currentTarget.style.borderColor = B.bdr}>
-              <span style={{ fontSize: 16 }}>📂</span>
-              <span style={{ fontSize: 13, fontWeight: 500 }}>{c}</span>
-            </div>
-          ))}
-          {categories.length === 0 && <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: B.txtD }}>No categories found</div>}
-        </div>
-      )}
-
-      {/* File list */}
-      {selectedCategory && !loading && (
+      {/* Document table */}
+      {!loading && filteredDocs.length > 0 && (
         <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
-          {files.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: B.txtD }}>No files in this category</div>
-          ) : (
-            <table style={S.tbl}>
-              <thead><tr>
-                <th style={S.th}>File</th>
-                <th style={S.th}>Size</th>
-                <th style={S.th}>Modified</th>
-              </tr></thead>
-              <tbody>
-                {files.map((f, i) => (
-                  <tr key={i}>
-                    <td style={{ ...S.td, display: "flex", alignItems: "center", gap: 8 }}>
-                      <span>{fileIcon(f.ext)}</span>
-                      <span style={{ fontSize: 13 }}>{f.name}</span>
-                    </td>
-                    <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtSize(f.size)}</td>
-                    <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{f.modified ? fmtD(f.modified.split("T")[0]) : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <table style={S.tbl}>
+            <thead><tr>
+              <th style={S.th}>File</th>
+              <th style={S.th}>Category</th>
+              <th style={S.th}>Size</th>
+              <th style={S.th}>Uploaded</th>
+              <th style={S.th}>AI</th>
+              <th style={{ ...S.th, width: 60 }}></th>
+            </tr></thead>
+            <tbody>
+              {filteredDocs.map(doc => (
+                <tr key={doc.id} style={{ cursor: "pointer" }}
+                  onMouseEnter={e => e.currentTarget.style.background = B.cardH}
+                  onMouseLeave={e => e.currentTarget.style.background = ""}>
+                  <td style={{ ...S.td, display: "flex", alignItems: "center", gap: 8 }}
+                    onClick={() => handleDownload(doc)}>
+                    <span>{fileIcon(doc.extension)}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500 }}>{doc.filename}</div>
+                      {doc.original_path && <div style={{ fontSize: 11, color: B.txtD, marginTop: 2 }}>{doc.original_path}</div>}
+                    </div>
+                  </td>
+                  <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{doc.category || "—"}</td>
+                  <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtSize(doc.size_bytes)}</td>
+                  <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{doc.uploaded_at ? fmtD(doc.uploaded_at.split("T")[0]) : "—"}</td>
+                  <td style={S.td}>{aiStatusBadge(doc.ai_status)}</td>
+                  <td style={S.td}>
+                    <span onClick={(e) => { e.stopPropagation(); handleDelete(doc); }}
+                      style={{ cursor: "pointer", fontSize: 14, color: B.txtD, padding: "4px 8px" }}
+                      title="Delete">🗑️</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && filteredDocs.length === 0 && !error && (
+        <div style={{ ...S.card, padding: 40, textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📂</div>
+          <div style={{ fontSize: 14, color: B.txtM }}>
+            {caseId ? "No documents yet. Upload files or drag and drop." : "No documents found."}
+          </div>
+          {caseId && (
+            <div style={{ fontSize: 12, color: B.txtD, marginTop: 8 }}>
+              Supports PDF, Word, Excel, images, and more.
+            </div>
           )}
         </div>
       )}
 
-      {error && error !== "Path not found" && (
+      {/* Drag overlay */}
+      {dragOver && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+          <div style={{ background: B.card, border: `2px dashed ${B.gold}`, borderRadius: 16, padding: "40px 60px", textAlign: "center" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📤</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: B.gold }}>Drop files to upload</div>
+          </div>
+        </div>
+      )}
+
+      {error && (
         <div style={{ padding: 12, background: B.dangerBg, borderRadius: 6, fontSize: 12, color: B.danger, marginTop: 8 }}>
           {error}
         </div>
@@ -3747,7 +3779,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "pleadings" && <Pleadings c={c} />}
       {tab === "timeline" && <CaseTimeline c={c} />}
       {tab === "tasks" && <TasksPanel caseId={c.id} userId={user?.id} team={team} />}
-      {tab === "docs" && <DocumentBrowser clientName={c.client} />}
+      {tab === "docs" && <DocumentBrowser caseId={c.id} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
       {tab === "discovery" && <DiscoveryTab c={c} caseId={c.id} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
