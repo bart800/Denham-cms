@@ -17,6 +17,7 @@ const AlertsPanelNew = dynamic(() => import("./alerts-panel"), { ssr: false });
 const DashboardV2 = dynamic(() => import("./dashboard-v2"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading dashboard...</div> });
 const ReportsPage = dynamic(() => import("./reports-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading reports...</div> });
 const CaseIntakeForm = dynamic(() => import("./case-intake-form"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading intake form...</div> });
+const CaseCompare = dynamic(() => import("./case-compare"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading compare...</div> });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -1074,6 +1075,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
     { id: "calendar", label: "Calendar", icon: "📅" },
     { id: "docs", label: "Documents", icon: "◇" },
     { id: "reports", label: "Reports", icon: "📊" },
+    { id: "compare", label: "Compare", icon: "⚖️" },
     { id: "intake", label: "New Case", icon: "➕" },
     { id: "compliance", label: "Compliance", icon: "🛡️", dot: counts?.criticalCases > 0 },
   ];
@@ -4329,6 +4331,7 @@ export default function DenhamStaffPortal() {
         )}
         {!loading && page === "compliance" && <ComplianceDash cases={cases} onOpen={openC} />}
         {!loading && page === "reports" && <ReportsPage />}
+        {!loading && page === "compare" && <CaseCompare onSelectCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "intake" && <CaseIntakeForm onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
         {!loading && page === "docs" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Documents</h2>
