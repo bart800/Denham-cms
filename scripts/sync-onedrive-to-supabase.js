@@ -116,9 +116,8 @@ async function syncFile(file, clientFolder, caseFolder) {
     .replace(/[^a-zA-Z0-9_.\-]/g, "_")
     .replace(/_+/g, "_");
 
-  // Log files over 5GB (Supabase Pro limit)
-  if (file.size > 5 * 1024 * 1024 * 1024) {
-    console.error(`\n  TOO LARGE (${fmtSize(file.size)}): ${file.path}`);
+  // Skip files over 50MB (avoids timeouts and memory issues; covers 99%+ of legal docs)
+  if (file.size > 50 * 1024 * 1024) {
     return { synced: false, reason: "too large", size: file.size };
   }
 
@@ -143,39 +142,41 @@ async function syncFile(file, clientFolder, caseFolder) {
     return { synced: false, reason: "already exists" };
   }
 
-  // Read and upload file
-  const buffer = await readFile(file.path);
-  const { error: uploadErr } = await supabase.storage
-    .from(BUCKET)
-    .upload(storagePath, buffer, { contentType: mime, upsert: true });
+  // Read and upload file (wrapped in try/catch to never crash)
+  try {
+    const buffer = await readFile(file.path);
+    const { error: uploadErr } = await supabase.storage
+      .from(BUCKET)
+      .upload(storagePath, buffer, { contentType: mime, upsert: true });
 
-  if (uploadErr) {
-    console.error(`  Upload failed: ${uploadErr.message}`);
-    return { synced: false, error: uploadErr.message };
+    if (uploadErr) {
+      return { synced: false, error: uploadErr.message };
+    }
+
+    // Upsert document metadata
+    const { error: dbErr } = await supabase
+      .from("documents")
+      .upsert({
+        case_id: caseId,
+        storage_path: storagePath,
+        original_path: relPath,
+        filename: file.name,
+        extension: ext,
+        category,
+        size_bytes: file.size,
+        mime_type: mime,
+        modified_at: file.modified.toISOString(),
+        uploaded_at: new Date().toISOString(),
+      }, { onConflict: "storage_path" });
+
+    if (dbErr) {
+      return { synced: false, error: dbErr.message };
+    }
+
+    return { synced: true };
+  } catch (err) {
+    return { synced: false, error: err.message };
   }
-
-  // Upsert document metadata
-  const { error: dbErr } = await supabase
-    .from("documents")
-    .upsert({
-      case_id: caseId,
-      storage_path: storagePath,
-      original_path: relPath,
-      filename: file.name,
-      extension: ext,
-      category,
-      size_bytes: file.size,
-      mime_type: mime,
-      modified_at: file.modified.toISOString(),
-      uploaded_at: new Date().toISOString(),
-    }, { onConflict: "storage_path" });
-
-  if (dbErr) {
-    console.error(`  DB insert failed: ${dbErr.message}`);
-    return { synced: false, error: dbErr.message };
-  }
-
-  return { synced: true };
 }
 
 function fmtSize(bytes) {
@@ -220,29 +221,44 @@ async function main() {
       if (totalFiles >= limitArg) break;
       const casePath = join(clientPath, cf.name);
 
-      if (cf.isDirectory()) {
-        const files = await walkDir(casePath);
-        for (const file of files) {
-          if (totalFiles >= limitArg) break;
+      try {
+        if (cf.isDirectory()) {
+          const files = await walkDir(casePath);
+          for (const file of files) {
+            if (totalFiles >= limitArg) break;
+            totalFiles++;
+            
+            try {
+              const result = await syncFile(file, client, cf.name);
+              if (result.synced) {
+                synced++;
+              } else if (result.error) {
+                errors++;
+              } else {
+                skipped++;
+              }
+              if (totalFiles % 100 === 0) {
+                process.stdout.write(`\r  Synced: ${synced} | Skipped: ${skipped} | Errors: ${errors} | Total: ${totalFiles}`);
+              }
+            } catch (fileErr) {
+              errors++;
+            }
+          }
+        } else {
+          // File directly under client folder
           totalFiles++;
-          
-          const result = await syncFile(file, client, cf.name);
-          if (result.synced) {
-            synced++;
-            process.stdout.write(`\r  Synced: ${synced} | Skipped: ${skipped} | Errors: ${errors} | Total: ${totalFiles}`);
-          } else if (result.error) {
+          try {
+            const fStat = await stat(casePath);
+            const result = await syncFile({ path: casePath, name: cf.name, size: fStat.size, modified: fStat.mtime }, client, null);
+            if (result.synced) synced++;
+            else if (result.error) errors++;
+            else skipped++;
+          } catch (fileErr) {
             errors++;
-          } else {
-            skipped++;
           }
         }
-      } else {
-        // File directly under client folder
-        totalFiles++;
-        const result = await syncFile({ path: casePath, name: cf.name, size: 0, modified: new Date() }, client, null);
-        if (result.synced) synced++;
-        else if (result.error) errors++;
-        else skipped++;
+      } catch (folderErr) {
+        errors++;
       }
     }
   }

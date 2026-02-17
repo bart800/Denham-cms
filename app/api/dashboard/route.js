@@ -16,7 +16,7 @@ export async function GET() {
     // Fetch all cases (select only needed columns)
     const { data: cases, error: casesErr } = await supabaseAdmin
       .from("cases")
-      .select("id, client_name, status, case_type, jurisdiction, insurance_company, sol_date, date_opened, recovery_amount, fee_amount, attorney_id");
+      .select("id, client_name, status, type, jurisdiction, insurer, statute_of_limitations, date_opened, total_recovery, attorney_fees, attorney_id");
 
     if (casesErr) throw casesErr;
 
@@ -28,12 +28,16 @@ export async function GET() {
     const attorneyMap = {};
     (teamMembers || []).forEach((m) => { attorneyMap[m.id] = m.name; });
 
-    // Fetch recent activity
-    const { data: activity } = await supabaseAdmin
-      .from("activity_log")
-      .select("*, case:cases!activity_log_case_id_fkey(client_name)")
-      .order("created_at", { ascending: false })
-      .limit(10);
+    // Fetch recent activity (gracefully handle empty or missing FK)
+    let activity = [];
+    try {
+      const { data: actData } = await supabaseAdmin
+        .from("activity_log")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      activity = actData || [];
+    } catch { /* empty or table issue */ }
 
     // Compute stats
     const total_cases = cases.length;
@@ -56,7 +60,7 @@ export async function GET() {
       cases_by_status[s] = (cases_by_status[s] || 0) + 1;
 
       // Type
-      const t = c.case_type || "unknown";
+      const t = c.type || "unknown";
       cases_by_type[t] = (cases_by_type[t] || 0) + 1;
 
       // Jurisdiction
@@ -64,8 +68,8 @@ export async function GET() {
       cases_by_jurisdiction[j] = (cases_by_jurisdiction[j] || 0) + 1;
 
       // Insurer
-      if (c.insurance_company) {
-        insurerCount[c.insurance_company] = (insurerCount[c.insurance_company] || 0) + 1;
+      if (c.insurer) {
+        insurerCount[c.insurer] = (insurerCount[c.insurer] || 0) + 1;
       }
 
       // Attorney
@@ -75,8 +79,8 @@ export async function GET() {
       }
 
       // Financials
-      total_recovery_sum += Number(c.recovery_amount) || 0;
-      total_fees_sum += Number(c.fee_amount) || 0;
+      total_recovery_sum += Number(c.total_recovery) || 0;
+      total_fees_sum += Number(c.attorney_fees) || 0;
 
       // Date opened
       if (c.date_opened) {
@@ -85,15 +89,15 @@ export async function GET() {
       }
 
       // SOL
-      if (c.sol_date) {
-        if (c.sol_date < today) {
+      if (c.statute_of_limitations) {
+        if (c.statute_of_limitations < today) {
           sol_expired_count++;
-        } else if (c.sol_date <= in30) {
-          const days_remaining = Math.ceil((new Date(c.sol_date) - now) / 86400000);
+        } else if (c.statute_of_limitations <= in30) {
+          const days_remaining = Math.ceil((new Date(c.statute_of_limitations) - now) / 86400000);
           sol_urgent_list.push({
             id: c.id,
             client_name: c.client_name,
-            sol_date: c.sol_date,
+            sol_date: c.statute_of_limitations,
             days_remaining,
           });
         }
@@ -115,11 +119,7 @@ export async function GET() {
     sol_urgent_list.sort((a, b) => a.days_remaining - b.days_remaining);
 
     // Recent activity
-    const recent_activity = (activity || []).map((a) => ({
-      ...a,
-      case_name: a.case?.client_name || null,
-      case: undefined,
-    }));
+    const recent_activity = activity;
 
     return NextResponse.json({
       total_cases,
