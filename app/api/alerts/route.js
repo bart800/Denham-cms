@@ -19,7 +19,7 @@ export async function GET() {
 
     const { data: solCases, error: solErr } = await db
       .from("cases")
-      .select("id, case_name, statute_of_limitations")
+      .select("id, client_name, ref, statute_of_limitations, status")
       .not("statute_of_limitations", "is", null)
       .lte("statute_of_limitations", in90.toISOString().split("T")[0])
       .gte("statute_of_limitations", now.toISOString().split("T")[0]);
@@ -35,45 +35,54 @@ export async function GET() {
           type: "sol",
           severity: isCritical ? "critical" : "warning",
           title: isCritical ? "SOL Imminent" : "SOL Approaching",
-          description: `${c.case_name} — SOL in ${daysLeft} day${daysLeft !== 1 ? "s" : ""} (${c.statute_of_limitations})`,
+          description: `${c.client_name} (${c.ref}) — SOL in ${daysLeft} day${daysLeft !== 1 ? "s" : ""} (${c.statute_of_limitations})`,
           case_id: c.id,
-          case_name: c.case_name,
+          case_name: c.client_name,
           created_at: now.toISOString(),
         });
       }
     }
 
-    // --- Litigation cases without discovery deadlines ---
-    const { data: litCases, error: litErr } = await db
-      .from("cases")
-      .select("id, case_name, case_phase, discovery_deadline")
-      .eq("case_phase", "Litigation")
-      .is("discovery_deadline", null);
-
-    if (!litErr && litCases) {
-      for (const c of litCases) {
-        alerts.push({
-          id: `disc-${c.id}`,
-          type: "compliance",
-          severity: "warning",
-          title: "Missing Discovery Deadline",
-          description: `${c.case_name} is in litigation but has no discovery deadline set.`,
-          case_id: c.id,
-          case_name: c.case_name,
-          created_at: now.toISOString(),
-        });
-      }
-    }
-
-    // --- Overdue tasks (gracefully skip if table doesn't exist) ---
+    // --- Litigation cases without discovery sets ---
     try {
-      const { data: tasks, error: taskErr } = await db
+      const { data: litCases } = await db
+        .from("cases")
+        .select("id, client_name, ref")
+        .like("status", "%Litigation%");
+
+      if (litCases) {
+        const { data: discSets } = await db
+          .from("discovery_sets")
+          .select("case_id");
+
+        const casesWithDisc = new Set((discSets || []).map(d => d.case_id));
+
+        for (const c of litCases) {
+          if (!casesWithDisc.has(c.id)) {
+            alerts.push({
+              id: `disc-${c.id}`,
+              type: "compliance",
+              severity: "warning",
+              title: "No Discovery Sets",
+              description: `${c.client_name} (${c.ref}) is in litigation with no discovery sets.`,
+              case_id: c.id,
+              case_name: c.client_name,
+              created_at: now.toISOString(),
+            });
+          }
+        }
+      }
+    } catch { /* discovery_sets may not exist */ }
+
+    // --- Overdue tasks ---
+    try {
+      const { data: tasks } = await db
         .from("case_tasks")
-        .select("id, title, due_date, case_id, cases(case_name)")
+        .select("id, title, due_date, case_id")
         .eq("status", "pending")
         .lt("due_date", now.toISOString().split("T")[0]);
 
-      if (!taskErr && tasks) {
+      if (tasks) {
         for (const t of tasks) {
           const daysOverdue = Math.ceil((now - new Date(t.due_date)) / (1000 * 60 * 60 * 24));
           alerts.push({
@@ -81,21 +90,18 @@ export async function GET() {
             type: "task",
             severity: daysOverdue > 7 ? "critical" : "warning",
             title: "Overdue Task",
-            description: `"${t.title}" overdue by ${daysOverdue} day${daysOverdue !== 1 ? "s" : ""} — ${t.cases?.case_name || "Unknown case"}`,
+            description: `"${t.title}" overdue by ${daysOverdue} day${daysOverdue !== 1 ? "s" : ""}`,
             case_id: t.case_id,
-            case_name: t.cases?.case_name || "Unknown",
+            case_name: null,
             created_at: now.toISOString(),
           });
         }
       }
-    } catch {
-      // case_tasks table doesn't exist — skip silently
-    }
+    } catch { /* case_tasks may not exist */ }
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 
-  // Sort: critical first, then warning, then info
   const order = { critical: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => (order[a.severity] ?? 9) - (order[b.severity] ?? 9));
 
