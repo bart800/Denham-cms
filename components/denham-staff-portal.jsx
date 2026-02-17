@@ -3241,6 +3241,235 @@ function CaseNotesTab({ c, caseId, user, onRefresh }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════
+// DISCOVERY TAB
+// ═══════════════════════════════════════════════════════════
+function DiscoveryTab({ c, caseId }) {
+  const [sets, setSets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [expandedSet, setExpandedSet] = useState(null);
+  const [items, setItems] = useState([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [showItemForm, setShowItemForm] = useState(false);
+  const [aiDrafting, setAiDrafting] = useState(null);
+  const [form, setForm] = useState({ type: "Interrogatories", direction: "Received", title: "", served_date: "", due_date: "", response_date: "", notes: "" });
+  const [itemForm, setItemForm] = useState({ item_number: "", request_text: "", response_text: "", status: "Pending" });
+  const [saving, setSaving] = useState(false);
+
+  const typeIcons = { Interrogatories: "📝", RFP: "📁", RFA: "✅", Subpoena: "📋", Deposition: "🎤" };
+  const statusClr = { Pending: B.txtD, "In Progress": "#4488ff", Completed: B.green, Overdue: B.danger, Objected: B.gold };
+  const itemStatusClr = { Pending: B.txtD, Answered: B.green, Objected: B.gold, Supplemented: "#4488ff" };
+
+  const loadSets = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/discovery/sets?case_id=${caseId}`);
+      const d = await r.json();
+      setSets(Array.isArray(d) ? d : []);
+    } catch { setSets([]); }
+    setLoading(false);
+  };
+
+  const loadItems = async (setId) => {
+    setItemsLoading(true);
+    try {
+      const r = await fetch(`/api/discovery/items?set_id=${setId}`);
+      const d = await r.json();
+      setItems(Array.isArray(d) ? d : []);
+    } catch { setItems([]); }
+    setItemsLoading(false);
+  };
+
+  useEffect(() => { loadSets(); }, [caseId]);
+
+  const createSet = async () => {
+    if (!form.title.trim()) return;
+    setSaving(true);
+    try {
+      await fetch("/api/discovery/sets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, case_id: caseId }) });
+      setForm({ type: "Interrogatories", direction: "Received", title: "", served_date: "", due_date: "", response_date: "", notes: "" });
+      setShowForm(false);
+      loadSets();
+    } catch {}
+    setSaving(false);
+  };
+
+  const createItem = async () => {
+    if (!itemForm.item_number || !expandedSet) return;
+    setSaving(true);
+    try {
+      await fetch("/api/discovery/items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...itemForm, set_id: expandedSet, item_number: parseInt(itemForm.item_number) }) });
+      setItemForm({ item_number: "", request_text: "", response_text: "", status: "Pending" });
+      setShowItemForm(false);
+      loadItems(expandedSet);
+    } catch {}
+    setSaving(false);
+  };
+
+  const aiDraft = async (item) => {
+    setAiDrafting(item.id);
+    try {
+      const r = await fetch("/api/discovery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: `You are a legal assistant for a property insurance dispute case. Draft a professional response to the following discovery request:\n\nCase: ${c?.client || "Unknown"} - ${c?.ref || ""}\nRequest #${item.item_number}: ${item.request_text || "No text"}\n\nProvide a concise, professional legal response.` }) });
+      const d = await r.json();
+      if (d.text) {
+        await fetch("/api/discovery/items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, response_text: d.text, status: "Answered" }) });
+        loadItems(expandedSet);
+      }
+    } catch {}
+    setAiDrafting(null);
+  };
+
+  const expandSet = (setId) => {
+    if (expandedSet === setId) { setExpandedSet(null); setItems([]); return; }
+    setExpandedSet(setId);
+    loadItems(setId);
+  };
+
+  const daysUntil = (d) => { if (!d) return null; return Math.ceil((new Date(d) - new Date()) / 86400000); };
+
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: B.txtD }}>Loading discovery...</div>;
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={S.secT}>Discovery ({sets.length})</div>
+        <button onClick={() => setShowForm(!showForm)} style={S.btn}>+ New Set</button>
+      </div>
+
+      {showForm && (
+        <div style={{ ...S.card, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, color: B.txtD, marginBottom: 4, display: "block" }}>Type</label>
+              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} style={S.input}>
+                {["Interrogatories", "RFP", "RFA", "Subpoena", "Deposition"].map(t => <option key={t} value={t}>{typeIcons[t]} {t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: B.txtD, marginBottom: 4, display: "block" }}>Direction</label>
+              <select value={form.direction} onChange={e => setForm({ ...form, direction: e.target.value })} style={S.input}>
+                <option value="Sent">Sent</option><option value="Received">Received</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 11, color: B.txtD, marginBottom: 4, display: "block" }}>Title</label>
+            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Defendant's First Set of Interrogatories" style={S.input} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, color: B.txtD, marginBottom: 4, display: "block" }}>Served Date</label>
+              <input type="date" value={form.served_date} onChange={e => setForm({ ...form, served_date: e.target.value })} style={S.input} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: B.txtD, marginBottom: 4, display: "block" }}>Due Date</label>
+              <input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} style={S.input} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: B.txtD, marginBottom: 4, display: "block" }}>Response Date</label>
+              <input type="date" value={form.response_date} onChange={e => setForm({ ...form, response_date: e.target.value })} style={S.input} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 11, color: B.txtD, marginBottom: 4, display: "block" }}>Notes</label>
+            <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} style={{ ...S.input, resize: "vertical" }} />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={createSet} disabled={saving} style={S.btn}>{saving ? "Saving..." : "Create Set"}</button>
+            <button onClick={() => setShowForm(false)} style={S.btnO}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {sets.length === 0 && !showForm && (
+        <div style={{ ...S.card, textAlign: "center", color: B.txtD, padding: 40 }}>
+          No discovery sets yet. Click "+ New Set" to add one.
+        </div>
+      )}
+
+      {sets.map(s => {
+        const days = daysUntil(s.due_date);
+        const overdue = days !== null && days < 0 && s.status !== "Completed";
+        const urgent = days !== null && days >= 0 && days <= 7 && s.status !== "Completed";
+        return (
+          <div key={s.id} style={{ ...S.card, marginBottom: 8, padding: 0, overflow: "hidden" }}>
+            <div onClick={() => expandSet(s.id)} style={{ padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, background: expandedSet === s.id ? B.cardH : "transparent" }}>
+              <span style={{ fontSize: 18 }}>{typeIcons[s.type] || "📄"}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: B.txt, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</div>
+                <div style={{ fontSize: 11, color: B.txtM, marginTop: 2 }}>
+                  {s.type} · {s.item_count || 0} items
+                  {s.due_date && <span> · Due {s.due_date}</span>}
+                </div>
+              </div>
+              <span style={{ ...S.badge, background: `${s.direction === "Sent" ? B.navy : B.purple}20`, color: s.direction === "Sent" ? "#6666cc" : B.purple, fontSize: 10 }}>{s.direction}</span>
+              <span style={{ ...S.badge, background: `${overdue ? B.danger : urgent ? B.gold : statusClr[s.status] || B.txtD}15`, color: overdue ? B.danger : urgent ? B.gold : statusClr[s.status] || B.txtD, fontSize: 10 }}>
+                {overdue ? "Overdue" : s.status}
+                {urgent && !overdue && ` (${days}d)`}
+              </span>
+              <span style={{ color: B.txtD, fontSize: 12 }}>{expandedSet === s.id ? "▲" : "▼"}</span>
+            </div>
+
+            {expandedSet === s.id && (
+              <div style={{ borderTop: `1px solid ${B.bdr}`, padding: 16 }}>
+                {s.notes && <div style={{ fontSize: 12, color: B.txtM, marginBottom: 12, fontStyle: "italic" }}>{s.notes}</div>}
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: B.txtM }}>Items</span>
+                  <button onClick={() => setShowItemForm(!showItemForm)} style={{ ...S.btnO, padding: "4px 10px", fontSize: 11 }}>+ Add Item</button>
+                </div>
+
+                {showItemForm && (
+                  <div style={{ background: B.bg, border: `1px solid ${B.bdr}`, borderRadius: 8, padding: 12, marginBottom: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 8, marginBottom: 8 }}>
+                      <div>
+                        <label style={{ fontSize: 10, color: B.txtD }}>Item #</label>
+                        <input value={itemForm.item_number} onChange={e => setItemForm({ ...itemForm, item_number: e.target.value })} style={S.input} placeholder="#" />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 10, color: B.txtD }}>Request Text</label>
+                        <textarea value={itemForm.request_text} onChange={e => setItemForm({ ...itemForm, request_text: e.target.value })} rows={2} style={{ ...S.input, resize: "vertical" }} placeholder="Enter request text..." />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={createItem} disabled={saving} style={{ ...S.btn, padding: "4px 10px", fontSize: 11 }}>{saving ? "..." : "Add"}</button>
+                      <button onClick={() => setShowItemForm(false)} style={{ ...S.btnO, padding: "4px 10px", fontSize: 11 }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+
+                {itemsLoading ? (
+                  <div style={{ padding: 16, textAlign: "center", color: B.txtD, fontSize: 12 }}>Loading items...</div>
+                ) : items.length === 0 ? (
+                  <div style={{ padding: 16, textAlign: "center", color: B.txtD, fontSize: 12 }}>No items yet</div>
+                ) : items.map((item, i) => (
+                  <div key={item.id} style={{ background: B.bg, border: `1px solid ${B.bdr}`, borderRadius: 8, padding: 12, marginBottom: 6 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                      <span style={{ ...S.mono, fontSize: 11, color: B.gold, fontWeight: 700 }}>#{item.item_number}</span>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <span style={{ ...S.badge, fontSize: 9, background: `${itemStatusClr[item.status] || B.txtD}15`, color: itemStatusClr[item.status] || B.txtD }}>{item.status}</span>
+                        {!item.response_text && (
+                          <button onClick={() => aiDraft(item)} disabled={aiDrafting === item.id} style={{ ...S.btnO, padding: "2px 8px", fontSize: 10, color: B.gold, borderColor: B.gold }}>
+                            {aiDrafting === item.id ? "Drafting..." : "🤖 AI Draft"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {item.request_text && <div style={{ fontSize: 12, color: B.txt, marginBottom: 6, lineHeight: 1.5 }}><strong style={{ color: B.txtD, fontSize: 10 }}>REQUEST:</strong><br />{item.request_text}</div>}
+                    {item.response_text && <div style={{ fontSize: 12, color: B.green, marginBottom: 4, lineHeight: 1.5, background: `${B.green}08`, padding: 8, borderRadius: 6 }}><strong style={{ color: B.txtD, fontSize: 10 }}>RESPONSE:</strong><br />{item.response_text}</div>}
+                    {item.objection_text && <div style={{ fontSize: 12, color: B.gold, lineHeight: 1.5 }}><strong style={{ color: B.txtD, fontSize: 10 }}>OBJECTION:</strong><br />{item.objection_text}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
   const [tab, setTab] = useState("overview");
   const [noteModal, setNoteModal] = useState(false);
@@ -3304,6 +3533,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "estimates", l: "Estimates" }, { id: "pleadings", l: "Pleadings" },
     { id: "timeline", l: "Timeline" }, { id: "tasks", l: "Tasks" },
     { id: "docs", l: "Documents" }, { id: "docgen", l: "Generate Docs" },
+    { id: "discovery", l: "Discovery" },
     { id: "compliance", l: "⚠️ Compliance" },
   ];
   const sc = stClr(c.status);
@@ -3508,6 +3738,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "tasks" && <TasksPanel caseId={c.id} userId={user?.id} team={team} />}
       {tab === "docs" && <DocumentBrowser clientName={c.client} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
+      {tab === "discovery" && <DiscoveryTab c={c} caseId={c.id} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
     </div>
   );
