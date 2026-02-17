@@ -3241,159 +3241,6 @@ function CaseNotesTab({ c, caseId, user, onRefresh }) {
   );
 }
 
-// ─── Per-Case Document Browser (uses /api/cases/[id]/docs) ──
-function CaseDocsBrowser({ caseId, clientName }) {
-  const [docs, setDocs] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [expandedFolders, setExpandedFolders] = useState(new Set());
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const resp = await fetch(`/api/cases/${caseId}/docs`);
-        const data = await resp.json();
-        setDocs(data);
-      } catch (err) {
-        setDocs({ matched: false, error: err.message });
-      }
-      setLoading(false);
-    })();
-  }, [caseId]);
-
-  const toggleFolder = (key) => {
-    setExpandedFolders(prev => {
-      const n = new Set(prev);
-      if (n.has(key)) n.delete(key); else n.add(key);
-      return n;
-    });
-  };
-
-  const fileIcon = ext => {
-    const e = (ext || "").toLowerCase();
-    if ([".pdf"].includes(e)) return "📕";
-    if ([".doc", ".docx"].includes(e)) return "📘";
-    if ([".xls", ".xlsx"].includes(e)) return "📗";
-    if ([".jpg", ".jpeg", ".png", ".gif", ".webp", ".tiff"].includes(e)) return "🖼️";
-    if ([".msg", ".eml"].includes(e)) return "📧";
-    if ([".mp4", ".mov", ".avi"].includes(e)) return "🎬";
-    if ([".zip", ".rar", ".7z"].includes(e)) return "📦";
-    return "📄";
-  };
-
-  if (loading) return <div style={{ ...S.card, padding: 40, textAlign: "center", color: B.txtM }}>Loading documents...</div>;
-
-  if (!docs?.matched) {
-    return (
-      <div style={{ ...S.card, padding: 60, textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>📂</div>
-        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No Documents Linked</div>
-        <div style={{ fontSize: 13, color: B.txtM, maxWidth: 400, margin: "0 auto" }}>
-          {docs?.error ? docs.error : `No matching Clio folder found for "${clientName}".`}
-        </div>
-        <div style={{ fontSize: 11, color: B.txtD, marginTop: 12 }}>Documents are available when running locally with OneDrive synced.</div>
-      </div>
-    );
-  }
-
-  const totalFiles = (docs.subfolders || []).reduce((sum, sf) => {
-    return sum + (sf.files || []).length + (sf.subdirs || []).reduce((s, sd) => s + (sd.files || []).length, 0);
-  }, 0) + (docs.rootFiles || []).length;
-
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <span style={{ fontSize: 11, color: B.txtD }}>
-          Clio folder: <span style={{ ...S.mono, color: B.gold }}>{docs.clioFolder}</span>
-        </span>
-        <span style={{ ...S.badge, background: B.greenBg, color: B.green }}>{totalFiles} files</span>
-      </div>
-
-      {(docs.rootFiles || []).length > 0 && (
-        <div style={{ ...S.card, marginBottom: 12 }}>
-          <h4 style={{ fontSize: 13, fontWeight: 600, color: B.gold, marginBottom: 12 }}>📁 Root Files</h4>
-          {docs.rootFiles.map((f, i) => (
-            <div key={i} style={{ padding: "6px 0", fontSize: 13, color: B.txtM, display: "flex", alignItems: "center", gap: 8 }}>
-              <span>{fileIcon(typeof f === "string" ? f.substring(f.lastIndexOf(".")) : f.ext)}</span>
-              <span>{typeof f === "string" ? f : f.name}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {(docs.subfolders || []).map((sf, si) => {
-        const sfKey = `sf-${si}`;
-        const isExpanded = expandedFolders.has(sfKey);
-        const fileCount = (sf.files || []).length + (sf.subdirs || []).reduce((s, sd) => s + (sd.files || []).length, 0);
-        return (
-          <div key={si} style={{ ...S.card, marginBottom: 8, padding: 0, overflow: "hidden" }}>
-            <div onClick={() => toggleFolder(sfKey)}
-              style={{ padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-              onMouseEnter={e => e.currentTarget.style.background = B.cardH}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 14, transition: "transform 0.2s", transform: isExpanded ? "rotate(90deg)" : "rotate(0)" }}>▶</span>
-                <span style={{ fontSize: 16 }}>📁</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{sf.name}</span>
-              </div>
-              <span style={{ ...S.mono, fontSize: 11, color: B.txtD }}>{fileCount} files</span>
-            </div>
-            {isExpanded && (
-              <div style={{ borderTop: `1px solid ${B.bdr}` }}>
-                {(sf.files || []).length > 0 && (
-                  <table style={{ ...S.tbl, margin: 0 }}>
-                    <thead><tr><th style={S.th}>File</th><th style={{ ...S.th, width: 100 }}>Size</th><th style={{ ...S.th, width: 140 }}>Modified</th></tr></thead>
-                    <tbody>
-                      {sf.files.map((f, fi) => (
-                        <tr key={fi}>
-                          <td style={{ ...S.td, display: "flex", alignItems: "center", gap: 8 }}><span>{fileIcon(f.ext)}</span><span style={{ fontSize: 13 }}>{f.name}</span></td>
-                          <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtSize(f.size)}</td>
-                          <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{f.modified ? fmtD(f.modified.split("T")[0]) : "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-                {(sf.subdirs || []).map((sd, sdi) => {
-                  const sdKey = `${sfKey}-${sdi}`;
-                  const sdExpanded = expandedFolders.has(sdKey);
-                  return (
-                    <div key={sdi}>
-                      <div onClick={() => toggleFolder(sdKey)}
-                        style={{ padding: "8px 16px 8px 32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: `1px solid ${B.bdr}06` }}
-                        onMouseEnter={e => e.currentTarget.style.background = B.cardH}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 12, transition: "transform 0.2s", transform: sdExpanded ? "rotate(90deg)" : "rotate(0)" }}>▶</span>
-                          <span style={{ fontSize: 14 }}>📂</span>
-                          <span style={{ fontSize: 12, fontWeight: 500, color: B.txtM }}>{sd.name}</span>
-                        </div>
-                        <span style={{ ...S.mono, fontSize: 10, color: B.txtD }}>{sd.files.length}</span>
-                      </div>
-                      {sdExpanded && (
-                        <table style={{ ...S.tbl, margin: 0 }}>
-                          <tbody>
-                            {sd.files.map((f, fi) => (
-                              <tr key={fi}>
-                                <td style={{ ...S.td, paddingLeft: 48, display: "flex", alignItems: "center", gap: 8 }}><span>{fileIcon(f.ext)}</span><span style={{ fontSize: 12 }}>{f.name}</span></td>
-                                <td style={{ ...S.td, ...S.mono, fontSize: 11, color: B.txtM, width: 100 }}>{fmtSize(f.size)}</td>
-                                <td style={{ ...S.td, ...S.mono, fontSize: 11, color: B.txtM, width: 140 }}>{f.modified ? fmtD(f.modified.split("T")[0]) : "—"}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
   const [tab, setTab] = useState("overview");
   const [noteModal, setNoteModal] = useState(false);
@@ -3451,12 +3298,12 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
   };
 
   const tabs = [
-    { id: "overview", l: "📋 Overview" }, { id: "notes", l: "✍️ Notes" },
-    { id: "claim", l: "📎 Claim Details" },
-    { id: "litigation", l: "⚖️ Litigation" }, { id: "negotiations", l: "💰 Negotiations" },
-    { id: "estimates", l: "📊 Estimates" }, { id: "pleadings", l: "📜 Pleadings" },
-    { id: "timeline", l: "📅 Timeline" }, { id: "tasks", l: "☐ Tasks" },
-    { id: "docs", l: "📁 Documents" }, { id: "docgen", l: "📝 Generate Docs" },
+    { id: "overview", l: "Overview" }, { id: "notes", l: "Notes" },
+    { id: "claim", l: "Claim Details" },
+    { id: "litigation", l: "Litigation" }, { id: "negotiations", l: "Negotiations" },
+    { id: "estimates", l: "Estimates" }, { id: "pleadings", l: "Pleadings" },
+    { id: "timeline", l: "Timeline" }, { id: "tasks", l: "Tasks" },
+    { id: "docs", l: "Documents" }, { id: "docgen", l: "Generate Docs" },
     { id: "compliance", l: "⚠️ Compliance" },
   ];
   const sc = stClr(c.status);
@@ -3469,55 +3316,29 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
 
   return (
     <div>
-      {/* ── Enhanced Header ── */}
       <div style={{ marginBottom: 20 }}>
         <button onClick={onBack} style={{ ...S.btnO, marginBottom: 16, fontSize: 12 }}>← Back to Cases</button>
-        <div style={{ ...S.card, padding: "20px 24px", borderColor: `${B.bdr}`, background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardH} 100%)` }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-              <div style={{ fontSize: 36, lineHeight: 1 }}>{LOSS_ICON[c.type] || "❓"}</div>
-              <div>
-                <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4, margin: 0 }}>{c.client}</h2>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>
-                  <span style={{ ...S.mono, fontSize: 13, color: B.gold }}>{c.ref}</span>
-                  <select value={c.status} onChange={e => changeStatus(e.target.value)}
-                    style={{ background: sc.bg, color: sc.t, border: `1px solid ${sc.t}40`, borderRadius: 20, padding: "3px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", outline: "none", appearance: "auto" }}>
-                    {CSTATS.map(st => <option key={st} value={st} style={{ background: B.card, color: B.txt }}>{st}</option>)}
-                  </select>
-                  {c.juris && <span style={{ ...S.badge, background: B.navyBg, color: "#6b6bff", fontSize: 11 }}>📍 {c.juris}</span>}
-                  {c.insurer && <span style={{ fontSize: 12, color: B.txtM }}>v. <strong style={{ color: B.txt }}>{c.insurer}</strong></span>}
-                  {solBadge(c.sol, c.status, c)}
-                </div>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {c.attorney?.name !== "Unassigned" && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: c.attorney?.clr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>{c.attorney?.ini || "?"}</div>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 600 }}>{c.attorney?.name}</div>
-                    <div style={{ fontSize: 10, color: B.txtD }}>Attorney</div>
-                  </div>
-                </div>
-              )}
-              {c.support?.name && c.support.name !== "Unassigned" && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: c.support?.clr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>{c.support?.ini || "?"}</div>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 600 }}>{c.support?.name}</div>
-                    <div style={{ fontSize: 10, color: B.txtD }}>Support</div>
-                  </div>
-                </div>
-              )}
-              {sd != null && (
-                <div style={{ textAlign: "right", paddingLeft: 16, borderLeft: `1px solid ${B.bdr}` }}>
-                  <div style={{ fontSize: 10, color: B.txtD, marginBottom: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>SOL</div>
-                  <div style={{ ...S.mono, fontSize: 18, fontWeight: 700, color: sd < 30 ? B.danger : sd < 90 ? B.gold : B.green }}>{fmtD(c.sol)}</div>
-                  <div style={{ ...S.mono, fontSize: 11, color: sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtD }}>{sd} days</div>
-                </div>
-              )}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{c.client}</h2>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ ...S.mono, fontSize: 13, color: B.gold }}>{c.ref}</span>
+              <select value={c.status} onChange={e => changeStatus(e.target.value)}
+                style={{ background: sc.bg, color: sc.t, border: `1px solid ${sc.t}40`, borderRadius: 20, padding: "3px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", outline: "none", appearance: "auto" }}>
+                {CSTATS.map(st => <option key={st} value={st} style={{ background: B.card, color: B.txt }}>{st}</option>)}
+              </select>
+              <span style={{ fontSize: 12, color: B.txtM }}>{c.type}</span>
+              <span style={{ ...S.mono, fontSize: 12, color: B.txtM }}>{c.juris}</span>
+              <span style={{ fontSize: 12, color: B.txtM }}>v. {c.insurer}</span>
             </div>
           </div>
+          {sd != null && (
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: B.txtD, marginBottom: 2 }}>SOL</div>
+              <div style={{ ...S.mono, fontSize: 16, fontWeight: 700, color: sd < 30 ? B.danger : sd < 90 ? B.gold : B.green }}>{fmtD(c.sol)}</div>
+              <div style={{ ...S.mono, fontSize: 11, color: sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtD }}>{sd} days</div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -3549,57 +3370,9 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
         </div>
       )}
 
-      {/* ── Key Info Cards (5 cards in grid) ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
-        {/* Contact */}
-        <div style={{ ...S.card, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 4 }}>📞 Contact</div>
-          <div style={{ fontSize: 13, fontWeight: 500, color: c.clientPhone ? B.txt : B.txtD, marginBottom: 6 }}>
-            {c.clientPhone ? <a href={`tel:${c.clientPhone.replace(/[^0-9+]/g, "")}`} style={{ color: B.gold, textDecoration: "none" }}>{c.clientPhone}</a> : "No phone"}
-          </div>
-          <div style={{ fontSize: 12, color: c.clientEmail ? B.txtM : B.txtD, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {c.clientEmail ? <a href={`mailto:${c.clientEmail}`} style={{ color: B.gold, textDecoration: "none" }}>{c.clientEmail}</a> : "No email"}
-          </div>
-        </div>
-        {/* Dates */}
-        <div style={{ ...S.card, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 4 }}>📅 Dates</div>
-          <div style={{ fontSize: 12, marginBottom: 4 }}><span style={{ color: B.txtD }}>Opened:</span> <span style={{ ...S.mono, color: B.txt, fontSize: 12 }}>{fmtD(c.dop)}</span></div>
-          <div style={{ fontSize: 12, marginBottom: 4 }}><span style={{ color: B.txtD }}>DOL:</span> <span style={{ ...S.mono, color: B.txt, fontSize: 12 }}>{fmtD(c.dol)}</span></div>
-          <div style={{ fontSize: 12 }}><span style={{ color: B.txtD }}>SOL:</span> <span style={{ ...S.mono, color: sd != null && sd < 90 ? (sd < 30 ? B.danger : B.gold) : B.txt, fontSize: 12 }}>{fmtD(c.sol)}</span></div>
-        </div>
-        {/* Insurance */}
-        <div style={{ ...S.card, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 4 }}>🏛️ Insurance</div>
-          <div style={{ fontSize: 13, fontWeight: 500, color: B.txt, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.insurer || "—"}</div>
-          <div style={{ fontSize: 11, color: B.txtM, ...S.mono, marginBottom: 2 }}>Claim: {c.cn || "—"}</div>
-          <div style={{ fontSize: 11, color: B.txtM, ...S.mono }}>Policy: {c.pn || "—"}</div>
-        </div>
-        {/* Financials */}
-        <div style={{ ...S.card, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 4 }}>💰 Financials</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: c.totalRec > 0 ? B.green : B.txtD, ...S.mono }}>{c.totalRec > 0 ? fmt(c.totalRec) : "—"}</div>
-          <div style={{ fontSize: 10, color: B.txtD, marginBottom: 4 }}>Total Recovery</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: c.attFees > 0 ? B.gold : B.txtD, ...S.mono }}>{c.attFees > 0 ? fmt(c.attFees) : "—"}</div>
-          <div style={{ fontSize: 10, color: B.txtD }}>Attorney Fees</div>
-        </div>
-        {/* Team */}
-        <div style={{ ...S.card, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 4 }}>👥 Team</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <div style={{ width: 22, height: 22, borderRadius: "50%", background: c.attorney?.clr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.attorney?.ini || "?"}</div>
-            <span style={{ fontSize: 12, fontWeight: 500 }}>{c.attorney?.name || "Unassigned"}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 22, height: 22, borderRadius: "50%", background: c.support?.clr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.support?.ini || "?"}</div>
-            <span style={{ fontSize: 12, fontWeight: 500, color: B.txtM }}>{c.support?.name || "Unassigned"}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Two-column layout: Main + Sidebar ── */}
+      {/* Two-column layout: Main (60%) + Sidebar (40%) */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20, marginBottom: 20 }}>
-        {/* Left column */}
+        {/* Left column - Key info cards */}
         <div>
           {/* Inline Edit Panel */}
           {editing && (
@@ -3640,6 +3413,22 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
             </div>
           )}
 
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+            {[
+              { l: "Attorney", v: c.attorney?.name || "—", c: c.attorney?.clr || "#888" },
+              { l: "Support", v: c.support?.name || "—", c: c.support?.clr || "#888" },
+              { l: "Date of Loss", v: fmtD(c.dol), c: B.txtM },
+              { l: "Negotiations", v: (c.negs || []).length, c: "#5b8def" },
+              { l: "Recovery", v: c.totalRec > 0 ? fmt(c.totalRec) : "—", c: c.totalRec > 0 ? B.green : B.txtD },
+              { l: "Client Phone", v: c.clientPhone || "—", c: c.clientPhone ? B.gold : B.txtD },
+            ].map((x, i) => (
+              <div key={i} style={{ ...S.card, padding: "12px 16px" }}>
+                <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{x.l}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: x.c, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.v}</div>
+              </div>
+            ))}
+          </div>
+
           {/* AI Summary inline */}
           <AiSummaryPanel caseId={c.id} />
         </div>
@@ -3664,11 +3453,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
               Recent Activity ({(c.acts || []).length})
             </div>
             {recentActs.length === 0 ? (
-              <div style={{ padding: 24, textAlign: "center", color: B.txtD, fontSize: 12 }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>📅</div>
-                <div>No activity recorded yet</div>
-                <div style={{ fontSize: 10, color: B.txtD, marginTop: 4 }}>Add notes or update the case to start tracking activity</div>
-              </div>
+              <div style={{ padding: 24, textAlign: "center", color: B.txtD, fontSize: 12 }}>No activity</div>
             ) : recentActs.map((a, i) => (
               <div key={a.id || i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: i < recentActs.length - 1 ? `1px solid ${B.bdr}06` : "none" }}>
                 <div style={{ width: 26, height: 26, borderRadius: "50%", background: a.aClr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{a.aIni || "?"}</div>
@@ -3721,7 +3506,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "pleadings" && <Pleadings c={c} />}
       {tab === "timeline" && <CaseTimeline c={c} />}
       {tab === "tasks" && <TasksPanel caseId={c.id} userId={user?.id} team={team} />}
-      {tab === "docs" && <CaseDocsBrowser caseId={c.id} clientName={c.client} />}
+      {tab === "docs" && <DocumentBrowser clientName={c.client} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
     </div>
