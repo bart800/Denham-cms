@@ -1240,6 +1240,8 @@ function TasksPanel({ caseId, userId, team, showCaseColumn }) {
         due_date: form.due_date || null,
         priority: form.priority,
       });
+      // Log task creation activity
+      try { if (caseId) await api.createActivity({ case_id: caseId, type: "task", description: `Task created: ${form.title}`, user_id: userId }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
       setForm({ title: "", description: "", assigned_to: "", due_date: "", priority: "normal" });
       setShowForm(false);
       toast.success("Task created");
@@ -1252,6 +1254,8 @@ function TasksPanel({ caseId, userId, team, showCaseColumn }) {
     const newStatus = task.status === "completed" ? "pending" : "completed";
     try {
       await api.updateTask(task.id, { status: newStatus, completed_at: newStatus === "completed" ? new Date().toISOString() : null });
+      // Log task status change activity
+      try { if (task.case_id) await api.createActivity({ case_id: task.case_id, type: "task", description: newStatus === "completed" ? `Task completed: ${task.title}` : `Task reopened: ${task.title}`, user_id: userId }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
       toast.success(newStatus === "completed" ? "Task completed" : "Task reopened");
       loadTasks();
     } catch (err) { console.error("Failed to update task:", err); toast.error("Failed to update task"); }
@@ -2328,6 +2332,8 @@ function NewCaseModal({ open, onClose, cases, team, onCreated }) {
       if (form.date_of_loss) caseData.date_of_loss = form.date_of_loss;
       if (form.attorney_id) caseData.attorney_id = form.attorney_id;
       const row = await api.createCase(caseData);
+      // Log case creation activity
+      try { await api.createActivity({ case_id: row.id, type: "creation", description: `Case created: ${ref} — ${form.client_name.trim()}` }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
       toast.success(`Case ${ref} created`);
       if (onCreated) onCreated(row);
       onClose();
@@ -2822,6 +2828,8 @@ function ComplianceTab({ c, onCaseUpdate }) {
     setSolSaving(true);
     try {
       await api.updateCase(c.id, { statute_of_limitations: solDate });
+      // Log SOL date update
+      try { await api.createActivity({ case_id: c.id, type: "sol_update", description: `SOL date updated to ${solDate}` }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
       toast.success("SOL date confirmed and saved");
       if (onCaseUpdate) onCaseUpdate({ ...c, sol: solDate });
       setSolEditing(false);
@@ -3288,6 +3296,8 @@ function DiscoveryTab({ c, caseId }) {
     setSaving(true);
     try {
       await fetch("/api/discovery/sets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, case_id: caseId }) });
+      // Log discovery set creation
+      try { await api.createActivity({ case_id: caseId, type: "discovery", description: `Discovery set added: ${form.title} (${form.type}, ${form.direction})` }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
       setForm({ type: "Interrogatories", direction: "Received", title: "", served_date: "", due_date: "", response_date: "", notes: "" });
       setShowForm(false);
       loadSets();
@@ -3300,6 +3310,8 @@ function DiscoveryTab({ c, caseId }) {
     setSaving(true);
     try {
       await fetch("/api/discovery/items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...itemForm, set_id: expandedSet, item_number: parseInt(itemForm.item_number) }) });
+      // Log discovery item creation
+      try { const setName = sets.find(s => s.id === expandedSet)?.title || "unknown set"; await api.createActivity({ case_id: caseId, type: "discovery", description: `Discovery item #${itemForm.item_number} added to ${setName}` }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
       setItemForm({ item_number: "", request_text: "", response_text: "", status: "Pending" });
       setShowItemForm(false);
       loadItems(expandedSet);
@@ -3507,6 +3519,11 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     setFeedback(null);
     try {
       await api.updateCase(c.id, editForm);
+      // Log case edit activity
+      try {
+        const changed = Object.keys(editForm).filter(k => editForm[k] !== c[k] && editForm[k] !== undefined).join(", ");
+        if (changed) await api.createActivity({ case_id: c.id, type: "edit", description: `Case updated: ${changed}`, user_id: user?.id });
+      } catch (logErr) { console.warn("Activity log failed:", logErr); }
       if (onUpdate) {
         onUpdate(c.id, {
           juris: editForm.jurisdiction, insurer: editForm.insurer,
@@ -3775,6 +3792,7 @@ function TasksKanban({ userId, team, cases }) {
         assigned_to: form.assigned_to || userId, created_by: userId,
         due_date: form.due_date || null, priority: form.priority,
       });
+      // Log task creation activity (no case_id in kanban view)
       setForm({ title: "", description: "", assigned_to: "", due_date: "", priority: "normal" });
       setShowForm(false);
       loadTasks();
@@ -3785,6 +3803,8 @@ function TasksKanban({ userId, team, cases }) {
   const toggleDone = async (task) => {
     try {
       await api.updateTask(task.id, { status: "completed", completed_at: new Date().toISOString() });
+      // Log task completion activity
+      try { if (task.case_id) await api.createActivity({ case_id: task.case_id, type: "task", description: `Task completed: ${task.title}`, user_id: userId }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
       loadTasks();
     } catch (err) { console.error(err); }
   };
@@ -4109,15 +4129,21 @@ export default function DenhamStaffPortal() {
   }, []);
 
   const updateCase = useCallback(async (id, updates) => {
+    const prevCase = cases.find(c => c.id === id);
     setCases(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     if (selCase && selCase.id === id) setSelCase(prev => ({ ...prev, ...updates }));
     // Only do DB write for status changes from the dropdown (other fields are saved directly in CaseDetail)
     if (supabase && updates.status !== undefined && Object.keys(updates).length === 1) {
       try {
         await api.updateCase(id, { status: updates.status });
+        // Log status change activity
+        try {
+          const fromStatus = prevCase?.status || "Unknown";
+          await api.createActivity({ case_id: id, type: "status_change", description: `Status changed from ${fromStatus} to ${updates.status}`, user_id: user?.id });
+        } catch (logErr) { console.warn("Activity log failed:", logErr); }
       } catch (e) { console.error("Failed to update case in Supabase:", e); }
     }
-  }, [selCase]);
+  }, [selCase, cases, user]);
 
   const openCaseById = useCallback(async (caseId) => {
     // Try to find in loaded cases first
