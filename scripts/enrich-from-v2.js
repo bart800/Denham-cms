@@ -235,12 +235,10 @@ function extractCasePatch(sc, existing) {
 }
 
 function extractClaimDetails(sc, caseId) {
-  // Schema: case_id, policy_number, claim_number, insurer, adjuster_name, adjuster_phone,
-  //         adjuster_email, date_of_loss, date_reported, date_denied, policy_type,
-  //         policy_limits, deductible, cause_of_loss, property_address
   const s = sc.sections || {};
   const cd = { case_id: caseId };
 
+  // Original columns
   cd.policy_number = firstNonEmpty(f(s, 'intake', 'policynumber', 'Policy Number'));
   cd.claim_number = firstNonEmpty(f(s, 'intake', 'claimnumber', 'Claim Number'));
   cd.insurer = firstNonEmpty(f(s, 'intake', 'Insurance Company Name', 'Insurance Company'));
@@ -252,15 +250,72 @@ function extractClaimDetails(sc, caseId) {
   cd.deductible = firstNonEmpty(f(s, 'intake', 'deductible', 'Deductible'));
   cd.cause_of_loss = firstNonEmpty(f(s, 'intake', 'causeofloss', 'Cause of Loss'));
   cd.property_address = firstNonEmpty(f(s, 'intake', 'insuredpropertyaddress', 'Property Address'));
-  // policy_limits: compose from coverage fields
-  const dwelling = f(s, 'intake', 'Dwelling');
-  const contents = f(s, 'intake', 'Contents');
-  if (dwelling || contents) {
+
+  // Claim status & loss details
+  cd.claim_status = firstNonEmpty(f(s, 'intake', 'Claim Status', 'claimstatus'));
+  cd.type_of_loss = firstNonEmpty(f(s, 'intake', 'Type of Loss'));
+  cd.type_of_loss_detail = firstNonEmpty(f(s, 'intake', 'typeofloss'));
+  cd.areas_of_damage = firstNonEmpty(f(s, 'intake', 'areasofdamagepleaselistallareasofd'));
+  cd.how_noticed_damage = firstNonEmpty(f(s, 'intake', 'howdidyounoticethedamage'));
+
+  // Property location
+  cd.insured_property_state = firstNonEmpty(f(s, 'intake', 'Insured Property State'));
+  cd.insured_property_zip = firstNonEmpty(f(s, 'intake', 'insuredpropertyzipcode'));
+  cd.insured_county = firstNonEmpty(f(s, 'intake', 'county'));
+
+  // Coverage (A=Dwelling, B=Other Structure, C=Contents, ALE)
+  cd.coverage_dwelling = parseAmount(f(s, 'intake', 'Dwelling'));
+  cd.coverage_other_structure = parseAmount(f(s, 'intake', 'Other Structure'));
+  cd.coverage_contents = parseAmount(f(s, 'intake', 'Contents'));
+  cd.coverage_ale = parseAmount(f(s, 'intake', 'ALE'));
+  cd.coverage_loss_of_income = parseAmount(f(s, 'intake', 'Loss of Income'));
+  cd.policy_period_start = parseDate(f(s, 'intake', 'Policy Period Start'));
+  cd.policy_period_end = parseDate(f(s, 'intake', 'Policy Period End'));
+
+  // Other insured / defendant
+  cd.other_insured = firstNonEmpty(f(s, 'intake', 'Other Insured'));
+  cd.defendant = firstNonEmpty(f(s, 'intake', 'Defendant'));
+
+  // Mortgage
+  cd.mortgage_company = firstNonEmpty(f(s, 'intake', 'Mortgage Company'));
+
+  // Estimates
+  cd.estimate_total = parseAmount(f(s, 'intake', 'Estimate for Total Damages'));
+  cd.estimate_interior = parseAmount(f(s, 'intake', 'Estimate for Interior Damages'));
+  cd.estimate_date = parseDate(f(s, 'intake', 'Date of Estimate'));
+
+  // Payments
+  cd.amount_of_payments = firstNonEmpty(f(s, 'intake', 'amountofpayments', 'Amount of Payment(s)'));
+
+  // Prior claims
+  cd.prior_claim_date = firstNonEmpty(f(s, 'intake', 'whendidyoufileapriorclaim'));
+  cd.prior_claim_with = firstNonEmpty(f(s, 'intake', 'whodidyoufileapriorclaimwith'));
+  cd.prior_claim_reason = firstNonEmpty(f(s, 'intake', 'whydidyoufileapriorclaim'));
+
+  // Property info
+  cd.property_purchased_date = firstNonEmpty(f(s, 'intake', 'whenwasthepropertypurchased'));
+  cd.roof_age = firstNonEmpty(f(s, 'intake', 'howoldistheroof'));
+
+  // Intake/referral
+  cd.date_of_intake = parseDate(f(s, 'intake', 'Date of Intake'));
+  cd.intake_coordinator = firstNonEmpty(f(s, 'intake', 'Intake Coordinator'));
+  cd.intake_status = firstNonEmpty(f(s, 'intake', 'Intake Status'));
+  cd.marketing_source = firstNonEmpty(f(s, 'intake', 'Marketing Source'));
+  cd.referring_attorney = firstNonEmpty(f(s, 'intake', 'Referring Attorney'));
+  cd.referring_pa = firstNonEmpty(f(s, 'intake', 'Referring Public Adjuster'));
+  cd.referring_contractor = firstNonEmpty(f(s, 'intake', 'Referring Contractor'));
+  cd.referring_client = firstNonEmpty(f(s, 'intake', 'Referring Client'));
+  cd.additional_information = firstNonEmpty(f(s, 'intake', 'additionalinformation'));
+
+  // Also store policy_limits as composed string for backwards compat
+  const dw = f(s, 'intake', 'Dwelling');
+  const ct = f(s, 'intake', 'Contents');
+  if (dw || ct) {
     const parts = [];
-    if (dwelling) parts.push(`Dwelling: $${dwelling}`);
+    if (dw) parts.push(`A/Dwelling: $${dw}`);
     const os = f(s, 'intake', 'Other Structure');
-    if (os) parts.push(`Other Structure: $${os}`);
-    if (contents) parts.push(`Contents: $${contents}`);
+    if (os) parts.push(`B/Other Structure: $${os}`);
+    if (ct) parts.push(`C/Contents: $${ct}`);
     const ale = f(s, 'intake', 'ALE');
     if (ale) parts.push(`ALE: $${ale}`);
     cd.policy_limits = parts.join('; ');
@@ -273,17 +328,29 @@ function extractClaimDetails(sc, caseId) {
 }
 
 function extractLitigationDetails(sc, caseId) {
-  // Schema: case_id, case_number, court, judge, filed_date, opposing_counsel,
-  //         opposing_firm, opposing_phone, opposing_email, trial_date,
-  //         mediation_date, discovery_deadline
   const s = sc.sections || {};
   const ld = { case_id: caseId };
 
+  // Original columns
   ld.case_number = firstNonEmpty(f(s, 'caseSummary', 'courtcasenumber'));
   ld.court = firstNonEmpty(f(s, 'caseSummary', 'Court'));
   ld.judge = firstNonEmpty(f(s, 'caseSummary', 'Judge'));
   ld.filed_date = parseDate(f(s, 'caseSummary', 'Complaint Filed'));
   ld.opposing_counsel = firstNonEmpty(f(s, 'caseSummary', 'Opposing Counsel'));
+
+  // New expanded columns
+  ld.court_caption = firstNonEmpty(f(s, 'caseSummary', 'courtcaptionieinthecircuitcourtoft'));
+  ld.plaintiff_caption = firstNonEmpty(f(s, 'caseSummary', 'plaintiffcaption'));
+  ld.defendant_caption = firstNonEmpty(f(s, 'caseSummary', 'defendantcaption'));
+  ld.case_description = firstNonEmpty(f(s, 'caseSummary', 'casedescription'));
+  ld.contract_signed = parseDate(f(s, 'caseSummary', 'Date Contract Signed'));
+  ld.completed_date = parseDate(f(s, 'caseSummary', 'Done'));
+  ld.primary_attorney = firstNonEmpty(f(s, 'caseSummary', 'Primary Attorney'));
+  ld.secondary_attorney = firstNonEmpty(f(s, 'caseSummary', 'Secondary Attorney'));
+  ld.support_staff = firstNonEmpty(f(s, 'caseSummary', 'Support'));
+  ld.sol_date = parseDate(f(s, 'caseSummary', 'Due'));
+  ld.sol_basis = firstNonEmpty(f(s, 'caseSummary', 'Basis for SOL'));
+  ld.certificate_of_service = firstNonEmpty(f(s, 'caseSummary', 'certificateofservice'));
 
   for (const k of Object.keys(ld)) {
     if (ld[k] === null || ld[k] === undefined) delete ld[k];
@@ -317,7 +384,9 @@ async function main() {
   let matched = 0, skipped = 0;
   const caseUpdates = [];
   const claimInserts = [];
+  const claimUpdates = [];
   const litInserts = [];
+  const litUpdates = [];
 
   for (const sc of scraped) {
     const match = findMatch(sc.projectName, existing);
@@ -330,16 +399,28 @@ async function main() {
       caseUpdates.push({ id: match.id, name: match.client_name, patch });
     }
 
-    // Claim details
-    if (!claimCaseIds.has(match.id)) {
-      const cd = extractClaimDetails(sc, match.id);
-      if (cd) claimInserts.push({ name: match.client_name, data: cd });
+    // Claim details - insert if new, update if exists (to fill new columns)
+    const cd = extractClaimDetails(sc, match.id);
+    if (cd) {
+      if (claimCaseIds.has(match.id)) {
+        const { case_id, ...updateData } = cd;
+        claimUpdates.push({ caseId: match.id, name: match.client_name, data: updateData });
+      } else {
+        claimInserts.push({ name: match.client_name, data: cd });
+        claimCaseIds.add(match.id); // prevent duplicate inserts
+      }
     }
 
-    // Litigation details
-    if (!litCaseIds.has(match.id)) {
-      const ld = extractLitigationDetails(sc, match.id);
-      if (ld) litInserts.push({ name: match.client_name, data: ld });
+    // Litigation details - insert if new, update if exists
+    const ld = extractLitigationDetails(sc, match.id);
+    if (ld) {
+      if (litCaseIds.has(match.id)) {
+        const { case_id, ...updateData } = ld;
+        litUpdates.push({ caseId: match.id, name: match.client_name, data: updateData });
+      } else {
+        litInserts.push({ name: match.client_name, data: ld });
+        litCaseIds.add(match.id);
+      }
     }
   }
 
@@ -365,19 +446,21 @@ async function main() {
     console.log();
   }
 
-  if (claimInserts.length) {
-    console.log(`📋 CLAIM DETAILS: ${claimInserts.length} new rows`);
-    const avgFields = Math.round(claimInserts.reduce((a, c) => a + Object.keys(c.data).length - 1, 0) / claimInserts.length);
+  if (claimInserts.length || claimUpdates.length) {
+    console.log(`📋 CLAIM DETAILS: ${claimInserts.length} new + ${claimUpdates.length} updates`);
+    const all = [...claimInserts, ...claimUpdates];
+    const avgFields = Math.round(all.reduce((a, c) => a + Object.keys(c.data).length, 0) / all.length);
     console.log(`   Average ${avgFields} fields per row\n`);
   }
 
-  if (litInserts.length) {
-    console.log(`⚖️  LITIGATION DETAILS: ${litInserts.length} new rows`);
-    const avgFields = Math.round(litInserts.reduce((a, c) => a + Object.keys(c.data).length - 1, 0) / litInserts.length);
+  if (litInserts.length || litUpdates.length) {
+    console.log(`⚖️  LITIGATION DETAILS: ${litInserts.length} new + ${litUpdates.length} updates`);
+    const all = [...litInserts, ...litUpdates];
+    const avgFields = Math.round(all.reduce((a, c) => a + Object.keys(c.data).length, 0) / all.length);
     console.log(`   Average ${avgFields} fields per row\n`);
   }
 
-  const totalChanges = caseUpdates.length + claimInserts.length + litInserts.length;
+  const totalChanges = caseUpdates.length + claimInserts.length + claimUpdates.length + litInserts.length + litUpdates.length;
   if (totalChanges === 0) {
     console.log('✅ Nothing to update.');
     return;
@@ -400,13 +483,25 @@ async function main() {
 
   for (const ci of claimInserts) {
     const { error } = await supabase.from('claim_details').insert(ci.data);
-    if (error) { console.error(`  ❌ claim_details/${ci.name}: ${error.message}`); fail++; }
+    if (error) { console.error(`  ❌ claim_details INSERT/${ci.name}: ${error.message}`); fail++; }
+    else { ok++; }
+  }
+
+  for (const cu of claimUpdates) {
+    const { error } = await supabase.from('claim_details').update(cu.data).eq('case_id', cu.caseId);
+    if (error) { console.error(`  ❌ claim_details UPDATE/${cu.name}: ${error.message}`); fail++; }
     else { ok++; }
   }
 
   for (const li of litInserts) {
     const { error } = await supabase.from('litigation_details').insert(li.data);
-    if (error) { console.error(`  ❌ litigation_details/${li.name}: ${error.message}`); fail++; }
+    if (error) { console.error(`  ❌ litigation_details INSERT/${li.name}: ${error.message}`); fail++; }
+    else { ok++; }
+  }
+
+  for (const lu of litUpdates) {
+    const { error } = await supabase.from('litigation_details').update(lu.data).eq('case_id', lu.caseId);
+    if (error) { console.error(`  ❌ litigation_details UPDATE/${lu.name}: ${error.message}`); fail++; }
     else { ok++; }
   }
 
