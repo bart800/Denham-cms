@@ -21,6 +21,7 @@ const CaseCompare = dynamic(() => import("./case-compare"), { ssr: false, loadin
 const SettingsPage = dynamic(() => import("./settings-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading settings...</div> });
 const AuditLog = dynamic(() => import("./audit-log"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading audit log...</div> });
 const DocTemplates = dynamic(() => import("./doc-templates"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading templates...</div> });
+const CaseCallsNew = dynamic(() => import("./case-calls"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calls...</div> });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -3601,6 +3602,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "docs", l: "Documents" }, { id: "docgen", l: "Generate Docs" },
     { id: "discovery", l: "Discovery" },
     { id: "emails", l: "Emails" },
+    { id: "calls", l: "📞 Calls" },
     { id: "compliance", l: "⚠️ Compliance" },
   ];
   const sc = stClr(c.status);
@@ -3811,6 +3813,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
       {tab === "discovery" && <DiscoveryTab c={c} caseId={c.id} />}
       {tab === "emails" && <CaseEmailsNew caseId={c.id} />}
+      {tab === "calls" && <CaseCallsNew caseId={c.id} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
     </div>
   );
