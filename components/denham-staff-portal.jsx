@@ -19,6 +19,7 @@ const ReportsPage = dynamic(() => import("./reports-page"), { ssr: false, loadin
 const CaseIntakeForm = dynamic(() => import("./case-intake-form"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading intake form...</div> });
 const CaseCompare = dynamic(() => import("./case-compare"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading compare...</div> });
 const SettingsPage = dynamic(() => import("./settings-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading settings...</div> });
+const AuditLog = dynamic(() => import("./audit-log"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading audit log...</div> });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -1078,6 +1079,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
     { id: "reports", label: "Reports", icon: "📊" },
     { id: "compare", label: "Compare", icon: "⚖️" },
     { id: "intake", label: "New Case", icon: "➕" },
+    { id: "activity", label: "Activity", icon: "📋" },
     { id: "settings", label: "Settings", icon: "⚙️" },
     { id: "compliance", label: "Compliance", icon: "🛡️", dot: counts?.criticalCases > 0 },
   ];
@@ -4331,6 +4333,7 @@ export default function DenhamStaffPortal() {
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Tasks</h2>
             <TasksKanban userId={user.id} team={team} cases={cases} /></div>
         )}
+        {!loading && page === "activity" && <AuditLog onNavigateCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "settings" && <SettingsPage />}
         {!loading && page === "compliance" && <ComplianceDash cases={cases} onOpen={openC} />}
         {!loading && page === "reports" && <ReportsPage />}
