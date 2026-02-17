@@ -17,6 +17,11 @@ const styles = {
   metricLabel: { color: '#999', marginRight: '4px' },
   empty: { padding: '40px', textAlign: 'center', color: '#666' },
   loading: { padding: '40px', textAlign: 'center', color: '#ebb003' },
+  transcriptToggle: { marginTop: '10px', background: 'none', border: '1px solid #ebb003', color: '#ebb003', padding: '4px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' },
+  transcriptBox: { marginTop: '10px', maxHeight: '400px', overflowY: 'auto', padding: '10px', background: '#000022', borderRadius: '6px', border: '1px solid #000066' },
+  bubble: (isInternal) => ({ marginBottom: '6px', padding: '6px 10px', borderRadius: '10px', maxWidth: '80%', fontSize: '13px', lineHeight: '1.4', background: isInternal ? '#000066' : '#386f4a', color: '#e0e0e0', marginLeft: isInternal ? 'auto' : '0', marginRight: isInternal ? '0' : 'auto' }),
+  bubbleName: { fontSize: '11px', fontWeight: 600, color: '#ebb003', marginBottom: '2px' },
+  aiSummaryBadge: { display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '12px', background: '#386f4a', color: '#fff', marginTop: '8px', marginRight: '8px' },
 };
 
 const categoryColors = { incoming: '#386f4a', missed: '#cc3333', voicemail: '#b8860b', outgoing: '#2255aa' };
@@ -32,6 +37,7 @@ export default function CaseCalls({ caseId }) {
   const [calls, setCalls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [showTranscript, setShowTranscript] = useState({});
 
   useEffect(() => {
     if (!caseId) return;
@@ -97,6 +103,33 @@ export default function CaseCalls({ caseId }) {
                         </div>
                       )}
                       {c.notes && <div style={{ marginTop: '8px', color: '#aaa' }}>{c.notes}</div>}
+                      {c.ai_summary && <div style={styles.aiSummaryBadge}>🤖 {c.ai_summary}</div>}
+                      {c.transcript && (
+                        <>
+                          <button
+                            style={styles.transcriptToggle}
+                            onClick={e => { e.stopPropagation(); setShowTranscript(prev => ({ ...prev, [c.id]: !prev[c.id] })); }}
+                          >
+                            {showTranscript[c.id] ? '▾ Hide Transcript' : '▸ Show Transcript'}
+                          </button>
+                          {showTranscript[c.id] && (
+                            <div style={styles.transcriptBox}>
+                              {c.transcript.split('\n').filter(Boolean).map((line, idx) => {
+                                const colonIdx = line.indexOf(':');
+                                const name = colonIdx > 0 ? line.slice(0, colonIdx).trim() : '';
+                                const content = colonIdx > 0 ? line.slice(colonIdx + 1).trim() : line;
+                                const isInternal = !!(name && (c.target_name && name.includes(c.target_name?.split(' ')[0])));
+                                return (
+                                  <div key={idx} style={styles.bubble(isInternal)}>
+                                    {name && <div style={styles.bubbleName}>{name}</div>}
+                                    <div>{content}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </td>
                   </tr>
                 )}
