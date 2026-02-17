@@ -12,6 +12,8 @@ const CaseTasksNew = dynamic(() => import("./case-tasks"), { ssr: false, loading
 const CaseEmailsNew = dynamic(() => import("./case-emails"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading emails...</div> });
 const CaseExportButton = dynamic(() => import("./case-export-button"), { ssr: false });
 const CaseDetailCardsNew = dynamic(() => import("./case-detail-cards"), { ssr: false });
+const GlobalSearchNew = dynamic(() => import("./global-search"), { ssr: false });
+const AlertsPanelNew = dynamic(() => import("./alerts-panel"), { ssr: false });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -2447,7 +2449,7 @@ function NewCaseModal({ open, onClose, cases, team, onCreated }) {
 // ═══════════════════════════════════════════════════════════
 // GLOBAL HEADER BAR
 // ═══════════════════════════════════════════════════════════
-function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK, criticalCount, onNavCompliance }) {
+function GlobalHeader({ user, page, selCase, solCases, allCases, onOpenCase, onCmdK, criticalCount, onNavCompliance }) {
   const [solOpen, setSolOpen] = useState(false);
   const breadcrumbs = [{ label: "Dashboard" }];
   if (page === "cases" || page === "caseDetail") breadcrumbs.push({ label: "Cases" });
@@ -2480,10 +2482,8 @@ function GlobalHeader({ user, page, selCase, solCases, onOpenCase, onCmdK, criti
         ))}
       </div>
       <div style={{ flex: 1 }} />
-      <div onClick={onCmdK} style={{ width: 200, padding: "6px 10px 6px 28px", borderRadius: 20, border: `1px solid ${B.bdr}`, background: "#0a0a14", fontSize: 11, color: B.txtD, cursor: "pointer", position: "relative" }}>
-        <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11 }}>🔍</span>
-        Search... <kbd style={{ background: B.bdr, padding: "1px 5px", borderRadius: 3, fontSize: 9, marginLeft: 8 }}>⌘K</kbd>
-      </div>
+      <GlobalSearchNew onSelect={(caseId) => { const c = (allCases || []).find(x => x.id === caseId); if (c) onOpenCase(c); }} />
+      <AlertsPanelNew onNavigate={(caseId) => { const c = (allCases || []).find(x => x.id === caseId); if (c) onOpenCase(c); }} />
       {(solCases || []).length > 0 && (
         <div style={{ position: "relative" }}>
           <div onClick={() => setSolOpen(o => !o)} role="button" aria-label="SOL alerts" style={{ width: 32, height: 32, borderRadius: "50%", background: solCritical.length > 0 ? B.dangerBg : B.goldBg, border: `1px solid ${solCritical.length > 0 ? B.danger : B.gold}40`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
@@ -4300,7 +4300,7 @@ export default function DenhamStaffPortal() {
         <ToastContainer />
         {/* Global Header Bar */}
         {!loading && user && (
-          <GlobalHeader user={user} page={page} selCase={selCase} solCases={solCases} onOpenCase={openC} onCmdK={() => setCmdBarOpen(true)} criticalCount={criticalCases.length} onNavCompliance={() => navTo("compliance")} />
+          <GlobalHeader user={user} page={page} selCase={selCase} solCases={solCases} allCases={cases} onOpenCase={openC} onCmdK={() => setCmdBarOpen(true)} criticalCount={criticalCases.length} onNavCompliance={() => navTo("compliance")} />
         )}
         {!loading && error && (
           <div style={{ padding: "12px 16px", background: B.dangerBg, borderRadius: 8, marginBottom: 16, fontSize: 13, color: B.danger }}>
