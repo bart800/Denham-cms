@@ -1,7 +1,7 @@
 /**
  * Enrich Supabase cases from Filevine V2 full scraper output.
  * Reads data/filevine-full-data.json, matches to existing cases by client_name,
- * and updates cases + populates claim_details, litigation_details, negotiations, estimates.
+ * and updates cases + populates claim_details, litigation_details.
  *
  * Usage: node scripts/enrich-from-v2.js [--commit]
  */
@@ -24,12 +24,14 @@ function normalize(s) {
   return (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function normSpaces(s) {
+  return (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+}
+
 function parseDate(s) {
   if (!s) return null;
-  // MM/DD/YYYY
   let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
-  // YYYY-MM-DD already
   m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return `${m[1]}-${m[2]}-${m[3]}`;
   return null;
@@ -47,12 +49,14 @@ function cleanEmail(s) {
   return cleaned.includes('@') ? cleaned : null;
 }
 
-function field(sections, sectionName, fieldName) {
+function f(sections, sectionName, ...fieldNames) {
   const sec = sections?.[sectionName];
-  if (!sec) return null;
-  // Check fields object
-  if (sec.fields?.[fieldName] !== undefined && sec.fields[fieldName] !== null && sec.fields[fieldName] !== '') {
-    return String(sec.fields[fieldName]).trim();
+  if (!sec?.fields) return null;
+  for (const fn of fieldNames) {
+    const v = sec.fields[fn];
+    if (v !== undefined && v !== null && String(v).trim() !== '' && !String(v).startsWith('? string:')) {
+      return String(v).trim();
+    }
   }
   return null;
 }
@@ -65,42 +69,20 @@ function firstNonEmpty(...vals) {
 }
 
 const STATE_MAP = {
-  'Kentucky':'KY','Tennessee':'TN','Texas':'TX','Montana':'MT','Arizona':'AZ',
-  'Indiana':'IN','Nebraska':'NE','Ohio':'OH','South Carolina':'SC','Colorado':'CO',
-  'North Carolina':'NC','Michigan':'MI','Wyoming':'WY','Washington':'WA','Missouri':'MO',
-  'California':'CA','New York':'NY','Florida':'FL','Georgia':'GA','Virginia':'VA',
-  'Alabama':'AL','Mississippi':'MS','Louisiana':'LA','Illinois':'IL','Pennsylvania':'PA',
+  'kentucky':'KY','tennessee':'TN','texas':'TX','montana':'MT','arizona':'AZ',
+  'indiana':'IN','nebraska':'NE','ohio':'OH','south carolina':'SC','colorado':'CO',
+  'north carolina':'NC','michigan':'MI','wyoming':'WY','washington':'WA','missouri':'MO',
+  'california':'CA','new york':'NY','florida':'FL','georgia':'GA','virginia':'VA',
+  'alabama':'AL','mississippi':'MS','louisiana':'LA','illinois':'IL','pennsylvania':'PA',
+  'west virginia':'WV','arkansas':'AR','iowa':'IA','minnesota':'MN','wisconsin':'WI',
+  'connecticut':'CT','new jersey':'NJ','maryland':'MD','new hampshire':'NH',
 };
 
 function mapState(s) {
   if (!s) return null;
   s = s.trim();
-  return STATE_MAP[s] || (s.length === 2 ? s.toUpperCase() : null);
-}
-
-const NEGOTIATION_TYPE_MAP = {
-  'bottom line': 'bottom_line',
-  'bottomline': 'bottom_line',
-  'plaintiff offer': 'plaintiff_offer',
-  'plaintiff\'s offer': 'plaintiff_offer',
-  'demand': 'presuit_demand',
-  'presuit demand': 'presuit_demand',
-  'defendant offer': 'defendant_offer',
-  'defendant\'s offer': 'defendant_offer',
-  'insurance offer': 'defendant_offer',
-  'insurer offer': 'defendant_offer',
-  'settlement': 'settlement',
-  'undisputed payment': 'undisputed_payment',
-  'undisputed': 'undisputed_payment',
-  'denial': 'denial',
-  'appraisal award': 'appraisal_award',
-  'appraisal': 'appraisal_award',
-};
-
-function mapNegotiationType(s) {
-  if (!s) return null;
-  const key = s.toLowerCase().trim();
-  return NEGOTIATION_TYPE_MAP[key] || key;
+  if (s.length === 2) return s.toUpperCase();
+  return STATE_MAP[s.toLowerCase()] || null;
 }
 
 function parseAmount(s) {
@@ -110,6 +92,41 @@ function parseAmount(s) {
   return isNaN(n) ? null : n;
 }
 
+const VALID_JURISDICTIONS = new Set([
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
+  'VA','WA','WV','WI','WY','DC'
+]);
+
+// ── Matching ─────────────────────────────────────────────────
+
+function findMatch(projectName, dbCases) {
+  if (!projectName) return null;
+  const pn = normSpaces(projectName);
+  const pnStripped = normalize(projectName);
+  
+  // 1. Exact normalized match
+  let found = dbCases.find(c => normalize(c.client_name) === pnStripped);
+  if (found) return found;
+  
+  // 2. DB name contained in project name (min 4 chars to avoid false matches)
+  found = dbCases.find(c => {
+    const cn = normSpaces(c.client_name);
+    return cn.length > 3 && pn.includes(cn);
+  });
+  if (found) return found;
+  
+  // 3. First word match (unique)
+  const pw = pn.split(/\s+/)[0];
+  if (pw.length > 3) {
+    const matches = dbCases.filter(c => normSpaces(c.client_name).split(/\s+/)[0] === pw);
+    if (matches.length === 1) return matches[0];
+  }
+  
+  return null;
+}
+
 // ── Field Extraction ─────────────────────────────────────────
 
 function extractCasePatch(sc, existing) {
@@ -117,269 +134,161 @@ function extractCasePatch(sc, existing) {
   const patch = {};
 
   // Client contact
-  const phone = cleanPhone(sc.clientPhone) || cleanPhone(field(s, 'intake', 'Phone'))
-    || cleanPhone(field(s, 'intake', 'Client Phone'));
+  const phone = cleanPhone(sc.clientPhone);
   if (phone && !existing.client_phone) patch.client_phone = phone;
 
-  const email = cleanEmail(sc.clientEmail) || cleanEmail(field(s, 'intake', 'Email'))
-    || cleanEmail(field(s, 'intake', 'Client Email'));
+  const email = cleanEmail(sc.clientEmail);
   if (email && !existing.client_email) patch.client_email = email;
 
-  // Insurer
+  // Insurer (intake has "Insurance Company Name")
   const insurer = firstNonEmpty(
-    field(s, 'insurance', 'Insurance Company Name'),
-    field(s, 'insurance', 'Insurance Company'),
-    field(s, 'insurance', 'Insurer'),
-    field(s, 'caseSummary', 'Insurance Company'),
-    field(s, 'intake', 'Insurance Company'),
+    f(s, 'intake', 'Insurance Company Name', 'Insurance Company'),
+    f(s, 'insurance', 'Insurance Company Name', 'Insurance Company'),
+    f(s, 'caseSummary', 'Insurance Company Name', 'Insurance Company'),
   );
   if (insurer && (!existing.insurer || existing.insurer === 'TBD')) patch.insurer = insurer;
 
-  // Claim/policy numbers
+  // Claim/policy numbers (intake has lowercase keys)
   const claimNum = firstNonEmpty(
-    field(s, 'insurance', 'Claim Number'), field(s, 'insurance', 'claimnumber'),
-    field(s, 'caseSummary', 'Claim Number'), field(s, 'intake', 'Claim Number'),
+    f(s, 'intake', 'claimnumber', 'Claim Number'),
+    f(s, 'insurance', 'claimnumber', 'Claim Number'),
   );
   if (claimNum && !existing.claim_number) patch.claim_number = claimNum;
 
   const policyNum = firstNonEmpty(
-    field(s, 'insurance', 'Policy Number'), field(s, 'insurance', 'policynumber'),
-    field(s, 'caseSummary', 'Policy Number'), field(s, 'intake', 'Policy Number'),
+    f(s, 'intake', 'policynumber', 'Policy Number'),
+    f(s, 'insurance', 'policynumber', 'Policy Number'),
   );
   if (policyNum && !existing.policy_number) patch.policy_number = policyNum;
 
   // Date of loss
   const dol = parseDate(firstNonEmpty(
-    field(s, 'caseSummary', 'Date of Loss'), field(s, 'intake', 'Date of Loss'),
-    field(s, 'insurance', 'Date of Loss'),
+    f(s, 'intake', 'Date of Loss'),
+    f(s, 'caseSummary', 'Date of Loss'),
   ));
   if (dol && !existing.date_of_loss) patch.date_of_loss = dol;
 
-  // Date opened
+  // Date opened (from intake date)
   const doi = parseDate(firstNonEmpty(
-    field(s, 'intake', 'Date of Intake'), field(s, 'intake', 'Date Opened'),
-    field(s, 'caseSummary', 'Date Opened'),
+    f(s, 'intake', 'Date of Intake', 'Date Opened'),
   ));
   if (doi && !existing.date_opened) patch.date_opened = doi;
 
-  // Statute of limitations
+  // Statute of limitations (caseSummary "Due" field is the SOL date!)
   const sol = parseDate(firstNonEmpty(
-    field(s, 'caseSummary', 'Statute of Limitations'),
-    field(s, 'intake', 'Statute of Limitations'),
+    f(s, 'caseSummary', 'Due'),
   ));
   if (sol && !existing.statute_of_limitations) patch.statute_of_limitations = sol;
 
   // Jurisdiction / state
   const state = mapState(firstNonEmpty(
-    field(s, 'insurance', 'Insured Property State'), field(s, 'intake', 'State'),
-    field(s, 'caseSummary', 'State'), field(s, 'insurance', 'State'),
+    f(s, 'intake', 'Insured Property State'),
   ));
-  if (state && (!existing.jurisdiction || existing.jurisdiction === 'KY')) patch.jurisdiction = state;
+  if (state && VALID_JURISDICTIONS.has(state) && (!existing.jurisdiction || existing.jurisdiction === 'KY')) {
+    // Only update if it's actually different from the default
+    if (state !== 'KY' || !existing.jurisdiction) patch.jurisdiction = state;
+  }
 
   // Type / cause of loss
   const lossType = firstNonEmpty(
-    field(s, 'caseSummary', 'Type of Loss'), field(s, 'intake', 'Type of Loss'),
-    field(s, 'caseSummary', 'Cause of Loss'), field(s, 'insurance', 'Cause of Loss'),
+    f(s, 'intake', 'Type of Loss'),
+    f(s, 'caseSummary', 'Type of Loss'),
   );
   if (lossType) {
-    if (!existing.cause_of_loss) patch.cause_of_loss = lossType;
-    const typeMap = { fire: 'Fire', water: 'Water', wind: 'Wind', hail: 'Hail', storm: 'Wind', hurricane: 'Wind', tornado: 'Wind', flood: 'Water' };
+    const causeDetail = firstNonEmpty(
+      f(s, 'intake', 'causeofloss', 'Cause of Loss'),
+      f(s, 'intake', 'typeofloss'),
+    );
+    if (causeDetail && !existing.cause_of_loss) patch.cause_of_loss = causeDetail;
+    
+    const typeMap = { 'fire':'Fire', 'water':'Water', 'wind':'Wind', 'hail':'Hail', 'other':'Other' };
     const mapped = typeMap[lossType.toLowerCase()];
-    if (mapped && (!existing.type || existing.type === 'Property')) patch.type = mapped;
+    if (mapped && (!existing.type || existing.type === 'Other')) patch.type = mapped;
   }
 
-  // Property address
+  // Property address (intake has lowercase key)
   const propAddr = firstNonEmpty(
-    field(s, 'insurance', 'Property Address'), field(s, 'insurance', 'Insured Property Address'),
-    field(s, 'caseSummary', 'Property Address'), field(s, 'intake', 'Property Address'),
-    // Try to compose from parts
-    [field(s, 'insurance', 'Street'), field(s, 'insurance', 'City'), field(s, 'insurance', 'State'), field(s, 'insurance', 'Zip')]
-      .filter(Boolean).join(', ') || null,
+    f(s, 'intake', 'insuredpropertyaddress', 'Insured Property Address', 'Property Address'),
   );
   if (propAddr && !existing.property_address) patch.property_address = propAddr;
 
   // Adjuster info
   const adjName = firstNonEmpty(
-    field(s, 'insurance', 'Adjuster Name'), field(s, 'insurance', 'Adjuster'),
-    field(s, 'caseSummary', 'Adjuster Name'),
+    f(s, 'intake', 'Adjuster', 'Adjuster Name'),
+    f(s, 'insurance', 'Adjuster', 'Adjuster Name'),
   );
   if (adjName && !existing.adjuster_name) patch.adjuster_name = adjName;
 
   const adjPhone = cleanPhone(firstNonEmpty(
-    field(s, 'insurance', 'Adjuster Phone'), field(s, 'insurance', 'Adjuster Phone Number'),
+    f(s, 'intake', 'Adjuster Phone'),
+    f(s, 'insurance', 'Adjuster Phone'),
   ));
   if (adjPhone && !existing.adjuster_phone) patch.adjuster_phone = adjPhone;
 
   const adjEmail = cleanEmail(firstNonEmpty(
-    field(s, 'insurance', 'Adjuster Email'), field(s, 'insurance', 'Adjuster Email Address'),
+    f(s, 'intake', 'Adjuster Email'),
+    f(s, 'insurance', 'Adjuster Email'),
   ));
   if (adjEmail && !existing.adjuster_email) patch.adjuster_email = adjEmail;
-
-  // Recovery / fees
-  const recovery = parseAmount(firstNonEmpty(
-    field(s, 'caseSummary', 'Total Recovery'), field(s, 'negotiations', 'Total Recovery'),
-  ));
-  if (recovery && (!existing.total_recovery || existing.total_recovery === 0)) patch.total_recovery = recovery;
-
-  const fees = parseAmount(firstNonEmpty(
-    field(s, 'caseSummary', 'Attorney Fees'), field(s, 'negotiations', 'Attorney Fees'),
-  ));
-  if (fees && (!existing.attorney_fees || existing.attorney_fees === 0)) patch.attorney_fees = fees;
 
   return patch;
 }
 
 function extractClaimDetails(sc, caseId) {
+  // Schema: case_id, policy_number, claim_number, insurer, adjuster_name, adjuster_phone,
+  //         adjuster_email, date_of_loss, date_reported, date_denied, policy_type,
+  //         policy_limits, deductible, cause_of_loss, property_address
   const s = sc.sections || {};
-  const cd = {};
+  const cd = { case_id: caseId };
 
-  cd.case_id = caseId;
-  cd.policy_number = firstNonEmpty(field(s, 'insurance', 'Policy Number'), field(s, 'insurance', 'policynumber'));
-  cd.claim_number = firstNonEmpty(field(s, 'insurance', 'Claim Number'), field(s, 'insurance', 'claimnumber'));
-  cd.insurer = firstNonEmpty(field(s, 'insurance', 'Insurance Company Name'), field(s, 'insurance', 'Insurance Company'));
-  cd.adjuster_name = firstNonEmpty(field(s, 'insurance', 'Adjuster Name'), field(s, 'insurance', 'Adjuster'));
-  cd.adjuster_phone = cleanPhone(field(s, 'insurance', 'Adjuster Phone'));
-  cd.adjuster_email = cleanEmail(field(s, 'insurance', 'Adjuster Email'));
-  cd.date_of_loss = parseDate(firstNonEmpty(field(s, 'caseSummary', 'Date of Loss'), field(s, 'insurance', 'Date of Loss')));
-  cd.date_reported = parseDate(firstNonEmpty(field(s, 'insurance', 'Date Reported'), field(s, 'insurance', 'Date Claim Reported')));
-  cd.date_denied = parseDate(firstNonEmpty(field(s, 'insurance', 'Date Denied'), field(s, 'insurance', 'Denial Date')));
-  cd.policy_type = firstNonEmpty(field(s, 'insurance', 'Policy Type'), field(s, 'insurance', 'Type of Policy'));
-  cd.policy_limits = firstNonEmpty(field(s, 'insurance', 'Policy Limits'), field(s, 'insurance', 'Coverage Limits'));
-  cd.deductible = firstNonEmpty(field(s, 'insurance', 'Deductible'));
-  cd.cause_of_loss = firstNonEmpty(field(s, 'caseSummary', 'Cause of Loss'), field(s, 'insurance', 'Cause of Loss'), field(s, 'caseSummary', 'Type of Loss'));
-  cd.property_address = firstNonEmpty(
-    field(s, 'insurance', 'Property Address'), field(s, 'insurance', 'Insured Property Address'),
-    field(s, 'caseSummary', 'Property Address'),
-  );
+  cd.policy_number = firstNonEmpty(f(s, 'intake', 'policynumber', 'Policy Number'));
+  cd.claim_number = firstNonEmpty(f(s, 'intake', 'claimnumber', 'Claim Number'));
+  cd.insurer = firstNonEmpty(f(s, 'intake', 'Insurance Company Name', 'Insurance Company'));
+  cd.adjuster_name = firstNonEmpty(f(s, 'intake', 'Adjuster', 'Adjuster Name'));
+  cd.adjuster_phone = cleanPhone(f(s, 'intake', 'Adjuster Phone'));
+  cd.adjuster_email = cleanEmail(f(s, 'intake', 'Adjuster Email'));
+  cd.date_of_loss = parseDate(f(s, 'intake', 'Date of Loss'));
+  cd.policy_type = firstNonEmpty(f(s, 'intake', 'Policy Type'));
+  cd.deductible = firstNonEmpty(f(s, 'intake', 'deductible', 'Deductible'));
+  cd.cause_of_loss = firstNonEmpty(f(s, 'intake', 'causeofloss', 'Cause of Loss'));
+  cd.property_address = firstNonEmpty(f(s, 'intake', 'insuredpropertyaddress', 'Property Address'));
+  // policy_limits: compose from coverage fields
+  const dwelling = f(s, 'intake', 'Dwelling');
+  const contents = f(s, 'intake', 'Contents');
+  if (dwelling || contents) {
+    const parts = [];
+    if (dwelling) parts.push(`Dwelling: $${dwelling}`);
+    const os = f(s, 'intake', 'Other Structure');
+    if (os) parts.push(`Other Structure: $${os}`);
+    if (contents) parts.push(`Contents: $${contents}`);
+    const ale = f(s, 'intake', 'ALE');
+    if (ale) parts.push(`ALE: $${ale}`);
+    cd.policy_limits = parts.join('; ');
+  }
 
-  // Only return if we have at least one non-null field beyond case_id
-  const hasData = Object.entries(cd).some(([k, v]) => k !== 'case_id' && v != null);
-  return hasData ? cd : null;
+  for (const k of Object.keys(cd)) {
+    if (cd[k] === null || cd[k] === undefined) delete cd[k];
+  }
+  return Object.keys(cd).length > 1 ? cd : null;
 }
 
 function extractLitigationDetails(sc, caseId) {
+  // Schema: case_id, case_number, court, judge, filed_date, opposing_counsel,
+  //         opposing_firm, opposing_phone, opposing_email, trial_date,
+  //         mediation_date, discovery_deadline
   const s = sc.sections || {};
   const ld = { case_id: caseId };
 
-  ld.case_number = firstNonEmpty(field(s, 'caseSummary', 'Case Number'), field(s, 'caseSummary', 'Court Case Number'));
-  ld.court = firstNonEmpty(field(s, 'caseSummary', 'Court'), field(s, 'caseSummary', 'Court Name'));
-  ld.judge = firstNonEmpty(field(s, 'caseSummary', 'Judge'), field(s, 'caseSummary', 'Judge Name'));
-  ld.filed_date = parseDate(firstNonEmpty(field(s, 'caseSummary', 'Filed Date'), field(s, 'caseSummary', 'Date Filed')));
-  ld.opposing_counsel = firstNonEmpty(field(s, 'caseSummary', 'Opposing Counsel'), field(s, 'caseSummary', 'Defense Attorney'));
-  ld.opposing_firm = firstNonEmpty(field(s, 'caseSummary', 'Opposing Firm'), field(s, 'caseSummary', 'Defense Firm'));
-  ld.opposing_phone = cleanPhone(field(s, 'caseSummary', 'Opposing Phone'));
-  ld.opposing_email = cleanEmail(field(s, 'caseSummary', 'Opposing Email'));
-  ld.trial_date = parseDate(field(s, 'caseSummary', 'Trial Date'));
-  ld.mediation_date = parseDate(field(s, 'caseSummary', 'Mediation Date'));
-  ld.discovery_deadline = parseDate(firstNonEmpty(field(s, 'caseSummary', 'Discovery Deadline'), field(s, 'caseSummary', 'Discovery Cutoff')));
+  ld.case_number = firstNonEmpty(f(s, 'caseSummary', 'courtcasenumber'));
+  ld.court = firstNonEmpty(f(s, 'caseSummary', 'Court'));
+  ld.judge = firstNonEmpty(f(s, 'caseSummary', 'Judge'));
+  ld.filed_date = parseDate(f(s, 'caseSummary', 'Complaint Filed'));
+  ld.opposing_counsel = firstNonEmpty(f(s, 'caseSummary', 'Opposing Counsel'));
 
-  const hasData = Object.entries(ld).some(([k, v]) => k !== 'case_id' && v != null);
-  return hasData ? ld : null;
-}
-
-function extractNegotiations(sc, caseId) {
-  const s = sc.sections || {};
-  const rows = [];
-
-  // From negotiations section tables
-  const negTables = s.negotiations?.tables || [];
-  for (const table of negTables) {
-    if (!Array.isArray(table)) continue;
-    for (const row of table) {
-      const type = mapNegotiationType(row.Type || row.type || row['Negotiation Type']);
-      const amount = parseAmount(row.Amount || row.amount);
-      const date = parseDate(row.Date || row.date);
-      if (!type || amount == null || !date) continue;
-      // Validate type against allowed values
-      const validTypes = ['bottom_line','plaintiff_offer','defendant_offer','presuit_demand','settlement','undisputed_payment','denial','appraisal_award'];
-      if (!validTypes.includes(type)) continue;
-      rows.push({
-        case_id: caseId,
-        type,
-        amount,
-        date,
-        notes: row.Notes || row.notes || null,
-        by_name: row['By'] || row.by || row.by_name || null,
-      });
-    }
+  for (const k of Object.keys(ld)) {
+    if (ld[k] === null || ld[k] === undefined) delete ld[k];
   }
-
-  // From negotiations section fields (individual named amounts)
-  const negFields = s.negotiations?.fields || {};
-  const fieldMappings = [
-    { keys: ['Bottom Line', 'Bottom Line Amount'], type: 'bottom_line' },
-    { keys: ['Presuit Demand', 'Demand Amount', 'Demand'], type: 'presuit_demand' },
-    { keys: ['Settlement Amount', 'Settlement'], type: 'settlement' },
-    { keys: ['Appraisal Award', 'Appraisal Award Amount'], type: 'appraisal_award' },
-    { keys: ['Undisputed Payment', 'Undisputed Amount'], type: 'undisputed_payment' },
-  ];
-  for (const mapping of fieldMappings) {
-    for (const key of mapping.keys) {
-      const val = negFields[key];
-      if (val) {
-        const amount = parseAmount(val);
-        const dateKey = key.replace('Amount', 'Date').replace(/ $/, '') + ' Date';
-        const date = parseDate(negFields[dateKey] || negFields['Date']) || parseDate(field(sc.sections, 'caseSummary', 'Date of Loss'));
-        if (amount != null && date) {
-          // Avoid duplicates with table rows
-          const dup = rows.find(r => r.type === mapping.type && r.amount === amount);
-          if (!dup) {
-            rows.push({ case_id: caseId, type: mapping.type, amount, date, notes: null, by_name: null });
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  return rows;
-}
-
-function extractEstimates(sc, caseId) {
-  const s = sc.sections || {};
-  const rows = [];
-
-  // From expenses section tables
-  const expTables = s.expenses?.tables || [];
-  for (const table of expTables) {
-    if (!Array.isArray(table)) continue;
-    for (const row of table) {
-      const type = row.Type || row.type || row['Expense Type'] || row['Estimate Type'] || 'Unknown';
-      const amount = parseAmount(row.Amount || row.amount || row.Cost || row.cost);
-      const date = parseDate(row.Date || row.date);
-      if (amount == null) continue;
-      rows.push({
-        case_id: caseId,
-        type: type.trim(),
-        vendor: row.Vendor || row.vendor || row['Company'] || row['Expert'] || null,
-        amount,
-        date: date || '1970-01-01', // date is NOT NULL in schema
-        notes: row.Notes || row.notes || row.Description || row.description || null,
-      });
-    }
-  }
-
-  // From estimates section if separate
-  const estTables = s.experts?.tables || [];
-  for (const table of estTables) {
-    if (!Array.isArray(table)) continue;
-    for (const row of table) {
-      const type = row.Type || row.type || row['Expert Type'] || 'Expert';
-      const amount = parseAmount(row.Amount || row.amount || row.Fee || row.fee || row.Cost);
-      const date = parseDate(row.Date || row.date);
-      if (amount == null) continue;
-      rows.push({
-        case_id: caseId,
-        type: type.trim(),
-        vendor: row.Name || row.name || row.Expert || row.expert || row.Vendor || null,
-        amount,
-        date: date || '1970-01-01',
-        notes: row.Notes || row.notes || row.Specialty || row.specialty || null,
-      });
-    }
-  }
-
-  return rows;
+  return Object.keys(ld).length > 1 ? ld : null;
 }
 
 // ── Main ─────────────────────────────────────────────────────
@@ -389,49 +298,29 @@ async function main() {
 
   if (!fs.existsSync(DATA_PATH)) {
     console.error(`❌ Data file not found: ${DATA_PATH}`);
-    console.error('   Place the V2 scraper output at data/filevine-full-data.json');
     process.exit(1);
   }
 
   const scraped = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'));
   console.log(`📂 Loaded ${scraped.length} cases from filevine-full-data.json`);
 
-  // Fetch all existing cases
-  const { data: existing, error } = await supabase
-    .from('cases')
-    .select('*');
+  const { data: existing, error } = await supabase.from('cases').select('*');
   if (error) { console.error('Fetch error:', error); process.exit(1); }
   console.log(`📊 ${existing.length} cases in Supabase\n`);
 
-  // Build name lookup
-  const nameMap = new Map();
-  existing.forEach(c => {
-    const key = normalize(c.client_name);
-    if (key) nameMap.set(key, c);
-  });
-
-  // Check existing claim_details / litigation_details to avoid duplicates
+  // Check existing related tables
   const { data: existingClaims } = await supabase.from('claim_details').select('case_id');
   const { data: existingLit } = await supabase.from('litigation_details').select('case_id');
-  const { data: existingNeg } = await supabase.from('negotiations').select('case_id, type, amount');
-  const { data: existingEst } = await supabase.from('estimates').select('case_id, type, amount');
-
   const claimCaseIds = new Set((existingClaims || []).map(r => r.case_id));
   const litCaseIds = new Set((existingLit || []).map(r => r.case_id));
-  const negKeys = new Set((existingNeg || []).map(r => `${r.case_id}:${r.type}:${r.amount}`));
-  const estKeys = new Set((existingEst || []).map(r => `${r.case_id}:${r.type}:${r.amount}`));
 
-  // Stats
   let matched = 0, skipped = 0;
   const caseUpdates = [];
   const claimInserts = [];
   const litInserts = [];
-  const negInserts = [];
-  const estInserts = [];
 
   for (const sc of scraped) {
-    const scKey = normalize(sc.projectName);
-    const match = nameMap.get(scKey);
+    const match = findMatch(sc.projectName, existing);
     if (!match) { skipped++; continue; }
     matched++;
 
@@ -441,36 +330,16 @@ async function main() {
       caseUpdates.push({ id: match.id, name: match.client_name, patch });
     }
 
-    // Claim details (1:1, skip if exists)
+    // Claim details
     if (!claimCaseIds.has(match.id)) {
       const cd = extractClaimDetails(sc, match.id);
       if (cd) claimInserts.push({ name: match.client_name, data: cd });
     }
 
-    // Litigation details (1:1, skip if exists)
+    // Litigation details
     if (!litCaseIds.has(match.id)) {
       const ld = extractLitigationDetails(sc, match.id);
       if (ld) litInserts.push({ name: match.client_name, data: ld });
-    }
-
-    // Negotiations (many, deduplicate)
-    const negs = extractNegotiations(sc, match.id);
-    for (const neg of negs) {
-      const key = `${neg.case_id}:${neg.type}:${neg.amount}`;
-      if (!negKeys.has(key)) {
-        negInserts.push({ name: match.client_name, data: neg });
-        negKeys.add(key);
-      }
-    }
-
-    // Estimates (many, deduplicate)
-    const ests = extractEstimates(sc, match.id);
-    for (const est of ests) {
-      const key = `${est.case_id}:${est.type}:${est.amount}`;
-      if (!estKeys.has(key)) {
-        estInserts.push({ name: match.client_name, data: est });
-        estKeys.add(key);
-      }
     }
   }
 
@@ -481,100 +350,63 @@ async function main() {
   console.log(`  Matched:    ${matched}/${scraped.length}`);
   console.log(`  No match:   ${skipped}\n`);
 
+  // Summarize case updates by field
+  const fieldCounts = {};
+  for (const u of caseUpdates) {
+    for (const k of Object.keys(u.patch)) {
+      fieldCounts[k] = (fieldCounts[k] || 0) + 1;
+    }
+  }
   if (caseUpdates.length) {
-    console.log(`📝 CASE UPDATES (${caseUpdates.length}):`);
-    for (const u of caseUpdates) {
-      console.log(`  ✏️  ${u.name}`);
-      for (const [k, v] of Object.entries(u.patch)) {
-        console.log(`      ${k}: ${v}`);
-      }
+    console.log(`📝 CASE UPDATES: ${caseUpdates.length} cases`);
+    for (const [k, v] of Object.entries(fieldCounts).sort((a, b) => b[1] - a[1])) {
+      console.log(`   ${k}: ${v} cases`);
     }
     console.log();
   }
 
   if (claimInserts.length) {
-    console.log(`📋 CLAIM DETAILS INSERTS (${claimInserts.length}):`);
-    for (const ci of claimInserts) {
-      const fields = Object.entries(ci.data).filter(([k, v]) => k !== 'case_id' && v != null);
-      console.log(`  ➕ ${ci.name} — ${fields.length} fields: ${fields.map(([k]) => k).join(', ')}`);
-    }
-    console.log();
+    console.log(`📋 CLAIM DETAILS: ${claimInserts.length} new rows`);
+    const avgFields = Math.round(claimInserts.reduce((a, c) => a + Object.keys(c.data).length - 1, 0) / claimInserts.length);
+    console.log(`   Average ${avgFields} fields per row\n`);
   }
 
   if (litInserts.length) {
-    console.log(`⚖️  LITIGATION DETAILS INSERTS (${litInserts.length}):`);
-    for (const li of litInserts) {
-      const fields = Object.entries(li.data).filter(([k, v]) => k !== 'case_id' && v != null);
-      console.log(`  ➕ ${li.name} — ${fields.length} fields: ${fields.map(([k]) => k).join(', ')}`);
-    }
-    console.log();
+    console.log(`⚖️  LITIGATION DETAILS: ${litInserts.length} new rows`);
+    const avgFields = Math.round(litInserts.reduce((a, c) => a + Object.keys(c.data).length - 1, 0) / litInserts.length);
+    console.log(`   Average ${avgFields} fields per row\n`);
   }
 
-  if (negInserts.length) {
-    console.log(`💰 NEGOTIATION INSERTS (${negInserts.length}):`);
-    for (const ni of negInserts) {
-      console.log(`  ➕ ${ni.name} — ${ni.data.type}: $${ni.data.amount} on ${ni.data.date}`);
-    }
-    console.log();
-  }
-
-  if (estInserts.length) {
-    console.log(`📊 ESTIMATE INSERTS (${estInserts.length}):`);
-    for (const ei of estInserts) {
-      console.log(`  ➕ ${ei.name} — ${ei.data.type}: $${ei.data.amount}${ei.data.vendor ? ` (${ei.data.vendor})` : ''}`);
-    }
-    console.log();
-  }
-
-  const totalChanges = caseUpdates.length + claimInserts.length + litInserts.length + negInserts.length + estInserts.length;
+  const totalChanges = caseUpdates.length + claimInserts.length + litInserts.length;
   if (totalChanges === 0) {
-    console.log('✅ Nothing to update — all data is current.');
+    console.log('✅ Nothing to update.');
+    return;
+  }
+
+  if (!COMMIT) {
+    console.log(`\n💡 ${totalChanges} total operations. Run with --commit to apply.`);
     return;
   }
 
   // ── Commit ──────────────────────────────────────────────────
-  if (!COMMIT) {
-    console.log(`\n💡 ${totalChanges} total changes. Run with --commit to apply.`);
-    return;
-  }
-
   console.log('\n🔥 Committing changes...\n');
   let ok = 0, fail = 0;
 
-  // Case updates
   for (const u of caseUpdates) {
     const { error } = await supabase.from('cases').update(u.patch).eq('id', u.id);
     if (error) { console.error(`  ❌ cases/${u.name}: ${error.message}`); fail++; }
     else { ok++; }
   }
 
-  // Claim details — strip nulls before insert
   for (const ci of claimInserts) {
-    const clean = Object.fromEntries(Object.entries(ci.data).filter(([, v]) => v != null));
-    const { error } = await supabase.from('claim_details').insert(clean);
+    const { error } = await supabase.from('claim_details').insert(ci.data);
     if (error) { console.error(`  ❌ claim_details/${ci.name}: ${error.message}`); fail++; }
     else { ok++; }
   }
 
-  // Litigation details
   for (const li of litInserts) {
-    const clean = Object.fromEntries(Object.entries(li.data).filter(([, v]) => v != null));
-    const { error } = await supabase.from('litigation_details').insert(clean);
+    const { error } = await supabase.from('litigation_details').insert(li.data);
     if (error) { console.error(`  ❌ litigation_details/${li.name}: ${error.message}`); fail++; }
-    else { ok++; }
-  }
-
-  // Negotiations
-  for (const ni of negInserts) {
-    const { error } = await supabase.from('negotiations').insert(ni.data);
-    if (error) { console.error(`  ❌ negotiations/${ni.name}: ${error.message}`); fail++; }
-    else { ok++; }
-  }
-
-  // Estimates
-  for (const ei of estInserts) {
-    const { error } = await supabase.from('estimates').insert(ei.data);
-    if (error) { console.error(`  ❌ estimates/${ei.name}: ${error.message}`); fail++; }
     else { ok++; }
   }
 
