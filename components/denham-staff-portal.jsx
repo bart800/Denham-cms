@@ -14,6 +14,7 @@ const CaseExportButton = dynamic(() => import("./case-export-button"), { ssr: fa
 const CaseDetailCardsNew = dynamic(() => import("./case-detail-cards"), { ssr: false });
 const GlobalSearchNew = dynamic(() => import("./global-search"), { ssr: false });
 const AlertsPanelNew = dynamic(() => import("./alerts-panel"), { ssr: false });
+const DashboardV2 = dynamic(() => import("./dashboard-v2"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading dashboard...</div> });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -4314,7 +4315,7 @@ export default function DenhamStaffPortal() {
             <div style={{ fontSize: 14, color: B.txtM }}>Loading...</div>
           </div>
         )}
-        {!loading && page === "dashboard" && <Dash user={user} cases={cases} onOpen={openC} onFilterStatus={filterByStatus} />}
+        {!loading && page === "dashboard" && <DashboardV2 />}
         {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={() => setStatusFilter("All")} team={team} onBatchUpdate={updateCase} onCaseCreated={handleCaseCreated} />}
         {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} allCases={cases} />}
         {!loading && page === "calendar" && <CalendarView cases={cases} onOpen={openC} />}
