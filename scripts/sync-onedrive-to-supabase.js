@@ -108,10 +108,24 @@ async function syncFile(file, clientFolder, caseFolder) {
   const caseId = findCaseId(clientFolder, caseFolder);
   const mime = MIME_MAP[ext] || "application/octet-stream";
 
+  // Sanitize filename for Supabase Storage (no brackets, quotes, special unicode)
+  const safeName = file.name
+    .replace(/[\[\]"'""\u2018\u2019\u201C\u201D\u2013\u2014]/g, "")
+    .replace(/[()]/g, "_")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_.\-]/g, "_")
+    .replace(/_+/g, "_");
+
+  // Log files over 5GB (Supabase Pro limit)
+  if (file.size > 5 * 1024 * 1024 * 1024) {
+    console.error(`\n  TOO LARGE (${fmtSize(file.size)}): ${file.path}`);
+    return { synced: false, reason: "too large", size: file.size };
+  }
+
   // Storage path: caseId/category/filename (or client/case/... if no case match)
   const storagePath = caseId
-    ? `${caseId}/${category}/${file.name}`
-    : `unmatched/${clientFolder}/${caseFolder || "root"}/${file.name}`;
+    ? `${caseId}/${category}/${safeName}`
+    : `unmatched/${clientFolder.replace(/[^a-zA-Z0-9_.\-]/g, "_")}/${(caseFolder || "root").replace(/[^a-zA-Z0-9_.\-]/g, "_")}/${safeName}`;
 
   if (dryRun) {
     console.log(`[DRY] ${relPath} → ${storagePath} (case: ${caseId || "UNMATCHED"}, cat: ${category}, ${fmtSize(file.size)})`);

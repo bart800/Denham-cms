@@ -2,6 +2,16 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import * as api from "../lib/api";
+import dynamic from "next/dynamic";
+
+// Lazy-load new standalone components
+const StorageDocBrowserNew = dynamic(() => import("./storage-doc-browser"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading documents...</div> });
+const NegotiationTrackerNew = dynamic(() => import("./negotiation-tracker"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading negotiations...</div> });
+const CaseTimelineNew = dynamic(() => import("./case-timeline"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading timeline...</div> });
+const CaseTasksNew = dynamic(() => import("./case-tasks"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading tasks...</div> });
+const CaseEmailsNew = dynamic(() => import("./case-emails"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading emails...</div> });
+const CaseExportButton = dynamic(() => import("./case-export-button"), { ssr: false });
+const CaseDetailCardsNew = dynamic(() => import("./case-detail-cards"), { ssr: false });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -3577,6 +3587,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "timeline", l: "Timeline" }, { id: "tasks", l: "Tasks" },
     { id: "docs", l: "Documents" }, { id: "docgen", l: "Generate Docs" },
     { id: "discovery", l: "Discovery" },
+    { id: "emails", l: "Emails" },
     { id: "compliance", l: "⚠️ Compliance" },
   ];
   const sc = stClr(c.status);
@@ -3717,6 +3728,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
               <button onClick={() => setTab("docs")} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>📄 Docs</button>
               <button onClick={() => setTab("docgen")} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>📝 Generate</button>
               <button onClick={() => printCaseSummary(c)} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>🖨️ Print</button>
+              <CaseExportButton caseId={c.id} />
             </div>
           </div>
 
@@ -3770,18 +3782,22 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
 
       {noteModal && <AddNoteModal caseId={c.id} user={user} onClose={() => setNoteModal(false)} onSaved={() => setRefreshKey(k => k + 1)} />}
 
-      {tab === "overview" && <CaseOverview c={c} />}
+      {tab === "overview" && <>
+        <CaseDetailCardsNew caseData={c} />
+        <div style={{ marginTop: 16 }}><CaseOverview c={c} /></div>
+      </>}
       {tab === "notes" && <CaseNotesTab c={c} caseId={c.id} user={user} onRefresh={() => setRefreshKey(k => k + 1)} key={refreshKey} />}
       {tab === "claim" && <ClaimDetails c={c} />}
       {tab === "litigation" && <LitDetails c={c} />}
-      {tab === "negotiations" && <Negotiations c={c} />}
+      {tab === "negotiations" && <NegotiationTrackerNew caseId={c.id} />}
       {tab === "estimates" && <Estimates c={c} />}
       {tab === "pleadings" && <Pleadings c={c} />}
-      {tab === "timeline" && <CaseTimeline c={c} />}
-      {tab === "tasks" && <TasksPanel caseId={c.id} userId={user?.id} team={team} />}
-      {tab === "docs" && <DocumentBrowser caseId={c.id} />}
+      {tab === "timeline" && <CaseTimelineNew caseId={c.id} />}
+      {tab === "tasks" && <CaseTasksNew caseId={c.id} teamMembers={team} currentUserId={user?.id} />}
+      {tab === "docs" && <StorageDocBrowserNew caseId={c.id} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
       {tab === "discovery" && <DiscoveryTab c={c} caseId={c.id} />}
+      {tab === "emails" && <CaseEmailsNew caseId={c.id} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
     </div>
   );
