@@ -254,7 +254,7 @@ function printCaseSummary(c) {
     @media print{body{margin:20px}}
   </style></head><body>
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div><h1>${c.client}</h1><div class="meta">${c.ref} · ${c.type} · ${c.juris || ""} · v. ${c.insurer || ""}</div></div>
+      <div><h1>${c.client}</h1><div class="meta">${c.ref} · ${c.type} · ${c.juris || ""} · ${(c.client || "").split(",")[0].split(" ").pop()} v. ${c.insurer || ""}</div></div>
       <div style="text-align:right"><div class="label">Status</div><div class="badge">${c.status}</div></div>
     </div>
     <h2>Case Information</h2>
@@ -3626,7 +3626,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
               </select>
               <span style={{ fontSize: 12, color: B.txtM }}>{c.type}</span>
               <span style={{ ...S.mono, fontSize: 12, color: B.txtM }}>{c.juris}</span>
-              <span style={{ fontSize: 12, color: B.txtM }}>v. {c.insurer}</span>
+              {c.insurer && <span style={{ fontSize: 12, color: B.txtM }}>{(c.client || "").split(",")[0].split(" ").pop()} v. {c.insurer}</span>}
             </div>
           </div>
           {sd != null && (
