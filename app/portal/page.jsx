@@ -54,6 +54,39 @@ export default function ClientPortal() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
+  const [activeTab, setActiveTab] = useState("case");
+  const [messages, setMessages] = useState([]);
+  const [newMsg, setNewMsg] = useState("");
+  const [msgLoading, setMsgLoading] = useState(false);
+
+  const getToken = () => localStorage.getItem("portal_token");
+
+  const loadMessages = async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const resp = await fetch("/api/portal/messages", { headers: { "x-portal-token": token } });
+      const data = await resp.json();
+      if (data.messages) setMessages(data.messages);
+    } catch (e) { /* ignore */ }
+  };
+
+  const sendMessage = async () => {
+    if (!newMsg.trim()) return;
+    const token = getToken();
+    if (!token) return;
+    setMsgLoading(true);
+    try {
+      const resp = await fetch("/api/portal/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-portal-token": token },
+        body: JSON.stringify({ message: newMsg.trim() }),
+      });
+      const data = await resp.json();
+      if (data.message) { setMessages(prev => [...prev, data.message]); setNewMsg(""); }
+    } catch (e) { /* ignore */ }
+    setMsgLoading(false);
+  };
 
   // Auto-login from saved token
   useEffect(() => {
@@ -68,6 +101,11 @@ export default function ClientPortal() {
       .catch(() => localStorage.removeItem("portal_token"))
       .finally(() => setAutoLoading(false));
   }, []);
+
+  // Load messages when tab changes or case loads
+  useEffect(() => {
+    if (caseData && activeTab === "messages") loadMessages();
+  }, [activeTab, caseData]);
 
   const requestCode = async () => {
     if (!ref.trim() || !lastName.trim()) { setError("Please enter both your case reference and last name."); return; }
@@ -218,11 +256,22 @@ export default function ClientPortal() {
         ) : (
           /* Case View */
           <div>
-            <button onClick={logout}
-              style={{ background: "transparent", border: `1px solid ${B.bdr}`, borderRadius: 6, padding: "6px 14px", fontSize: 12, color: B.txtM, cursor: "pointer", marginBottom: 24, fontFamily: "'DM Sans',sans-serif" }}>
-              ← Log Out
-            </button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <div style={{ display: "flex", gap: 0, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 8, overflow: "hidden" }}>
+                {[["case", "📋 Case"], ["messages", "💬 Messages"]].map(([key, label]) => (
+                  <button key={key} onClick={() => setActiveTab(key)}
+                    style={{ background: activeTab === key ? B.navy : "transparent", color: activeTab === key ? "#fff" : B.txtM, border: "none", padding: "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button onClick={logout}
+                style={{ background: "transparent", border: `1px solid ${B.bdr}`, borderRadius: 6, padding: "6px 14px", fontSize: 12, color: B.txtM, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                Log Out
+              </button>
+            </div>
 
+            {activeTab === "case" ? (<>
             {/* Case Header */}
             <div style={{ background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
@@ -348,6 +397,47 @@ export default function ClientPortal() {
                 </div>
               )}
             </div>
+
+            </>) : (
+              /* Messages Tab */
+              <div style={{ background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>💬</span> Messages
+                </div>
+                <div style={{ maxHeight: 400, overflowY: "auto", marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {messages.length === 0 && (
+                    <div style={{ padding: 32, textAlign: "center", color: B.txtD, fontSize: 13 }}>No messages yet. Send a message to your legal team below.</div>
+                  )}
+                  {messages.map(m => (
+                    <div key={m.id} style={{ display: "flex", justifyContent: m.sender_type === "client" ? "flex-end" : "flex-start" }}>
+                      <div style={{
+                        maxWidth: "75%", padding: "10px 14px", borderRadius: 12,
+                        background: m.sender_type === "client" ? B.navy : "#1a1a2a",
+                        borderBottomRightRadius: m.sender_type === "client" ? 2 : 12,
+                        borderBottomLeftRadius: m.sender_type === "firm" ? 2 : 12,
+                      }}>
+                        <div style={{ fontSize: 10, color: B.txtD, marginBottom: 4, fontWeight: 600 }}>
+                          {m.sender_type === "client" ? "You" : "Denham Law"} · {new Date(m.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </div>
+                        <div style={{ fontSize: 13, color: B.txt, lineHeight: 1.4 }}>{m.message}</div>
+                        {m.sender_type === "client" && m.read_at && (
+                          <div style={{ fontSize: 9, color: B.txtD, marginTop: 2, textAlign: "right" }}>✓ Read</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Type a message..."
+                    style={{ ...S.input, flex: 1 }}
+                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()} />
+                  <button onClick={sendMessage} disabled={msgLoading || !newMsg.trim()}
+                    style={{ ...S.btn, opacity: msgLoading || !newMsg.trim() ? 0.5 : 1, padding: "10px 16px" }}>
+                    {msgLoading ? "..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Contact */}
             <div style={{ marginTop: 24, textAlign: "center", fontSize: 12, color: B.txtD }}>
