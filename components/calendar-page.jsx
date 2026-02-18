@@ -396,14 +396,4 @@ function EventModal({ event, onClose, onToggleMet }) {
   );
 }
 
-function guessType(subject) {
-  const s = (subject || "").toLowerCase();
-  if (s.includes("deadline")) return "deadline";
-  if (s.includes("hearing")) return "hearing";
-  if (s.includes("deposition") || s.includes("depo")) return "deposition";
-  if (s.includes("sol") || s.includes("statute")) return "sol";
-  if (s.includes("mediation") || s.includes("meeting")) return "meeting";
-  return "other";
-}
-
 const navBtn = { background: "#000066", border: "1px solid #333", color: "#ebb003", borderRadius: 6, padding: "6px 12px", cursor: "pointer", fontSize: 16 };
