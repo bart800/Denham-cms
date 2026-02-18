@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import pg from "pg";
+import dns from "dns";
 
 const { Client } = pg;
+
+// Force Node to prefer IPv6 for DNS resolution
+dns.setDefaultResultOrder('verbatim');
 
 export async function POST(request) {
   const { sql, secret, debug } = await request.json();
@@ -25,32 +29,36 @@ export async function POST(request) {
     return NextResponse.json({ error: "No DB credentials configured" }, { status: 500 });
   }
 
-  // Dedicated pooler (transaction mode, port 6543) - IPv6, works on Vercel
-  // Username is "postgres" (not "postgres.ref") for dedicated pooler
+  // Resolve IPv6 address manually, then connect directly
+  let ipv6Addr = null;
+  try {
+    const addrs = await new Promise((res, rej) => 
+      dns.resolve6('db.amyttoowrroajffqubpd.supabase.co', (e, a) => e ? rej(e) : res(a))
+    );
+    ipv6Addr = addrs[0];
+  } catch (e) {
+    // Fall through to hostname-based strategies
+  }
+
   const strategies = [
     process.env.DATABASE_URL,
-    // Dedicated pooler transaction mode
+    // Direct IPv6 connection to pooler (transaction mode)
+    ipv6Addr ? { host: ipv6Addr, port: 6543, user: 'postgres', password, database: 'postgres' } : null,
+    // Direct IPv6 connection (direct mode)
+    ipv6Addr ? { host: ipv6Addr, port: 5432, user: 'postgres', password, database: 'postgres' } : null,
+    // Hostname-based fallbacks
     `postgres://postgres:${password}@db.amyttoowrroajffqubpd.supabase.co:6543/postgres`,
-    // Direct connection
     `postgresql://postgres:${password}@db.amyttoowrroajffqubpd.supabase.co:5432/postgres`,
   ].filter(Boolean);
 
-  // Try DNS resolution first to debug
-  const dns = require('dns');
-  const dnsResults = {};
-  try {
-    const addrs4 = await new Promise((res, rej) => dns.resolve4('db.amyttoowrroajffqubpd.supabase.co', (e, a) => e ? rej(e) : res(a)));
-    dnsResults.ipv4 = addrs4;
-  } catch (e) { dnsResults.ipv4Error = e.message; }
-  try {
-    const addrs6 = await new Promise((res, rej) => dns.resolve6('db.amyttoowrroajffqubpd.supabase.co', (e, a) => e ? rej(e) : res(a)));
-    dnsResults.ipv6 = addrs6;
-  } catch (e) { dnsResults.ipv6Error = e.message; }
-
   const errors = [];
   for (let i = 0; i < strategies.length; i++) {
+    const opts = typeof strategies[i] === 'string' 
+      ? { connectionString: strategies[i] }
+      : strategies[i];
+    
     const client = new Client({
-      connectionString: strategies[i],
+      ...opts,
       ssl: { rejectUnauthorized: false },
       connectionTimeoutMillis: 15000
     });
@@ -58,12 +66,12 @@ export async function POST(request) {
       await client.connect();
       const result = await client.query(sql);
       await client.end();
-      return NextResponse.json({ ok: true, rowCount: result.rowCount, strategy: i });
+      return NextResponse.json({ ok: true, rowCount: result.rowCount, strategy: i, ipv6: ipv6Addr });
     } catch (e) {
       errors.push({ strategy: i, error: e.message });
       await client.end().catch(() => {});
     }
   }
 
-  return NextResponse.json({ error: "All strategies failed", details: errors, dns: dnsResults }, { status: 500 });
+  return NextResponse.json({ error: "All strategies failed", details: errors, ipv6: ipv6Addr }, { status: 500 });
 }
