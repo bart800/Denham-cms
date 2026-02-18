@@ -24,6 +24,9 @@ const DocTemplates = dynamic(() => import("./doc-templates"), { ssr: false, load
 const CaseCallsNew = dynamic(() => import("./case-calls"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calls...</div> });
 const ContactsPage = dynamic(() => import("./contacts-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading contacts...</div> });
 const CaseContactsNew = dynamic(() => import("./case-contacts"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading contacts...</div> });
+const CaseDocumentsTab = dynamic(() => import("./case-documents-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading documents...</div> });
+const CaseEstimatesTab = dynamic(() => import("./case-estimates-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading estimates...</div> });
+const CasePleadingsTab = dynamic(() => import("./case-pleadings-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading pleadings...</div> });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -3809,11 +3812,11 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "claim" && <ClaimDetails c={c} />}
       {tab === "litigation" && <LitDetails c={c} />}
       {tab === "negotiations" && <NegotiationTrackerNew caseId={c.id} />}
-      {tab === "estimates" && <Estimates c={c} />}
-      {tab === "pleadings" && <Pleadings c={c} />}
+      {tab === "estimates" && <CaseEstimatesTab caseId={c.id} />}
+      {tab === "pleadings" && <CasePleadingsTab caseId={c.id} />}
       {tab === "timeline" && <CaseTimelineNew caseId={c.id} />}
       {tab === "tasks" && <CaseTasksNew caseId={c.id} teamMembers={team} currentUserId={user?.id} />}
-      {tab === "docs" && <StorageDocBrowserNew caseId={c.id} />}
+      {tab === "docs" && <CaseDocumentsTab caseId={c.id} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
       {tab === "discovery" && <DiscoveryTab c={c} caseId={c.id} />}
       {tab === "emails" && <CaseEmailsNew caseId={c.id} />}
