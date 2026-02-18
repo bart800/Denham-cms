@@ -40,7 +40,7 @@ export async function GET() {
     } catch { /* empty or table issue */ }
 
     // Compute stats
-    const total_cases = cases.length;
+    const total_cases = activeCases.length;
 
     const cases_by_status = {};
     const cases_by_type = {};
@@ -54,7 +54,11 @@ export async function GET() {
     const sol_urgent_list = [];
     let sol_expired_count = 0;
 
-    for (const c of cases) {
+    // Separate closed cases
+    const activeCases = cases.filter(c => c.status !== "Closed");
+    const closed_count = cases.length - activeCases.length;
+
+    for (const c of activeCases) {
       // Status
       const s = c.status || "unknown";
       cases_by_status[s] = (cases_by_status[s] || 0) + 1;
@@ -123,6 +127,7 @@ export async function GET() {
 
     return NextResponse.json({
       total_cases,
+      closed_count,
       cases_by_status,
       cases_by_type,
       cases_by_jurisdiction,
