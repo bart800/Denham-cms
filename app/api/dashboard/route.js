@@ -1,12 +1,14 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request) {
   if (!supabaseAdmin) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
   }
 
   try {
+    const { searchParams } = new URL(request.url);
+    const filterAttorneyId = searchParams.get("attorney_id") || null;
     const now = new Date();
     const today = now.toISOString().slice(0, 10);
     const in30 = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
@@ -39,10 +41,13 @@ export async function GET() {
       activity = actData || [];
     } catch { /* empty or table issue */ }
 
+    // Filter by attorney if requested
+    const scopedCases = filterAttorneyId ? cases.filter(c => c.attorney_id === filterAttorneyId) : cases;
+
     // Separate closed/referred cases
-    const activeCases = cases.filter(c => c.status !== "Closed" && c.status !== "Referred");
-    const closed_count = cases.filter(c => c.status === "Closed").length;
-    const referred_count = cases.filter(c => c.status === "Referred").length;
+    const activeCases = scopedCases.filter(c => c.status !== "Closed" && c.status !== "Referred");
+    const closed_count = scopedCases.filter(c => c.status === "Closed").length;
+    const referred_count = scopedCases.filter(c => c.status === "Referred").length;
 
     // Compute stats
     const total_cases = activeCases.length;
@@ -126,8 +131,15 @@ export async function GET() {
     // Recent activity
     const recent_activity = activity;
 
+    // Attorney list for picker (only those with cases)
+    const attorneys = (teamMembers || [])
+      .filter(m => cases.some(c => c.attorney_id === m.id))
+      .map(m => ({ id: m.id, name: m.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
     return NextResponse.json({
       total_cases,
+      attorneys,
       closed_count,
       referred_count,
       cases_by_status,

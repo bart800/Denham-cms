@@ -61,20 +61,54 @@ function Skeleton() {
 export default function DashboardV2({ onNavigate }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [selectedAttorney, setSelectedAttorney] = useState("");
+  const [attorneys, setAttorneys] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/dashboard")
+  const fetchDashboard = (attorneyId) => {
+    setLoading(true);
+    setError(null);
+    const url = attorneyId ? `/api/dashboard?attorney_id=${attorneyId}` : "/api/dashboard";
+    fetch(url)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(setData)
-      .catch((e) => setError(e.message));
-  }, []);
+      .then((d) => {
+        setData(d);
+        if (d.attorneys && !attorneys.length) setAttorneys(d.attorneys);
+        setLoading(false);
+      })
+      .catch((e) => { setError(e.message); setLoading(false); });
+  };
+
+  useEffect(() => { fetchDashboard(selectedAttorney); }, [selectedAttorney]);
 
   if (error) return <div style={{ color: RED, padding: 40, textAlign: "center" }}>Dashboard error: {error}</div>;
 
+  const selectedName = selectedAttorney ? (attorneys.find(a => a.id === selectedAttorney)?.name || "") : "";
+
   return (
     <div style={{ minHeight: "100vh", background: NAVY, color: TEXT, padding: "24px 32px", fontFamily: "-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" }}>
-      <h1 style={{ margin: "0 0 24px", fontSize: 28, color: GOLD }}>Dashboard</h1>
-      {!data ? <Skeleton /> : <Grid data={data} onNavigate={onNavigate} />}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <h1 style={{ margin: 0, fontSize: 28, color: GOLD }}>
+          {selectedAttorney ? `${selectedName}'s Dashboard` : "Firm Dashboard"}
+        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <label style={{ fontSize: 13, color: TEXT_DIM }}>View:</label>
+          <select
+            value={selectedAttorney}
+            onChange={(e) => setSelectedAttorney(e.target.value)}
+            style={{
+              background: CARD_BG, color: TEXT, border: CARD_BORDER, borderRadius: 8,
+              padding: "8px 12px", fontSize: 14, cursor: "pointer", minWidth: 180,
+            }}
+          >
+            <option value="">🏢 Firm Wide</option>
+            {attorneys.map(a => (
+              <option key={a.id} value={a.id}>👤 {a.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {loading || !data ? <Skeleton /> : <Grid data={data} onNavigate={onNavigate} />}
     </div>
   );
 }
