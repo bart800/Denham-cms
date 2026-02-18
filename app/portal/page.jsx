@@ -49,6 +49,9 @@ export default function ClientPortal() {
   const [authStep, setAuthStep] = useState("login"); // login | code | ready
   const [code, setCode] = useState("");
   const [autoLoading, setAutoLoading] = useState(true);
+  const [authMessage, setAuthMessage] = useState("");
+  const [emailSent, setEmailSent] = useState(true);
+  const [resending, setResending] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
   const [uploadErr, setUploadErr] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -118,9 +121,32 @@ export default function ClientPortal() {
       });
       const data = await resp.json();
       if (data.error) { setError(data.error); }
-      else { setAuthStep("code"); }
+      else {
+        setAuthStep("code");
+        setAuthMessage(data.message || "");
+        setEmailSent(data.emailSent !== false);
+        if (data.ref) setRef(data.ref);
+      }
     } catch (err) { setError("Unable to connect. Please try again later."); }
     setLoading(false);
+  };
+
+  const resendCode = async () => {
+    setResending(true); setError("");
+    try {
+      const resp = await fetch("/api/portal/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ref: ref.trim(), lastName: lastName.trim() }),
+      });
+      const data = await resp.json();
+      if (data.error) { setError(data.error); }
+      else {
+        setAuthMessage(data.message || "Code resent!");
+        setEmailSent(data.emailSent !== false);
+      }
+    } catch (err) { setError("Unable to resend. Please try again."); }
+    setResending(false);
   };
 
   const verifyCode = async () => {
@@ -232,9 +258,18 @@ export default function ClientPortal() {
                 </>
               ) : (
                 <>
-                  <div style={{ marginBottom: 8, fontSize: 12, color: B.txtM }}>
-                    Code sent for <span style={{ color: B.gold, ...S.mono }}>{ref}</span>
+                  <div style={{ marginBottom: 12, fontSize: 12, color: B.txtM }}>
+                    {authMessage ? (
+                      <span>{authMessage}</span>
+                    ) : (
+                      <>Code sent for <span style={{ color: B.gold, ...S.mono }}>{ref}</span></>
+                    )}
                   </div>
+                  {!emailSent && (
+                    <div style={{ marginBottom: 12, padding: "8px 12px", background: "rgba(235,176,3,0.08)", border: `1px solid ${B.gold}30`, borderRadius: 6, fontSize: 12, color: B.gold }}>
+                      Check with your attorney's office for your code
+                    </div>
+                  )}
                   <div style={{ marginBottom: 24 }}>
                     <label style={{ fontSize: 12, color: B.txtM, marginBottom: 6, display: "block", fontWeight: 600 }}>Verification Code</label>
                     <input value={code} onChange={e => setCode(e.target.value)} placeholder="123456" maxLength={6}
@@ -245,10 +280,16 @@ export default function ClientPortal() {
                   <button onClick={verifyCode} disabled={loading} style={{ ...S.btn, width: "100%", opacity: loading ? 0.6 : 1 }}>
                     {loading ? "Verifying..." : "Verify & Login"}
                   </button>
-                  <button onClick={() => { setAuthStep("login"); setCode(""); setError(""); }}
-                    style={{ background: "transparent", border: "none", color: B.txtM, fontSize: 12, cursor: "pointer", marginTop: 12, width: "100%", textAlign: "center", fontFamily: "'DM Sans',sans-serif" }}>
-                    ← Back
-                  </button>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+                    <button onClick={() => { setAuthStep("login"); setCode(""); setError(""); setAuthMessage(""); }}
+                      style={{ background: "transparent", border: "none", color: B.txtM, fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                      ← Back
+                    </button>
+                    <button onClick={resendCode} disabled={resending}
+                      style={{ background: "transparent", border: "none", color: B.gold, fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", opacity: resending ? 0.5 : 1 }}>
+                      {resending ? "Resending..." : "Resend code"}
+                    </button>
+                  </div>
                 </>
               )}
             </div>
