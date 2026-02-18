@@ -141,6 +141,26 @@ function Grid({ data }) {
         </div>
       </Card>
 
+      {/* Cases by Phase */}
+      <Card title="Cases by Phase">
+        {(() => {
+          const phaseOrder = ["Intake", "Investigation", "Presuit Demand", "Appraisal", "Litigation - Filed", "Settled", "Closed"];
+          const phaseColors = { "Intake": "#ebb003", "Investigation": "#42a5f5", "Presuit Demand": "#ff9800", "Appraisal": "#ab47bc", "Litigation - Filed": "#e53935", "Settled": GREEN, "Closed": "#666" };
+          const entries = phaseOrder.map(p => [p, (cases_by_status || {})[p] || 0]).filter(([,v]) => v > 0);
+          const phaseMax = Math.max(...entries.map(([,v]) => v), 1);
+          return entries.map(([p, v]) => <Bar key={p} label={p} value={v} max={phaseMax} color={phaseColors[p] || GOLD} />);
+        })()}
+      </Card>
+
+      {/* Cases by State */}
+      <Card title="Cases by State">
+        {(() => {
+          const entries = Object.entries(cases_by_jurisdiction || {}).sort((a, b) => b[1] - a[1]);
+          const stateMax = Math.max(...entries.map(([,v]) => v), 1);
+          return entries.map(([s, v]) => <Bar key={s} label={s} value={v} max={stateMax} color="#42a5f5" />);
+        })()}
+      </Card>
+
       {/* Cases by Type */}
       <Card title="Cases by Type">
         {Object.entries(cases_by_type || {}).sort((a, b) => b[1] - a[1]).map(([t, c]) => (
