@@ -29,6 +29,7 @@ const CalendarPage = dynamic(() => import("./calendar-page"), { ssr: false, load
 const CaseCalendarTab = dynamic(() => import("./case-calendar-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calendar...</div> });
 const CaseEstimatesTab = dynamic(() => import("./case-estimates-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading estimates...</div> });
 const CasePleadingsTab = dynamic(() => import("./case-pleadings-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading pleadings...</div> });
+const CaseMessagesNew = dynamic(() => import("./case-messages"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading messages...</div> });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -3613,6 +3614,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "calls", l: "📞 Calls" },
     { id: "contacts", l: "👤 Contacts" },
     { id: "calendar", l: "📅 Calendar" },
+    { id: "messages", l: "💬 Messages" },
     { id: "compliance", l: "⚠️ Compliance" },
   ];
   const sc = stClr(c.status);
@@ -3826,6 +3828,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "calls" && <CaseCallsNew caseId={c.id} />}
       {tab === "contacts" && <CaseContactsNew caseId={c.id} />}
       {tab === "calendar" && <CaseCalendarTab caseId={c.id} />}
+      {tab === "messages" && <CaseMessagesNew caseId={c.id} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
     </div>
   );
