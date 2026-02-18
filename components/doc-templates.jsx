@@ -4,20 +4,47 @@ import { useState, useEffect, useRef } from "react";
 const NAVY = "#000066";
 const GOLD = "#ebb003";
 
-export default function DocTemplates({ caseId, caseName }) {
+export default function DocTemplates({ caseId: propCaseId, caseName: propCaseName }) {
   const [templates, setTemplates] = useState([]);
   const [selected, setSelected] = useState(null);
   const [html, setHtml] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const previewRef = useRef(null);
+  const [caseSearch, setCaseSearch] = useState("");
+  const [caseResults, setCaseResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedCase, setSelectedCase] = useState(
+    propCaseId ? { id: propCaseId, name: propCaseName } : null
+  );
+
+  const caseId = selectedCase?.id || propCaseId;
+  const caseName = selectedCase?.name || propCaseName;
+
+  useEffect(() => {
+    if (propCaseId) setSelectedCase({ id: propCaseId, name: propCaseName });
+  }, [propCaseId, propCaseName]);
 
   useEffect(() => {
     fetch("/api/templates")
       .then((r) => r.json())
-      .then(setTemplates)
+      .then((d) => setTemplates(Array.isArray(d) ? d : d.templates || d.data || []))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!caseSearch || caseSearch.length < 2) { setCaseResults([]); return; }
+    const timeout = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const res = await fetch(`/api/cases/search?q=${encodeURIComponent(caseSearch)}&limit=10`);
+        const data = await res.json();
+        setCaseResults(data.data || data || []);
+      } catch { setCaseResults([]); }
+      setSearchLoading(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [caseSearch]);
 
   async function generate(tpl) {
     if (!caseId) return alert("No case selected.");
@@ -75,11 +102,41 @@ export default function DocTemplates({ caseId, caseName }) {
       {/* Left: Template Grid */}
       <div style={{ width: 340, flexShrink: 0 }}>
         <h3 style={{ color: GOLD, margin: "0 0 16px 0", fontSize: 18 }}>📄 Document Templates</h3>
-        {caseName && (
-          <div style={{ color: "#aaa", fontSize: 13, marginBottom: 16 }}>
-            Case: <span style={{ color: "#fff" }}>{caseName}</span>
-          </div>
-        )}
+        {/* Case selector */}
+        <div style={{ marginBottom: 16, position: "relative" }}>
+          {selectedCase ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#1a1a2e", borderRadius: 6, border: "1px solid #333" }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#888" }}>Selected Case</div>
+                <div style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>{caseName || `Case #${caseId}`}</div>
+              </div>
+              <button onClick={() => { setSelectedCase(null); setCaseSearch(""); }} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 16 }}>✕</button>
+            </div>
+          ) : (
+            <>
+              <input
+                type="text"
+                placeholder="Search for a case..."
+                value={caseSearch}
+                onChange={(e) => setCaseSearch(e.target.value)}
+                style={{ width: "100%", padding: "8px 12px", background: "#1a1a2e", border: "1px solid #333", borderRadius: 6, color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+              />
+              {searchLoading && <div style={{ color: "#888", fontSize: 12, padding: "8px 0" }}>Searching...</div>}
+              {caseResults.length > 0 && (
+                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1a1a2e", border: "1px solid #333", borderRadius: 6, maxHeight: 200, overflowY: "auto", zIndex: 10 }}>
+                  {caseResults.map((c) => (
+                    <div key={c.id} onClick={() => { setSelectedCase({ id: c.id, name: c.client_name || c.name }); setCaseSearch(""); setCaseResults([]); }}
+                      style={{ padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid #333", fontSize: 13, color: "#ddd" }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#2a2a3e"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                      <span style={{ color: GOLD, fontFamily: "monospace" }}>{c.ref}</span> — {c.client_name || c.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {templates.map((tpl) => (
             <div

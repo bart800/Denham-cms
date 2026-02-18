@@ -4343,14 +4343,14 @@ export default function DenhamStaffPortal() {
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Tasks</h2>
             <TasksKanban userId={user.id} team={team} cases={cases} /></div>
         )}
-        {!loading && page === "templates" && <DocTemplates />}
+        {!loading && page === "templates" && <DocTemplates caseId={selCase?.id} caseName={selCase?.client} />}
         {!loading && page === "activity" && <AuditLog onNavigateCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "settings" && <SettingsPage />}
         {!loading && page === "compliance" && <ComplianceDash cases={cases} onOpen={openC} />}
         {!loading && page === "reports" && <ReportsPage />}
         {!loading && page === "contacts" && <ContactsPage />}
         {!loading && page === "compare" && <CaseCompare onSelectCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
-        {!loading && page === "intake" && <CaseIntakeForm onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
+        {!loading && page === "intake" && <CaseIntakeForm onClose={() => navTo("cases")} onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
         {!loading && page === "docs" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Documents</h2>
             <DocumentBrowser />

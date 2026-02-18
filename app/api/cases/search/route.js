@@ -22,8 +22,8 @@ export async function GET(request) {
       let query = db
         .from("cases")
         .select(
-          `id, ref, client_name, status, loss_type, insurer, claim_number, policy_number,
-           date_opened, date_closed, statute_of_limitations, jurisdiction, loss_date,
+          `id, ref, client_name, status, type, insurer, claim_number, policy_number,
+           date_opened, statute_of_limitations, jurisdiction, date_of_loss,
            attorney:team_members!cases_attorney_id_fkey(id, name, initials, color),
            support:team_members!cases_support_id_fkey(id, name, initials, color)`,
           { count: "exact" }
@@ -35,7 +35,7 @@ export async function GET(request) {
       // Apply additional filters on top of text search
       if (insurer) query = query.ilike("insurer", `%${insurer}%`);
       if (status) query = query.eq("status", status);
-      if (type) query = query.eq("loss_type", type);
+      if (type) query = query.eq("type", type);
       if (attorneyId) query = query.eq("attorney_id", attorneyId);
       if (solDays) {
         const today = new Date().toISOString().split("T")[0];
@@ -61,8 +61,8 @@ export async function GET(request) {
     let query = db
       .from("cases")
       .select(
-        `id, ref, client_name, status, loss_type, insurer, claim_number, policy_number,
-         date_opened, date_closed, statute_of_limitations, jurisdiction, loss_date,
+        `id, ref, client_name, status, type, insurer, claim_number, policy_number,
+         date_opened, statute_of_limitations, jurisdiction, date_of_loss,
          attorney:team_members!cases_attorney_id_fkey(id, name, initials, color),
          support:team_members!cases_support_id_fkey(id, name, initials, color)`,
         { count: "exact" }
@@ -70,7 +70,7 @@ export async function GET(request) {
 
     if (insurer) query = query.ilike("insurer", `%${insurer}%`);
     if (status) query = query.eq("status", status);
-    if (type) query = query.eq("loss_type", type);
+    if (type) query = query.eq("type", type);
     if (attorneyId) query = query.eq("attorney_id", attorneyId);
     if (solDays) {
       const today = new Date().toISOString().split("T")[0];

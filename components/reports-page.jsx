@@ -47,7 +47,7 @@ function CaseVolumeReport({ cases }) {
       buckets[key] = 0;
     }
     (cases || []).forEach(c => {
-      const opened = c.open_date || c.created_at;
+      const opened = c.date_opened || c.open_date || c.created_at;
       if (!opened) return;
       const key = opened.slice(0, 7);
       if (key in buckets) buckets[key]++;
@@ -120,7 +120,7 @@ function AttorneyPerformance({ cases }) {
   const rows = useMemo(() => {
     const map = {};
     (cases || []).forEach(c => {
-      const atty = c.assigned_attorney || c.attorney || 'Unassigned';
+      const atty = c.assigned_attorney || (typeof c.attorney === 'object' ? c.attorney?.name : c.attorney) || 'Unassigned';
       if (!map[atty]) map[atty] = { active: 0, settled: 0, totalRecovery: 0, wins: 0, total: 0 };
       const m = map[atty];
       m.total++;
@@ -180,7 +180,7 @@ function InsurerAnalysis({ cases }) {
   const rows = useMemo(() => {
     const map = {};
     (cases || []).forEach(c => {
-      const ins = c.insurance_company || c.insurer || 'Unknown';
+      const ins = c.insurer || c.insurance_company || 'Unknown';
       if (!map[ins]) map[ins] = { cases: 0, settled: 0, totalSettlement: 0, litigation: 0 };
       const m = map[ins];
       m.cases++;
@@ -236,8 +236,8 @@ function SOLCalendar({ cases }) {
     const end = new Date(now);
     end.setDate(end.getDate() + 90);
     return (cases || [])
-      .filter(c => c.sol_date || c.statute_of_limitations)
-      .map(c => ({ ...c, solDate: new Date(c.sol_date || c.statute_of_limitations) }))
+      .filter(c => c.statute_of_limitations || c.sol_date)
+      .map(c => ({ ...c, solDate: new Date(c.statute_of_limitations || c.sol_date) }))
       .filter(c => c.solDate >= now && c.solDate <= end)
       .sort((a, b) => a.solDate - b.solDate);
   }, [cases]);
@@ -375,13 +375,13 @@ export default function ReportsPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('/api/dashboard')
+    fetch('/api/cases/search?q=_&limit=500')
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(d => { setData(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
   }, []);
 
-  const cases = data?.cases || data?.data || [];
+  const cases = data?.data || data?.cases || [];
 
   return (
     <div style={{ background: DARK_BG, minHeight: '100vh', color: TEXT, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
