@@ -81,7 +81,7 @@ export default function CaseCalls({ caseId }) {
                   <td style={styles.td}>
                     <span style={styles.badge(categoryColors[mainCat] || '#555')}>{mainCat || c.category}</span>
                   </td>
-                  <td style={styles.td}>{c.date_started ? new Date(c.date_started).toLocaleString() : '--'}</td>
+                  <td style={styles.td}>{(c.started_at || c.date_started) ? new Date(c.started_at || c.date_started).toLocaleString() : '--'}</td>
                   <td style={styles.td}>{c.caller_name || '--'}</td>
                   <td style={styles.td}>{c.external_number || '--'}</td>
                   <td style={styles.td}>{formatDuration(c.duration_seconds)}</td>

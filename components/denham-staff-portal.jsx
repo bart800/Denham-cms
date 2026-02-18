@@ -3936,6 +3936,9 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "activity" && <ComprehensiveActivityFeed caseId={c.id} />}
       {tab === "overview" && <>
         <CaseDetailCardsNew caseData={c} />
+        <div style={{ marginTop: 20, background: B.card, borderRadius: 10, border: `1px solid ${B.bdr}`, padding: 20 }}>
+          <ComprehensiveActivityFeed caseId={c.id} limit={20} />
+        </div>
         <div style={{ marginTop: 16 }}><CaseOverview c={c} /></div>
       </>}
       {tab === "notes" && <CaseNotesTab c={c} caseId={c.id} user={user} onRefresh={() => setRefreshKey(k => k + 1)} key={refreshKey} />}
