@@ -80,7 +80,7 @@ export default function DashboardV2() {
 
 function Grid({ data }) {
   const {
-    total_cases, cases_by_status, cases_by_type, top_insurers, sol_urgent,
+    total_cases, cases_by_status, cases_by_type, cases_by_jurisdiction, top_insurers, sol_urgent,
     cases_opened_this_month, cases_opened_this_year, total_recovery_sum,
     total_fees_sum, cases_by_attorney, recent_activity,
   } = data;
