@@ -47,6 +47,10 @@ export default function ClientPortal() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
+  const [uploadErr, setUploadErr] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
 
   const lookup = async () => {
     if (!ref.trim() || !lastName.trim()) { setError("Please enter both your case reference and last name."); return; }
@@ -64,9 +68,41 @@ export default function ClientPortal() {
     setLoading(false);
   };
 
-  const handleUpload = () => {
-    setUploadMsg("Thank you! Your document has been received. Our team will review it shortly.");
-    setTimeout(() => setUploadMsg(""), 5000);
+  const ALLOWED_EXTS = ["pdf", "jpg", "jpeg", "png", "docx"];
+  const MAX_SIZE = 25 * 1024 * 1024;
+
+  const doUpload = async (file) => {
+    setUploadMsg(""); setUploadErr("");
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (!ALLOWED_EXTS.includes(ext)) { setUploadErr("File type not allowed. Please upload PDF, JPG, PNG, or DOCX."); return; }
+    if (file.size > MAX_SIZE) { setUploadErr("File is too large. Maximum size is 25MB."); return; }
+    setUploading(true); setUploadProgress(10);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("caseId", caseData.id);
+      fd.append("clientName", caseData.client);
+      setUploadProgress(30);
+      const resp = await fetch("/api/portal/upload", { method: "POST", body: fd });
+      setUploadProgress(80);
+      const data = await resp.json();
+      if (data.error) { setUploadErr(data.error); }
+      else { setUploadMsg(`✓ "${data.filename}" uploaded successfully. Our team will review it shortly.`); }
+    } catch (e) { setUploadErr("Upload failed. Please try again."); }
+    setUploading(false); setUploadProgress(100);
+    setTimeout(() => setUploadProgress(0), 2000);
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) doUpload(file);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault(); setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) doUpload(file);
   };
 
   return (
@@ -211,17 +247,31 @@ export default function ClientPortal() {
               <p style={{ fontSize: 12, color: B.txtM, marginBottom: 16 }}>
                 Have photos, receipts, or other documents to share with your legal team? Upload them here.
               </p>
-              <div style={{ border: `2px dashed ${B.bdr}`, borderRadius: 8, padding: 32, textAlign: "center", cursor: "pointer" }}
-                onClick={handleUpload}
-                onMouseEnter={e => e.currentTarget.style.borderColor = B.gold}
-                onMouseLeave={e => e.currentTarget.style.borderColor = B.bdr}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>📤</div>
-                <div style={{ fontSize: 13, color: B.txtM }}>Click to select files</div>
+              <input type="file" id="portal-file-input" accept=".pdf,.jpg,.jpeg,.png,.docx" style={{ display: "none" }} onChange={handleFileSelect} />
+              <div
+                style={{ border: `2px dashed ${dragOver ? B.gold : B.bdr}`, borderRadius: 8, padding: 32, textAlign: "center", cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.6 : 1, transition: "border-color 0.2s" }}
+                onClick={() => !uploading && document.getElementById("portal-file-input").click()}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+              >
+                <div style={{ fontSize: 32, marginBottom: 8 }}>{uploading ? "⏳" : "📤"}</div>
+                <div style={{ fontSize: 13, color: B.txtM }}>{uploading ? "Uploading..." : "Click or drag files here"}</div>
                 <div style={{ fontSize: 11, color: B.txtD, marginTop: 4 }}>PDF, JPG, PNG, DOCX up to 25MB</div>
               </div>
+              {uploadProgress > 0 && (
+                <div style={{ marginTop: 12, height: 4, background: B.bdr, borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${uploadProgress}%`, background: B.gold, borderRadius: 2, transition: "width 0.3s" }} />
+                </div>
+              )}
               {uploadMsg && (
                 <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(56,111,74,0.12)", border: `1px solid ${B.green}30`, borderRadius: 6, fontSize: 12, color: B.green }}>
                   {uploadMsg}
+                </div>
+              )}
+              {uploadErr && (
+                <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(224,64,80,0.12)", border: `1px solid ${B.danger}30`, borderRadius: 6, fontSize: 12, color: B.danger }}>
+                  {uploadErr}
                 </div>
               )}
             </div>

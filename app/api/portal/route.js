@@ -61,6 +61,7 @@ export async function POST(request) {
 
     return Response.json({
       case: {
+        id: c.id,
         ref: c.ref,
         client: c.client_name,
         status: c.status,
