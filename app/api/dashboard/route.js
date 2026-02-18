@@ -55,8 +55,9 @@ export async function GET() {
     let sol_expired_count = 0;
 
     // Separate closed cases
-    const activeCases = cases.filter(c => c.status !== "Closed");
-    const closed_count = cases.length - activeCases.length;
+    const activeCases = cases.filter(c => c.status !== "Closed" && c.status !== "Referred");
+    const closed_count = cases.filter(c => c.status === "Closed").length;
+    const referred_count = cases.filter(c => c.status === "Referred").length;
 
     for (const c of activeCases) {
       // Status
@@ -128,6 +129,7 @@ export async function GET() {
     return NextResponse.json({
       total_cases,
       closed_count,
+      referred_count,
       cases_by_status,
       cases_by_type,
       cases_by_jurisdiction,

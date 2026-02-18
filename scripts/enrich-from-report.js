@@ -213,7 +213,7 @@ async function main() {
       'Litigation': 'Litigation - Filed',
       'Settlement': 'Settled',
       'Appraisal': 'Appraisal',
-      'Referred': 'Closed',
+      'Referred': 'Referred',
     };
     const newStatus = phaseMap[row['Phase']];
     if (newStatus && match.status !== newStatus) casePatch.status = newStatus;

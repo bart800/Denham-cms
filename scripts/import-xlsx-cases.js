@@ -40,7 +40,7 @@ function excelDate(serial){
     'Settlement Decision':'Settled',
     'Case Monitoring':'Investigation',
     'Appraisal':'Appraisal',
-    'Referred':'Closed',
+    'Referred':'Referred',
   };
   
   let added=0, skipped=0, updated=0;
