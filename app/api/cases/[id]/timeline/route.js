@@ -4,103 +4,102 @@ import { NextResponse } from "next/server";
 export async function GET(request, { params }) {
   const { id } = await params;
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get("type"); // filter: note, status_change, negotiation, milestone, document
+  const type = searchParams.get("type");
 
   if (!supabaseAdmin) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
   }
 
   try {
-    // Fetch all three sources in parallel
-    const [activityRes, negotiationsRes, caseRes] = await Promise.all([
-      supabaseAdmin
-        .from("activity_log")
-        .select("*")
-        .eq("case_id", id)
-        .order("date", { ascending: false }),
-      supabaseAdmin
-        .from("negotiations")
-        .select("*")
-        .eq("case_id", id)
-        .order("date", { ascending: false }),
-      supabaseAdmin
-        .from("cases")
-        .select("client_name, date_opened, date_of_loss, statute_of_limitations")
-        .eq("id", id)
-        .single(),
+    // Fetch ALL sources in parallel
+    const [activityRes, negotiationsRes, estimatesRes, pleadingsRes, emailsRes, callsRes, caseRes] = await Promise.all([
+      supabaseAdmin.from("activity_log").select("*").eq("case_id", id).order("date", { ascending: false }),
+      supabaseAdmin.from("negotiations").select("*").eq("case_id", id).order("date", { ascending: false }),
+      supabaseAdmin.from("estimates").select("*").eq("case_id", id).order("date", { ascending: false }),
+      supabaseAdmin.from("pleadings").select("*").eq("case_id", id).order("date", { ascending: false }),
+      supabaseAdmin.from("case_emails").select("id, subject, from_address, to_address, direction, received_at").eq("case_id", id).order("received_at", { ascending: false }).limit(100),
+      supabaseAdmin.from("case_calls").select("id, direction, category, caller_name, external_number, duration_seconds, started_at, ai_summary").eq("case_id", id).order("started_at", { ascending: false }).limit(100),
+      supabaseAdmin.from("cases").select("client_name, date_opened, date_of_loss, statute_of_limitations").eq("id", id).single(),
     ]);
-
-    if (activityRes.error) throw activityRes.error;
-    if (negotiationsRes.error) throw negotiationsRes.error;
-    if (caseRes.error) throw caseRes.error;
 
     const events = [];
 
-    // 1. Activity log entries
+    // Activity log
     for (const a of activityRes.data || []) {
       events.push({
-        id: `activity-${a.id}`,
-        type: a.type || "note",
-        date: a.date || a.created_at,
-        description: a.description,
-        actor: a.actor_name || a.actor || null,
-        source: "activity_log",
+        id: `activity-${a.id}`, type: a.type || "note",
+        date: a.date || a.created_at, description: a.description,
+        actor: a.actor_name || a.actor || null, source: "activity_log",
       });
     }
 
-    // 2. Negotiations → timeline events
+    // Negotiations
     for (const n of negotiationsRes.data || []) {
       const isDemand = n.type === "demand";
       const amount = Number(n.amount).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 });
       events.push({
-        id: `negotiation-${n.id}`,
-        type: "negotiation",
+        id: `negotiation-${n.id}`, type: "negotiation",
         date: n.date || n.created_at,
         description: isDemand ? `Demand sent ${amount}` : `Offer received ${amount}`,
-        actor: n.notes || null,
-        source: "negotiations",
+        actor: n.by_name || n.notes || null, source: "negotiations",
       });
     }
 
-    // 3. Case milestones
-    const c = caseRes.data;
-    if (c) {
-      if (c.date_opened) {
-        events.push({
-          id: "milestone-opened",
-          type: "milestone",
-          date: c.date_opened,
-          description: "Case opened",
-          actor: null,
-          source: "case",
-        });
-      }
-      if (c.date_of_loss) {
-        events.push({
-          id: "milestone-loss",
-          type: "milestone",
-          date: c.date_of_loss,
-          description: "Date of loss",
-          actor: null,
-          source: "case",
-        });
-      }
-      if (c.statute_of_limitations) {
-        events.push({
-          id: "milestone-sol",
-          type: "milestone",
-          date: c.statute_of_limitations,
-          description: "Statute of limitations",
-          actor: null,
-          source: "case",
-        });
-      }
+    // Estimates
+    for (const e of estimatesRes.data || []) {
+      const amount = Number(e.amount).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 });
+      events.push({
+        id: `estimate-${e.id}`, type: "estimate",
+        date: e.date || e.created_at,
+        description: `${e.type || "Estimate"}: ${amount}${e.vendor ? ` (${e.vendor})` : ""}`,
+        actor: null, source: "estimates",
+      });
+    }
+
+    // Pleadings
+    for (const p of pleadingsRes.data || []) {
+      events.push({
+        id: `pleading-${p.id}`, type: "pleading",
+        date: p.date || p.created_at,
+        description: `${p.type || "Pleading"}${p.filed_by ? ` filed by ${p.filed_by}` : ""}${p.status ? ` — ${p.status}` : ""}`,
+        actor: p.filed_by || null, source: "pleadings",
+      });
+    }
+
+    // Emails
+    for (const e of emailsRes.data || []) {
+      events.push({
+        id: `email-${e.id}`, type: "email",
+        date: e.received_at,
+        description: `${e.direction === "inbound" ? "📥" : "📤"} ${e.subject || "(no subject)"}`,
+        actor: e.direction === "inbound" ? e.from_address : e.to_address,
+        source: "case_emails",
+      });
+    }
+
+    // Calls
+    for (const c of callsRes.data || []) {
+      const dur = c.duration_seconds ? `${Math.floor(c.duration_seconds / 60)}:${String(c.duration_seconds % 60).padStart(2, "0")}` : "";
+      events.push({
+        id: `call-${c.id}`, type: "call",
+        date: c.started_at,
+        description: `${c.direction === "inbound" ? "📞 Incoming" : "📱 Outgoing"} call${c.caller_name ? ` — ${c.caller_name}` : ""}${dur ? ` (${dur})` : ""}${c.ai_summary ? `: ${c.ai_summary}` : ""}`,
+        actor: c.caller_name || c.external_number || null,
+        source: "case_calls",
+      });
+    }
+
+    // Case milestones
+    const caseData = caseRes.data;
+    if (caseData) {
+      if (caseData.date_opened) events.push({ id: "milestone-opened", type: "milestone", date: caseData.date_opened, description: "Case opened", actor: null, source: "case" });
+      if (caseData.date_of_loss) events.push({ id: "milestone-loss", type: "milestone", date: caseData.date_of_loss, description: "Date of loss", actor: null, source: "case" });
+      if (caseData.statute_of_limitations) events.push({ id: "milestone-sol", type: "milestone", date: caseData.statute_of_limitations, description: "Statute of limitations", actor: null, source: "case" });
     }
 
     // Sort newest first
     events.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Filter by type if requested
     const filtered = type ? events.filter((e) => e.type === type) : events;
 
     return NextResponse.json({ timeline: filtered, total: filtered.length });

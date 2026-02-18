@@ -30,6 +30,7 @@ const CaseCalendarTab = dynamic(() => import("./case-calendar-tab"), { ssr: fals
 const CaseEstimatesTab = dynamic(() => import("./case-estimates-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading estimates...</div> });
 const CasePleadingsTab = dynamic(() => import("./case-pleadings-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading pleadings...</div> });
 const CaseMessagesNew = dynamic(() => import("./case-messages"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading messages...</div> });
+const ComprehensiveActivityFeed = dynamic(() => import("./comprehensive-activity-feed"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading activity...</div> });
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {
@@ -1990,6 +1991,129 @@ function ActivityFeed({ c }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// COMPREHENSIVE ACTIVITY FEED (fetches from all sources)
+// ═══════════════════════════════════════════════════════════
+const TYPE_COLORS = {
+  note: "#6c757d", call: "#386f4a", email: "#4a90d9", task: "#ff8c00",
+  document: "#20b2aa", negotiation: "#ebb003", pleading: "#e74c3c",
+  estimate: "#7b68ee", status_change: "#17a2b8", deadline: "#dc3545",
+};
+
+function ComprehensiveActivityFeed({ caseId }) {
+  const [feed, setFeed] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [sortDir, setSortDir] = useState("desc");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/cases/${caseId}/activity`)
+      .then(r => r.json())
+      .then(data => { if (!cancelled) { setFeed(Array.isArray(data) ? data : []); setLoading(false); } })
+      .catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [caseId]);
+
+  const filtered = feed
+    .filter(a => filter === "all" || a.type === filter)
+    .sort((a, b) => sortDir === "desc" ? new Date(b.date || 0) - new Date(a.date || 0) : new Date(a.date || 0) - new Date(b.date || 0));
+
+  const typeCounts = {};
+  feed.forEach(a => { typeCounts[a.type] = (typeCounts[a.type] || 0) + 1; });
+  const types = Object.keys(typeCounts).sort();
+
+  const fmtDate = (d) => {
+    if (!d) return "—";
+    try {
+      const dt = new Date(d);
+      const now = new Date();
+      const diff = now - dt;
+      if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+      if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+      if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+      return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: dt.getFullYear() !== now.getFullYear() ? "numeric" : undefined });
+    } catch { return d; }
+  };
+
+  if (loading) return (
+    <div style={{ padding: 40, textAlign: "center", color: B.txtD }}>
+      <div style={{ fontSize: 24, marginBottom: 8 }}>⏳</div>
+      Loading activity feed...
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Summary chips */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <button onClick={() => setFilter("all")} style={{
+          padding: "6px 14px", borderRadius: 20, border: `1px solid ${filter === "all" ? B.gold : B.bdr}`,
+          background: filter === "all" ? B.gold + "22" : "transparent", color: filter === "all" ? B.gold : B.txtM,
+          fontSize: 12, fontWeight: 600, cursor: "pointer",
+        }}>All ({feed.length})</button>
+        {types.map(t => (
+          <button key={t} onClick={() => setFilter(t)} style={{
+            padding: "5px 12px", borderRadius: 20, border: `1px solid ${filter === t ? (TYPE_COLORS[t] || B.gold) : B.bdr}`,
+            background: filter === t ? (TYPE_COLORS[t] || B.gold) + "22" : "transparent",
+            color: filter === t ? (TYPE_COLORS[t] || B.gold) : B.txtD,
+            fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+          }}>
+            <span>{aIcon(t)}</span>
+            <span>{t.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</span>
+            <span style={{ opacity: 0.7 }}>({typeCounts[t]})</span>
+          </button>
+        ))}
+        <button onClick={() => setSortDir(d => d === "desc" ? "asc" : "desc")} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px", marginLeft: "auto" }}>
+          {sortDir === "desc" ? "Newest ↓" : "Oldest ↑"}
+        </button>
+      </div>
+
+      {/* Feed */}
+      <div style={{ ...S.card, padding: 0 }}>
+        {filtered.length === 0 ? (
+          <div style={{ padding: 48, textAlign: "center", color: B.txtD }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
+            No activity {filter !== "all" ? "matching filter" : "yet"}
+          </div>
+        ) : filtered.map((a, i) => {
+          const clr = TYPE_COLORS[a.type] || "#888";
+          return (
+            <div key={a.id || i} style={{
+              display: "flex", gap: 14, padding: "14px 20px",
+              borderBottom: i < filtered.length - 1 ? `1px solid ${B.bdr}15` : "none",
+              borderLeft: `3px solid ${clr}`,
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = B.bdr + "20"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%", background: a.actorClr || clr,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, flexShrink: 0,
+              }}>{a.icon || aIcon(a.type)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5,
+                    color: clr, background: clr + "18", padding: "2px 8px", borderRadius: 10,
+                  }}>{a.type?.replace(/_/g, " ")}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: B.txt }}>{a.title}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, color: B.txtD, ...S.mono, flexShrink: 0 }}>{fmtDate(a.date)}</span>
+                </div>
+                {a.desc && <div style={{ fontSize: 12, color: B.txtM, marginTop: 2, lineHeight: 1.5 }}>{a.desc}</div>}
+                {a.actor && <div style={{ fontSize: 10, color: B.txtD, marginTop: 4 }}>by {a.actor}</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // CLAIM DETAILS
 // ═══════════════════════════════════════════════════════════
 function ClaimDetails({ c }) {
@@ -3603,7 +3727,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
   };
 
   const tabs = [
-    { id: "overview", l: "Overview" }, { id: "notes", l: "Notes" },
+    { id: "overview", l: "Overview" }, { id: "activity", l: "📋 Activity" }, { id: "notes", l: "Notes" },
     { id: "claim", l: "Claim Details" },
     { id: "litigation", l: "Litigation" }, { id: "negotiations", l: "Negotiations" },
     { id: "estimates", l: "Estimates" }, { id: "pleadings", l: "Pleadings" },
@@ -3781,7 +3905,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
               </div>
             ))}
             {(c.acts || []).length > 8 && (
-              <div onClick={() => setTab("notes")} style={{ padding: "8px 16px", textAlign: "center", fontSize: 11, color: B.gold, cursor: "pointer", borderTop: `1px solid ${B.bdr}` }}>
+              <div onClick={() => setTab("activity")} style={{ padding: "8px 16px", textAlign: "center", fontSize: 11, color: B.gold, cursor: "pointer", borderTop: `1px solid ${B.bdr}` }}>
                 View all activity →
               </div>
             )}
@@ -3809,6 +3933,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
 
       {noteModal && <AddNoteModal caseId={c.id} user={user} onClose={() => setNoteModal(false)} onSaved={() => setRefreshKey(k => k + 1)} />}
 
+      {tab === "activity" && <ComprehensiveActivityFeed caseId={c.id} />}
       {tab === "overview" && <>
         <CaseDetailCardsNew caseData={c} />
         <div style={{ marginTop: 16 }}><CaseOverview c={c} /></div>
@@ -4220,27 +4345,27 @@ export default function DenhamStaffPortal() {
   }, [selCase, cases, user]);
 
   const openCaseById = useCallback(async (caseId) => {
-    // Try to find in loaded cases first
-    let c = cases.find(x => x.id === caseId);
+    // Always fetch full case data for activity_log, negotiations, etc.
+    try {
+      const row = await api.getCase(caseId);
+      if (row) {
+        const c = sbToCase(row);
+        setPage("caseDetail");
+        setSelCase(c);
+        setStatusFilter("All");
+        window.history.pushState({ page: "caseDetail", caseId: c.id, statusFilter: "All" }, "", window.location.pathname);
+        return;
+      }
+    } catch (e) {
+      console.error("Failed to load case:", e);
+    }
+    // Fallback to list version if fetch fails
+    const c = cases.find(x => x.id === caseId);
     if (c) {
       setPage("caseDetail");
       setSelCase(c);
       setStatusFilter("All");
       window.history.pushState({ page: "caseDetail", caseId: c.id, statusFilter: "All" }, "", window.location.pathname);
-      return;
-    }
-    // If not found (e.g. from AI search), fetch from Supabase
-    try {
-      const row = await api.getCase(caseId);
-      if (row) {
-        c = sbToCase(row);
-        setPage("caseDetail");
-        setSelCase(c);
-        setStatusFilter("All");
-        window.history.pushState({ page: "caseDetail", caseId: c.id, statusFilter: "All" }, "", window.location.pathname);
-      }
-    } catch (e) {
-      console.error("Failed to load case:", e);
     }
   }, [cases]);
 
@@ -4295,7 +4420,19 @@ export default function DenhamStaffPortal() {
 
   if (!user) return <Login onLogin={setUser} team={team} />;
 
-  const openC = c => { navTo("caseDetail", c); };
+  const openC = async (c) => {
+    try {
+      const row = await api.getCase(c.id);
+      if (row) {
+        navTo("caseDetail", sbToCase(row));
+      } else {
+        navTo("caseDetail", c);
+      }
+    } catch (e) {
+      console.error("Failed to load full case:", e);
+      navTo("caseDetail", c);
+    }
+  };
   const backC = () => { window.history.back(); };
   const filterByStatus = st => { navTo("cases", null, st); };
   const dashNav = (target, filters) => {

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "../../../../../lib/supabase";
+import { supabaseAdmin, supabase } from "../../../../../lib/supabase";
+
+const db = supabaseAdmin || supabase;
 
 export async function GET(request, { params }) {
   try {
-    if (!supabaseAdmin) {
+    if (!db) {
       return NextResponse.json({ error: "DB not configured" }, { status: 500 });
     }
 
@@ -11,7 +13,7 @@ export async function GET(request, { params }) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
-    let query = supabaseAdmin
+    let query = db
       .from("case_calls")
       .select("*")
       .eq("case_id", id)
