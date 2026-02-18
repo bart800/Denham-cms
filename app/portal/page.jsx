@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const B = {
   navy: "#000066", gold: "#ebb003", green: "#386f4a",
@@ -46,26 +46,71 @@ export default function ClientPortal() {
   const [caseData, setCaseData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [authStep, setAuthStep] = useState("login"); // login | code | ready
+  const [code, setCode] = useState("");
+  const [autoLoading, setAutoLoading] = useState(true);
   const [uploadMsg, setUploadMsg] = useState("");
   const [uploadErr, setUploadErr] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
 
-  const lookup = async () => {
+  // Auto-login from saved token
+  useEffect(() => {
+    const token = localStorage.getItem("portal_token");
+    if (!token) { setAutoLoading(false); return; }
+    fetch("/api/portal/session", { headers: { "x-portal-token": token } })
+      .then(r => r.json())
+      .then(data => {
+        if (data.case) { setCaseData(data.case); setAuthStep("ready"); }
+        else { localStorage.removeItem("portal_token"); }
+      })
+      .catch(() => localStorage.removeItem("portal_token"))
+      .finally(() => setAutoLoading(false));
+  }, []);
+
+  const requestCode = async () => {
     if (!ref.trim() || !lastName.trim()) { setError("Please enter both your case reference and last name."); return; }
-    setLoading(true); setError(""); setCaseData(null);
+    setLoading(true); setError("");
     try {
-      const resp = await fetch("/api/portal", {
+      const resp = await fetch("/api/portal/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ref: ref.trim(), lastName: lastName.trim() }),
       });
       const data = await resp.json();
       if (data.error) { setError(data.error); }
-      else { setCaseData(data.case); }
+      else { setAuthStep("code"); }
     } catch (err) { setError("Unable to connect. Please try again later."); }
     setLoading(false);
+  };
+
+  const verifyCode = async () => {
+    if (!code.trim()) { setError("Please enter the verification code."); return; }
+    setLoading(true); setError("");
+    try {
+      const resp = await fetch("/api/portal/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ref: ref.trim(), code: code.trim() }),
+      });
+      const data = await resp.json();
+      if (data.error) { setError(data.error); }
+      else {
+        localStorage.setItem("portal_token", data.token);
+        // Fetch case data with token
+        const sessResp = await fetch("/api/portal/session", { headers: { "x-portal-token": data.token } });
+        const sessData = await sessResp.json();
+        if (sessData.case) { setCaseData(sessData.case); setAuthStep("ready"); }
+        else { setError("Failed to load case data."); }
+      }
+    } catch (err) { setError("Unable to connect. Please try again later."); }
+    setLoading(false);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("portal_token");
+    setCaseData(null); setAuthStep("login"); setRef(""); setLastName(""); setCode("");
   };
 
   const ALLOWED_EXTS = ["pdf", "jpg", "jpeg", "png", "docx"];
@@ -118,36 +163,64 @@ export default function ClientPortal() {
       </div>
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
-        {!caseData ? (
-          /* Lookup Form */
+        {autoLoading ? (
+          <div style={{ textAlign: "center", padding: 60 }}>
+            <div style={{ fontSize: 16, color: B.txtM }}>Loading...</div>
+          </div>
+        ) : !caseData ? (
+          /* Auth Form */
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>Case Lookup</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>Client Portal</h1>
             <p style={{ fontSize: 14, color: B.txtM, textAlign: "center", marginBottom: 32 }}>
-              Enter your case reference number and last name to view your case status.
+              {authStep === "login" ? "Enter your case reference number and last name to get started." : "Enter the 6-digit verification code sent to you."}
             </p>
             <div style={{ background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 32, maxWidth: 440, margin: "0 auto" }}>
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, color: B.txtM, marginBottom: 6, display: "block", fontWeight: 600 }}>Case Reference Number</label>
-                <input value={ref} onChange={e => setRef(e.target.value)} placeholder="e.g. DL-2025-0001" style={S.input}
-                  onKeyDown={e => e.key === "Enter" && lookup()} />
-              </div>
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ fontSize: 12, color: B.txtM, marginBottom: 6, display: "block", fontWeight: 600 }}>Last Name</label>
-                <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Your last name" style={S.input}
-                  onKeyDown={e => e.key === "Enter" && lookup()} />
-              </div>
-              {error && <p style={{ fontSize: 13, color: B.danger, marginBottom: 16 }}>{error}</p>}
-              <button onClick={lookup} disabled={loading} style={{ ...S.btn, width: "100%", opacity: loading ? 0.6 : 1 }}>
-                {loading ? "Looking up..." : "View My Case"}
-              </button>
+              {authStep === "login" ? (
+                <>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: 12, color: B.txtM, marginBottom: 6, display: "block", fontWeight: 600 }}>Case Reference Number</label>
+                    <input value={ref} onChange={e => setRef(e.target.value)} placeholder="e.g. DL-2025-0001" style={S.input}
+                      onKeyDown={e => e.key === "Enter" && requestCode()} />
+                  </div>
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ fontSize: 12, color: B.txtM, marginBottom: 6, display: "block", fontWeight: 600 }}>Last Name</label>
+                    <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Your last name" style={S.input}
+                      onKeyDown={e => e.key === "Enter" && requestCode()} />
+                  </div>
+                  {error && <p style={{ fontSize: 13, color: B.danger, marginBottom: 16 }}>{error}</p>}
+                  <button onClick={requestCode} disabled={loading} style={{ ...S.btn, width: "100%", opacity: loading ? 0.6 : 1 }}>
+                    {loading ? "Verifying..." : "Continue"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ marginBottom: 8, fontSize: 12, color: B.txtM }}>
+                    Code sent for <span style={{ color: B.gold, ...S.mono }}>{ref}</span>
+                  </div>
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ fontSize: 12, color: B.txtM, marginBottom: 6, display: "block", fontWeight: 600 }}>Verification Code</label>
+                    <input value={code} onChange={e => setCode(e.target.value)} placeholder="123456" maxLength={6}
+                      style={{ ...S.input, ...S.mono, fontSize: 24, textAlign: "center", letterSpacing: 8 }}
+                      onKeyDown={e => e.key === "Enter" && verifyCode()} />
+                  </div>
+                  {error && <p style={{ fontSize: 13, color: B.danger, marginBottom: 16 }}>{error}</p>}
+                  <button onClick={verifyCode} disabled={loading} style={{ ...S.btn, width: "100%", opacity: loading ? 0.6 : 1 }}>
+                    {loading ? "Verifying..." : "Verify & Login"}
+                  </button>
+                  <button onClick={() => { setAuthStep("login"); setCode(""); setError(""); }}
+                    style={{ background: "transparent", border: "none", color: B.txtM, fontSize: 12, cursor: "pointer", marginTop: 12, width: "100%", textAlign: "center", fontFamily: "'DM Sans',sans-serif" }}>
+                    ← Back
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ) : (
           /* Case View */
           <div>
-            <button onClick={() => { setCaseData(null); setRef(""); setLastName(""); }}
+            <button onClick={logout}
               style={{ background: "transparent", border: `1px solid ${B.bdr}`, borderRadius: 6, padding: "6px 14px", fontSize: 12, color: B.txtM, cursor: "pointer", marginBottom: 24, fontFamily: "'DM Sans',sans-serif" }}>
-              ← Back to Lookup
+              ← Log Out
             </button>
 
             {/* Case Header */}
