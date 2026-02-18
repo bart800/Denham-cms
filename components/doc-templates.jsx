@@ -39,7 +39,8 @@ export default function DocTemplates({ caseId: propCaseId, caseName: propCaseNam
       try {
         const res = await fetch(`/api/cases/search?q=${encodeURIComponent(caseSearch)}&limit=10`);
         const data = await res.json();
-        setCaseResults(data.data || data || []);
+        const results = data?.data || (Array.isArray(data) ? data : []);
+        setCaseResults(results);
       } catch { setCaseResults([]); }
       setSearchLoading(false);
     }, 300);
