@@ -1,0 +1,1 @@
+ALTER TABLE case_emails ADD COLUMN IF NOT EXISTS matched_by TEXT;
