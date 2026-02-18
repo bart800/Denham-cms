@@ -53,4 +53,4 @@ CREATE POLICY "case_contacts_update" ON case_contacts FOR UPDATE USING (true);
 CREATE POLICY "case_contacts_delete" ON case_contacts FOR DELETE USING (true);
 
 -- Trigger for updated_at
-CREATE TRIGGER update_contacts_updated_at BEFORE UPDATE ON contacts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_contacts_updated_at BEFORE UPDATE ON contacts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
