@@ -38,6 +38,31 @@ export default function StorageDocBrowser({ caseId, className = "" }) {
   const [error, setError] = useState(null);
   const [expandedCats, setExpandedCats] = useState({});
   const [downloading, setDownloading] = useState(null);
+  const [analyzing, setAnalyzing] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [showAnalysis, setShowAnalysis] = useState(null);
+
+  const handleAnalyze = async (doc, e) => {
+    if (e) e.stopPropagation();
+    setAnalyzing(doc.id);
+    setAnalysisResult(null);
+    try {
+      const res = await fetch("/api/docs/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ document_id: doc.id, storage_path: doc.storage_path }),
+      });
+      const data = await res.json();
+      if (data.analysis) {
+        setAnalysisResult(data.analysis);
+        setShowAnalysis(doc.id);
+      }
+    } catch (err) {
+      console.error("Analysis failed:", err);
+    } finally {
+      setAnalyzing(null);
+    }
+  };
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -190,6 +215,7 @@ export default function StorageDocBrowser({ caseId, className = "" }) {
                     <div
                       key={doc.id}
                       className="flex items-center gap-3 px-4 pl-12 py-2 hover:bg-blue-50 group cursor-pointer"
+                      style={{ position: "relative" }}
                       onClick={() => handleDownload(doc)}
                     >
                       <Icon className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -198,6 +224,17 @@ export default function StorageDocBrowser({ caseId, className = "" }) {
                         <p className="text-xs text-gray-400 truncate">{doc.original_path}</p>
                       </div>
                       <span className="text-xs text-gray-400 flex-shrink-0">{formatSize(doc.size_bytes)}</span>
+                      <button
+                        onClick={(e) => handleAnalyze(doc, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-green-600 hover:text-green-800"
+                        title="Analyze document"
+                      >
+                        {analyzing === doc.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <span style={{ fontSize: 14 }}>🔍</span>
+                        )}
+                      </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}
                         className="opacity-0 group-hover:opacity-100 p-1 text-blue-600 hover:text-blue-800"
@@ -209,6 +246,52 @@ export default function StorageDocBrowser({ caseId, className = "" }) {
                           <Download className="w-4 h-4" />
                         )}
                       </button>
+                      {showAnalysis === doc.id && analysisResult && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            position: "absolute", right: 0, top: "100%", zIndex: 50,
+                            background: "#111119", border: "1px solid #2a2a3a", borderRadius: 8,
+                            padding: 16, width: 360, maxHeight: 400, overflowY: "auto",
+                            boxShadow: "0 8px 32px rgba(0,0,0,0.5)", color: "#e8e8f0", fontSize: 13,
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                            <span style={{ fontWeight: 700, color: "#ebb003" }}>
+                              {analysisResult.docType || "Document"} Analysis
+                            </span>
+                            <button onClick={(e) => { e.stopPropagation(); setShowAnalysis(null); }} style={{ background: "none", border: "none", color: "#8888a0", cursor: "pointer", fontSize: 16 }}>✕</button>
+                          </div>
+                          {analysisResult.summary && <p style={{ marginBottom: 10, lineHeight: 1.5 }}>{analysisResult.summary}</p>}
+                          {analysisResult.amounts?.length > 0 && (
+                            <div style={{ marginBottom: 8 }}>
+                              <span style={{ color: "#386f4a", fontWeight: 600, fontSize: 11 }}>💰 AMOUNTS</span>
+                              <div>{analysisResult.amounts.map((a, i) => <span key={i} style={{ display: "inline-block", background: "rgba(56,111,74,0.15)", padding: "2px 8px", borderRadius: 12, margin: "2px 4px 2px 0", fontSize: 12 }}>{a}</span>)}</div>
+                            </div>
+                          )}
+                          {analysisResult.dates?.length > 0 && (
+                            <div style={{ marginBottom: 8 }}>
+                              <span style={{ color: "#ebb003", fontWeight: 600, fontSize: 11 }}>📅 DATES</span>
+                              <div>{analysisResult.dates.map((d, i) => <span key={i} style={{ display: "inline-block", background: "rgba(235,176,3,0.1)", padding: "2px 8px", borderRadius: 12, margin: "2px 4px 2px 0", fontSize: 12 }}>{d}</span>)}</div>
+                            </div>
+                          )}
+                          {analysisResult.parties?.length > 0 && (
+                            <div style={{ marginBottom: 8 }}>
+                              <span style={{ color: "#7c5cbf", fontWeight: 600, fontSize: 11 }}>👤 PARTIES</span>
+                              <div>{analysisResult.parties.map((p, i) => <span key={i} style={{ display: "inline-block", background: "rgba(124,92,191,0.1)", padding: "2px 8px", borderRadius: 12, margin: "2px 4px 2px 0", fontSize: 12 }}>{p}</span>)}</div>
+                            </div>
+                          )}
+                          {analysisResult.denialReason && (
+                            <div style={{ background: "rgba(224,64,80,0.1)", border: "1px solid rgba(224,64,80,0.3)", borderRadius: 6, padding: 10, marginBottom: 8 }}>
+                              <span style={{ color: "#e04050", fontWeight: 600, fontSize: 11 }}>⚠️ DENIAL REASON</span>
+                              <p style={{ marginTop: 4, fontSize: 12, lineHeight: 1.4 }}>{analysisResult.denialReason}</p>
+                            </div>
+                          )}
+                          {analysisResult.flags?.length > 0 && (
+                            <div>{analysisResult.flags.map((f, i) => <div key={i} style={{ color: "#ebb003", fontSize: 12 }}>⚡ {f}</div>)}</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
