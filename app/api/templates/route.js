@@ -39,6 +39,13 @@ const TEMPLATES = [
     category: "Litigation",
   },
   {
+    id: "pi-demand-letter",
+    name: "Personal Injury Demand Letter",
+    description: "Comprehensive PI demand letter with liability, medical treatment, and damages",
+    icon: "🩹",
+    category: "Personal Injury",
+  },
+  {
     id: "authorization-release",
     name: "Authorization Release",
     description: "Medical/property records release form",
@@ -220,8 +227,111 @@ function generateAuthorizationRelease(c) {
   </style></head><body>${letterhead()}${body}</body></html>`;
 }
 
+function generatePiDemandLetter(c) {
+  const claim = c.claim_details || {};
+  const medicalExpenses = parseFloat(claim.medical_expenses) || 0;
+  const lostWages = parseFloat(claim.lost_wages) || 0;
+  const otherDamages = parseFloat(claim.other_damages) || 0;
+  const economicTotal = medicalExpenses + lostWages + otherDamages;
+  // Default non-economic multiplier: 3x medical if no explicit amount
+  const nonEconomic = parseFloat(claim.non_economic_damages) || (medicalExpenses * 3);
+  const totalDemand = economicTotal + nonEconomic;
+
+  const deadlineDate = new Date();
+  deadlineDate.setDate(deadlineDate.getDate() + 30);
+  const deadline = formatDate(deadlineDate);
+
+  const body = `
+    <div style="margin-bottom:24px;">${formatDate()}</div>
+    <div style="margin-bottom:4px;"><strong>VIA CERTIFIED MAIL — RETURN RECEIPT REQUESTED</strong></div>
+    <div style="margin-bottom:4px;">&nbsp;</div>
+    <div style="margin-bottom:4px;">${v(c.insurer, "[Insurance Company]")}</div>
+    <div style="margin-bottom:4px;">Attn: ${v(c.adjuster_name, "[Claims Adjuster]")}</div>
+    ${c.adjuster_email ? `<div style="margin-bottom:4px;">${c.adjuster_email}</div>` : ""}
+    <div style="margin-bottom:24px;">&nbsp;</div>
+
+    <div style="margin-bottom:24px;"><strong>Re: ${v(c.client_name)} — Claim No. ${v(c.claim_number)} — Policy No. ${v(c.policy_number)} — Date of Incident: ${v(c.date_of_loss ? formatDate(c.date_of_loss) : null)}</strong></div>
+
+    <p>Dear ${v(c.adjuster_name, "Claims Adjuster")}:</p>
+
+    <h3 style="color:#000066;border-bottom:1px solid #000066;padding-bottom:4px;">I. Representation</h3>
+    <p>Please be advised that this firm represents <strong>${v(c.client_name)}</strong> in connection with a personal injury claim arising from the incident that occurred on <strong>${v(c.date_of_loss ? formatDate(c.date_of_loss) : null)}</strong>. This letter constitutes a formal demand for settlement of our client's claim against your insured.</p>
+
+    <h3 style="color:#000066;border-bottom:1px solid #000066;padding-bottom:4px;">II. Facts of the Incident &amp; Liability</h3>
+    <p>On ${v(c.date_of_loss ? formatDate(c.date_of_loss) : null)}, ${v(c.client_name)} was involved in ${v(c.cause_of_loss, "[describe the incident — e.g., a motor vehicle collision at the intersection of Main St. and Broadway in Lexington, Kentucky]")}.</p>
+    <p><em>[Describe the facts establishing liability — the at-fault party's negligence, traffic violations, witness statements, police report findings, etc.]</em></p>
+    <p>Your insured's negligence was the sole and proximate cause of this incident and the resulting injuries to our client.</p>
+
+    <h3 style="color:#000066;border-bottom:1px solid #000066;padding-bottom:4px;">III. Injuries &amp; Medical Treatment</h3>
+    <p>As a direct and proximate result of this incident, ${v(c.client_name)} sustained the following injuries:</p>
+    <ul>
+      <li><em>[Injury 1 — e.g., cervical strain/sprain]</em></li>
+      <li><em>[Injury 2 — e.g., lumbar disc herniation at L4-L5]</em></li>
+      <li><em>[Injury 3 — e.g., right shoulder rotator cuff tear]</em></li>
+      <li><em>[Additional injuries as applicable]</em></li>
+    </ul>
+
+    <p><strong>Emergency Treatment:</strong></p>
+    <p><em>[Describe initial ER visit, ambulance transport, hospital, date, findings]</em></p>
+
+    <p><strong>Follow-Up Treatment &amp; Providers:</strong></p>
+    <ul>
+      <li><em>[Provider Name] — [type of treatment, dates, frequency]</em></li>
+      <li><em>[Provider Name] — [type of treatment, dates, frequency]</em></li>
+      <li><em>[Provider Name] — [type of treatment, dates, frequency]</em></li>
+    </ul>
+
+    <p><strong>Diagnostic Studies:</strong></p>
+    <p><em>[MRI findings, X-ray results, CT scans, EMG/NCS results, etc.]</em></p>
+
+    <p><strong>Current Status &amp; Prognosis:</strong></p>
+    <p><em>[Describe current condition, any permanent impairment, future treatment recommendations, MMI status]</em></p>
+
+    <h3 style="color:#000066;border-bottom:1px solid #000066;padding-bottom:4px;">IV. Pain, Suffering &amp; Loss of Enjoyment of Life</h3>
+    <p>${v(c.client_name)} has endured significant physical pain and emotional suffering as a result of this incident. Our client's daily life has been substantially disrupted, including:</p>
+    <ul>
+      <li>Chronic pain requiring ongoing treatment and medication</li>
+      <li>Inability to participate in recreational activities and hobbies</li>
+      <li>Difficulty performing routine daily tasks and household activities</li>
+      <li>Emotional distress, anxiety, and diminished quality of life</li>
+      <li>Disruption to family and social relationships</li>
+    </ul>
+    <p><em>[Add case-specific details about how the injuries have impacted the client's life]</em></p>
+
+    <h3 style="color:#000066;border-bottom:1px solid #000066;padding-bottom:4px;">V. Damages</h3>
+
+    <p><strong>A. Economic Damages:</strong></p>
+    <table style="width:100%;border-collapse:collapse;margin:12px 0 24px 0;">
+      <tr><td style="padding:6px 12px;border-bottom:1px solid #ddd;">Medical Expenses (to date)</td><td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:right;">$${medicalExpenses.toLocaleString("en-US", {minimumFractionDigits:2})}</td></tr>
+      <tr><td style="padding:6px 12px;border-bottom:1px solid #ddd;">Lost Wages / Loss of Earning Capacity</td><td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:right;">$${lostWages.toLocaleString("en-US", {minimumFractionDigits:2})}</td></tr>
+      ${otherDamages > 0 ? `<tr><td style="padding:6px 12px;border-bottom:1px solid #ddd;">Other Economic Damages</td><td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:right;">$${otherDamages.toLocaleString("en-US", {minimumFractionDigits:2})}</td></tr>` : ""}
+      <tr style="font-weight:bold;"><td style="padding:6px 12px;border-top:2px solid #000;">Total Economic Damages</td><td style="padding:6px 12px;border-top:2px solid #000;text-align:right;">$${economicTotal.toLocaleString("en-US", {minimumFractionDigits:2})}</td></tr>
+    </table>
+
+    <p><strong>B. Non-Economic Damages:</strong></p>
+    <table style="width:100%;border-collapse:collapse;margin:12px 0 24px 0;">
+      <tr><td style="padding:6px 12px;border-bottom:1px solid #ddd;">Pain and Suffering</td><td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:right;" rowspan="1">$${nonEconomic.toLocaleString("en-US", {minimumFractionDigits:2})}</td></tr>
+    </table>
+
+    <h3 style="color:#000066;border-bottom:1px solid #000066;padding-bottom:4px;">VI. Total Demand</h3>
+    <table style="width:100%;border-collapse:collapse;margin:12px 0 24px 0;">
+      <tr><td style="padding:6px 12px;border-bottom:1px solid #ddd;">Economic Damages</td><td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:right;">$${economicTotal.toLocaleString("en-US", {minimumFractionDigits:2})}</td></tr>
+      <tr><td style="padding:6px 12px;border-bottom:1px solid #ddd;">Non-Economic Damages</td><td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:right;">$${nonEconomic.toLocaleString("en-US", {minimumFractionDigits:2})}</td></tr>
+      <tr style="font-weight:bold;font-size:16px;"><td style="padding:8px 12px;border-top:3px double #000066;color:#000066;">TOTAL DEMAND</td><td style="padding:8px 12px;border-top:3px double #000066;text-align:right;color:#000066;">$${totalDemand.toLocaleString("en-US", {minimumFractionDigits:2})}</td></tr>
+    </table>
+
+    <p>Based on the foregoing, we hereby demand the total sum of <strong>$${totalDemand.toLocaleString("en-US", {minimumFractionDigits:2})}</strong> to fully and fairly compensate ${v(c.client_name)} for the injuries and damages sustained.</p>
+
+    <h3 style="color:#000066;border-bottom:1px solid #000066;padding-bottom:4px;">VII. Settlement Deadline</h3>
+    <p>This demand shall remain open for <strong>thirty (30) days</strong> from the date of this letter, through <strong>${deadline}</strong>. If we do not receive a response or a good-faith settlement offer by that date, we will have no alternative but to pursue all available legal remedies, including the filing of a civil action seeking compensatory damages, punitive damages where applicable, pre- and post-judgment interest, and attorney's fees and costs.</p>
+
+    <p>Please direct all correspondence regarding this matter to the undersigned at the address above. We look forward to resolving this claim promptly and fairly.</p>`;
+  return wrap(body);
+}
+
 const GENERATORS = {
   "demand-letter": generateDemandLetter,
+  "pi-demand-letter": generatePiDemandLetter,
   "representation-letter": generateRepresentationLetter,
   "status-update-client": generateStatusUpdateClient,
   "preservation-letter": generatePreservationLetter,

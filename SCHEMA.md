@@ -125,7 +125,12 @@
 ## claim_details
 - id UUID PK
 - case_id UUID FK → cases
-- (various claim-specific fields)
+- property_damage NUMERIC
+- medical_expenses NUMERIC
+- lost_wages NUMERIC
+- other_damages NUMERIC
+- non_economic_damages NUMERIC (used by PI demand letter; defaults to 3x medical if absent)
+- (various other claim-specific fields)
 
 ## litigation_details
 - id UUID PK
