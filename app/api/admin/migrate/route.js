@@ -29,9 +29,23 @@ export async function POST(request) {
   // Username is "postgres" (not "postgres.ref") for dedicated pooler
   const strategies = [
     process.env.DATABASE_URL,
+    // Dedicated pooler transaction mode
     `postgres://postgres:${password}@db.amyttoowrroajffqubpd.supabase.co:6543/postgres`,
+    // Direct connection
     `postgresql://postgres:${password}@db.amyttoowrroajffqubpd.supabase.co:5432/postgres`,
   ].filter(Boolean);
+
+  // Try DNS resolution first to debug
+  const dns = require('dns');
+  const dnsResults = {};
+  try {
+    const addrs4 = await new Promise((res, rej) => dns.resolve4('db.amyttoowrroajffqubpd.supabase.co', (e, a) => e ? rej(e) : res(a)));
+    dnsResults.ipv4 = addrs4;
+  } catch (e) { dnsResults.ipv4Error = e.message; }
+  try {
+    const addrs6 = await new Promise((res, rej) => dns.resolve6('db.amyttoowrroajffqubpd.supabase.co', (e, a) => e ? rej(e) : res(a)));
+    dnsResults.ipv6 = addrs6;
+  } catch (e) { dnsResults.ipv6Error = e.message; }
 
   const errors = [];
   for (let i = 0; i < strategies.length; i++) {
@@ -51,5 +65,5 @@ export async function POST(request) {
     }
   }
 
-  return NextResponse.json({ error: "All strategies failed", details: errors }, { status: 500 });
+  return NextResponse.json({ error: "All strategies failed", details: errors, dns: dnsResults }, { status: 500 });
 }
