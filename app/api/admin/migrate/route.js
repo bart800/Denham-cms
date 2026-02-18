@@ -12,10 +12,9 @@ export async function POST(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Build connection string from existing env vars
-  // DB_PASSWORD must be set on Vercel, or fall back to DATABASE_URL
+  // Use Supabase connection pooler (Transaction mode, port 6543)
   const connStr = process.env.DATABASE_URL || 
-    `postgresql://postgres:${process.env.DB_PASSWORD}@db.amyttoowrroajffqubpd.supabase.co:5432/postgres`;
+    `postgresql://postgres.amyttoowrroajffqubpd:${process.env.DB_PASSWORD}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
 
   const client = new Client({
     connectionString: connStr,
