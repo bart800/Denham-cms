@@ -26,7 +26,7 @@ export async function POST(request) {
     const now = new Date();
     const start = body.start || now.toISOString();
     const endDate = new Date(now);
-    endDate.setDate(endDate.getDate() + 90);
+    endDate.setDate(endDate.getDate() + 365);
     const end = body.end || endDate.toISOString();
 
     // Fetch events from Outlook
