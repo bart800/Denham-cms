@@ -1617,16 +1617,16 @@ function Dash({ user, cases, onOpen, onFilterStatus }) {
 // ═══════════════════════════════════════════════════════════
 // CASES LIST (with smart search)
 // ═══════════════════════════════════════════════════════════
-function Cases({ user, cases, onOpen, initialStatus, onClearFilter, team, onBatchUpdate, onCaseCreated }) {
+function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilter, team, onBatchUpdate, onCaseCreated }) {
   const [search, setSearch] = useState("");
-  const [fSt, setFSt] = useState(initialStatus || "All");
+  const [fSt, setFSt] = useState(initialFilters?.status || initialStatus || "All");
   const [newCaseOpen, setNewCaseOpen] = useState(false);
-  const [fJ, setFJ] = useState("All");
-  const [fIns, setFIns] = useState("All");
-  const [fAtt, setFAtt] = useState("All");
+  const [fJ, setFJ] = useState(initialFilters?.jurisdiction || "All");
+  const [fIns, setFIns] = useState(initialFilters?.insurer || "All");
+  const [fAtt, setFAtt] = useState(initialFilters?.attorney || "All");
   const [fDateFrom, setFDateFrom] = useState("");
   const [fDateTo, setFDateTo] = useState("");
-  const [fType, setFType] = useState("All");
+  const [fType, setFType] = useState(initialFilters?.type || "All");
   const [fDolFrom, setFDolFrom] = useState("");
   const [fDolTo, setFDolTo] = useState("");
   const [scope, setScope] = useState("all");
@@ -4109,6 +4109,7 @@ export default function DenhamStaffPortal() {
   const [page, setPage] = useState("dashboard");
   const [selCase, setSelCase] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [dashFilters, setDashFilters] = useState(null);
   const [cases, setCases] = useState([]);
   const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -4294,6 +4295,13 @@ export default function DenhamStaffPortal() {
   const openC = c => { navTo("caseDetail", c); };
   const backC = () => { window.history.back(); };
   const filterByStatus = st => { navTo("cases", null, st); };
+  const dashNav = (target, filters) => {
+    if (target === "cases") {
+      setDashFilters(filters);
+      setStatusFilter(filters?.status || "All");
+      navTo("cases", null, filters?.status || "All");
+    }
+  };
   const handleCaseCreated = (row) => {
     const newCase = sbToCase(row);
     setCases(prev => [newCase, ...prev]);
@@ -4342,8 +4350,8 @@ export default function DenhamStaffPortal() {
             <div style={{ fontSize: 14, color: B.txtM }}>Loading...</div>
           </div>
         )}
-        {!loading && page === "dashboard" && <DashboardV2 />}
-        {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={() => setStatusFilter("All")} team={team} onBatchUpdate={updateCase} onCaseCreated={handleCaseCreated} />}
+        {!loading && page === "dashboard" && <DashboardV2 onNavigate={dashNav} />}
+        {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} initialFilters={dashFilters} onClearFilter={() => { setStatusFilter("All"); setDashFilters(null); }} team={team} onBatchUpdate={updateCase} onCaseCreated={handleCaseCreated} />}
         {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} allCases={cases} />}
         {!loading && page === "calendar" && <CalendarPage />}
         {!loading && page === "tasks" && (

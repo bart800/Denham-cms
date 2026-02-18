@@ -32,10 +32,11 @@ function Card({ title, span, children }) {
   );
 }
 
-function Bar({ label, value, max, color = GOLD }) {
+function Bar({ label, value, max, color = GOLD, onClick }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
+  const clickable = !!onClick;
   return (
-    <div style={{ marginBottom: 8 }}>
+    <div style={{ marginBottom: 8, cursor: clickable ? "pointer" : "default" }} onClick={onClick}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 3 }}>
         <span style={{ color: TEXT }}>{label}</span>
         <span style={{ color: TEXT_DIM }}>{value}</span>
@@ -57,7 +58,7 @@ function Skeleton() {
   );
 }
 
-export default function DashboardV2() {
+export default function DashboardV2({ onNavigate }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -73,12 +74,13 @@ export default function DashboardV2() {
   return (
     <div style={{ minHeight: "100vh", background: NAVY, color: TEXT, padding: "24px 32px", fontFamily: "-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" }}>
       <h1 style={{ margin: "0 0 24px", fontSize: 28, color: GOLD }}>Dashboard</h1>
-      {!data ? <Skeleton /> : <Grid data={data} />}
+      {!data ? <Skeleton /> : <Grid data={data} onNavigate={onNavigate} />}
     </div>
   );
 }
 
-function Grid({ data }) {
+function Grid({ data, onNavigate }) {
+  const nav = (filter) => onNavigate && onNavigate("cases", filter);
   const {
     total_cases, cases_by_status, cases_by_type, cases_by_jurisdiction, top_insurers, sol_urgent,
     cases_opened_this_month, cases_opened_this_year, total_recovery_sum,
@@ -144,11 +146,11 @@ function Grid({ data }) {
       {/* Cases by Phase */}
       <Card title="Cases by Phase">
         {(() => {
-          const phaseOrder = ["Intake", "Investigation", "Presuit Demand", "Appraisal", "Litigation - Filed", "Settled", "Closed"];
-          const phaseColors = { "Intake": "#ebb003", "Investigation": "#42a5f5", "Presuit Demand": "#ff9800", "Appraisal": "#ab47bc", "Litigation - Filed": "#e53935", "Settled": GREEN, "Closed": "#666" };
+          const phaseOrder = ["Intake", "Investigation", "Presuit Demand", "Appraisal", "Litigation - Filed", "Settlement", "Referred"];
+          const phaseColors = { "Intake": "#ebb003", "Investigation": "#42a5f5", "Presuit Demand": "#ff9800", "Appraisal": "#ab47bc", "Litigation - Filed": "#e53935", "Settlement": GREEN, "Referred": "#666" };
           const entries = phaseOrder.map(p => [p, (cases_by_status || {})[p] || 0]).filter(([,v]) => v > 0);
           const phaseMax = Math.max(...entries.map(([,v]) => v), 1);
-          return entries.map(([p, v]) => <Bar key={p} label={p} value={v} max={phaseMax} color={phaseColors[p] || GOLD} />);
+          return entries.map(([p, v]) => <Bar key={p} label={p} value={v} max={phaseMax} color={phaseColors[p] || GOLD} onClick={() => nav({ status: p })} />);
         })()}
       </Card>
 
@@ -157,28 +159,28 @@ function Grid({ data }) {
         {(() => {
           const entries = Object.entries(cases_by_jurisdiction || {}).sort((a, b) => b[1] - a[1]);
           const stateMax = Math.max(...entries.map(([,v]) => v), 1);
-          return entries.map(([s, v]) => <Bar key={s} label={s} value={v} max={stateMax} color="#42a5f5" />);
+          return entries.map(([s, v]) => <Bar key={s} label={s} value={v} max={stateMax} color="#42a5f5" onClick={() => nav({ jurisdiction: s })} />);
         })()}
       </Card>
 
       {/* Cases by Type */}
       <Card title="Cases by Type">
         {Object.entries(cases_by_type || {}).sort((a, b) => b[1] - a[1]).map(([t, c]) => (
-          <Bar key={t} label={`${typeEmoji[t.toLowerCase()] || "❓"} ${t}`} value={c} max={typeMax} color={GOLD} />
+          <Bar key={t} label={`${typeEmoji[t.toLowerCase()] || "❓"} ${t}`} value={c} max={typeMax} color={GOLD} onClick={() => nav({ type: t })} />
         ))}
       </Card>
 
       {/* Top 10 Insurers */}
       <Card title="Top 10 Insurers">
         {(top_insurers || []).slice(0, 10).map((ins) => (
-          <Bar key={ins.name} label={ins.name} value={ins.count} max={insurerMax} color="#5c6bc0" />
+          <Bar key={ins.name} label={ins.name} value={ins.count} max={insurerMax} color="#5c6bc0" onClick={() => nav({ insurer: ins.name })} />
         ))}
       </Card>
 
       {/* Cases by Attorney */}
       <Card title="Cases by Attorney">
         {(cases_by_attorney || []).map((a) => (
-          <Bar key={a.name} label={a.name} value={a.count} max={attMax} color={GREEN} />
+          <Bar key={a.name} label={a.name} value={a.count} max={attMax} color={GREEN} onClick={() => nav({ attorney: a.name })} />
         ))}
       </Card>
 
