@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin, supabase } from "../../../../../lib/supabase";
+import { supabaseAdmin, supabase } from "@/lib/supabase";
 
 const db = supabaseAdmin || supabase;
 
@@ -88,14 +88,14 @@ export async function GET(request, { params }) {
 
     // Documents
     const { data: docs } = await db
-      .from("case_documents")
+      .from("documents")
       .select("*")
       .eq("case_id", id);
     (docs || []).forEach(d => feed.push({
-      id: `doc-${d.id}`, date: d.created_at || d.uploaded_at, type: "document",
-      icon: "📄", title: `Document: ${d.name || d.file_name || "Untitled"}`,
-      desc: d.category || d.description || "", actor: d.uploaded_by, actorIni: "D", actorClr: "#20b2aa",
-      meta: { category: d.category, fileName: d.file_name || d.name },
+      id: `doc-${d.id}`, date: d.uploaded_at || d.created_at, type: "document",
+      icon: "📄", title: `Document: ${d.filename || d.original_path || "Untitled"}`,
+      desc: d.category || "", actor: null, actorIni: "D", actorClr: "#20b2aa",
+      meta: { category: d.category, fileName: d.filename },
     }));
 
     // Tasks

@@ -30,7 +30,7 @@ const CaseCalendarTab = dynamic(() => import("./case-calendar-tab"), { ssr: fals
 const CaseEstimatesTab = dynamic(() => import("./case-estimates-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading estimates...</div> });
 const CasePleadingsTab = dynamic(() => import("./case-pleadings-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading pleadings...</div> });
 const CaseMessagesNew = dynamic(() => import("./case-messages"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading messages...</div> });
-const ComprehensiveActivityFeed = dynamic(() => import("./comprehensive-activity-feed"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading activity...</div> });
+// ComprehensiveActivityFeed is defined inline below (not imported)
 
 // ─── Brand Colors ───────────────────────────────────────────
 const B = {

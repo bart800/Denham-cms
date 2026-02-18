@@ -1,25 +1,28 @@
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin, supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+
+const db = supabaseAdmin || supabase;
 
 export async function GET(request, { params }) {
   const { id } = await params;
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type");
 
-  if (!supabaseAdmin) {
+  if (!db) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
   }
 
   try {
     // Fetch ALL sources in parallel
-    const [activityRes, negotiationsRes, estimatesRes, pleadingsRes, emailsRes, callsRes, caseRes] = await Promise.all([
-      supabaseAdmin.from("activity_log").select("*").eq("case_id", id).order("date", { ascending: false }),
-      supabaseAdmin.from("negotiations").select("*").eq("case_id", id).order("date", { ascending: false }),
-      supabaseAdmin.from("estimates").select("*").eq("case_id", id).order("date", { ascending: false }),
-      supabaseAdmin.from("pleadings").select("*").eq("case_id", id).order("date", { ascending: false }),
-      supabaseAdmin.from("case_emails").select("id, subject, from_address, to_address, direction, received_at").eq("case_id", id).order("received_at", { ascending: false }).limit(100),
-      supabaseAdmin.from("case_calls").select("id, direction, category, caller_name, external_number, duration_seconds, started_at, ai_summary").eq("case_id", id).order("started_at", { ascending: false }).limit(100),
-      supabaseAdmin.from("cases").select("client_name, date_opened, date_of_loss, statute_of_limitations").eq("id", id).single(),
+    const [activityRes, negotiationsRes, estimatesRes, pleadingsRes, emailsRes, callsRes, docsRes, caseRes] = await Promise.all([
+      db.from("activity_log").select("*").eq("case_id", id).order("date", { ascending: false }),
+      db.from("negotiations").select("*").eq("case_id", id).order("date", { ascending: false }),
+      db.from("estimates").select("*").eq("case_id", id).order("date", { ascending: false }),
+      db.from("pleadings").select("*").eq("case_id", id).order("date", { ascending: false }),
+      db.from("case_emails").select("id, subject, from_address, to_address, direction, received_at").eq("case_id", id).order("received_at", { ascending: false }).limit(100),
+      db.from("case_calls").select("id, direction, category, caller_name, external_number, duration_seconds, started_at, ai_summary").eq("case_id", id).order("started_at", { ascending: false }).limit(100),
+      db.from("documents").select("id, filename, category, uploaded_at, created_at").eq("case_id", id).order("uploaded_at", { ascending: false }).limit(200),
+      db.from("cases").select("client_name, date_opened, date_of_loss, statute_of_limitations").eq("id", id).single(),
     ]);
 
     const events = [];
@@ -86,6 +89,16 @@ export async function GET(request, { params }) {
         description: `${c.direction === "inbound" ? "📞 Incoming" : "📱 Outgoing"} call${c.caller_name ? ` — ${c.caller_name}` : ""}${dur ? ` (${dur})` : ""}${c.ai_summary ? `: ${c.ai_summary}` : ""}`,
         actor: c.caller_name || c.external_number || null,
         source: "case_calls",
+      });
+    }
+
+    // Documents
+    for (const d of docsRes.data || []) {
+      events.push({
+        id: `doc-${d.id}`, type: "document",
+        date: d.uploaded_at || d.created_at,
+        description: `📄 ${d.filename || "Document"}${d.category ? ` (${d.category})` : ""}`,
+        actor: null, source: "documents",
       });
     }
 
