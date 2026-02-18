@@ -396,21 +396,6 @@ function EventModal({ event, onClose, onToggleMet }) {
   );
 }
 
-function countdownText(days) {
-  if (days === 0) return "TODAY";
-  if (days === 1) return "TOMORROW";
-  if (days < 0) return `${Math.abs(days)}d OVERDUE`;
-  return `${days}d`;
-}
-
-function urgencyColor(days) {
-  if (days <= 0) return "#e53935";
-  if (days <= 3) return "#e74c3c";
-  if (days <= 7) return "#ff9800";
-  if (days <= 14) return "#ebb003";
-  return "#386f4a";
-}
-
 function guessType(subject) {
   const s = (subject || "").toLowerCase();
   if (s.includes("deadline")) return "deadline";
