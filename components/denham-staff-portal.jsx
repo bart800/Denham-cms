@@ -25,6 +25,8 @@ const CaseCallsNew = dynamic(() => import("./case-calls"), { ssr: false, loading
 const ContactsPage = dynamic(() => import("./contacts-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading contacts...</div> });
 const CaseContactsNew = dynamic(() => import("./case-contacts"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading contacts...</div> });
 const CaseDocumentsTab = dynamic(() => import("./case-documents-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading documents...</div> });
+const CalendarPage = dynamic(() => import("./calendar-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calendar...</div> });
+const CaseCalendarTab = dynamic(() => import("./case-calendar-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calendar...</div> });
 const CaseEstimatesTab = dynamic(() => import("./case-estimates-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading estimates...</div> });
 const CasePleadingsTab = dynamic(() => import("./case-pleadings-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading pleadings...</div> });
 
@@ -3610,6 +3612,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "emails", l: "Emails" },
     { id: "calls", l: "📞 Calls" },
     { id: "contacts", l: "👤 Contacts" },
+    { id: "calendar", l: "📅 Calendar" },
     { id: "compliance", l: "⚠️ Compliance" },
   ];
   const sc = stClr(c.status);
@@ -3822,6 +3825,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "emails" && <CaseEmailsNew caseId={c.id} />}
       {tab === "calls" && <CaseCallsNew caseId={c.id} />}
       {tab === "contacts" && <CaseContactsNew caseId={c.id} />}
+      {tab === "calendar" && <CaseCalendarTab caseId={c.id} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
     </div>
   );
@@ -4341,7 +4345,7 @@ export default function DenhamStaffPortal() {
         {!loading && page === "dashboard" && <DashboardV2 />}
         {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} onClearFilter={() => setStatusFilter("All")} team={team} onBatchUpdate={updateCase} onCaseCreated={handleCaseCreated} />}
         {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} allCases={cases} />}
-        {!loading && page === "calendar" && <CalendarView cases={cases} onOpen={openC} />}
+        {!loading && page === "calendar" && <CalendarPage />}
         {!loading && page === "tasks" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Tasks</h2>
             <TasksKanban userId={user.id} team={team} cases={cases} /></div>
