@@ -11,27 +11,32 @@ export async function POST(request) {
   }
 
   if (debug) {
+    // List all env vars that might contain DB connection info
+    const envKeys = Object.keys(process.env).filter(k => 
+      k.includes('DATABASE') || k.includes('POSTGRES') || k.includes('PG') || 
+      k.includes('DB_') || k.includes('SUPABASE')
+    );
     return NextResponse.json({
-      hasDBPassword: !!process.env.DB_PASSWORD,
-      dbPasswordLen: process.env.DB_PASSWORD?.length || 0,
-      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      dbEnvVars: envKeys.map(k => ({ key: k, len: process.env[k]?.length || 0, preview: process.env[k]?.substring(0, 30) + '...' }))
     });
   }
 
-  const password = process.env.DB_PASSWORD;
-  if (!password && !process.env.DATABASE_URL) {
-    return NextResponse.json({ error: "DB_PASSWORD or DATABASE_URL env var not set" }, { status: 500 });
-  }
-
-  // Try strategies in order
-  const errors = [];
+  // Build strategies from available env vars
+  const password = process.env.DB_PASSWORD || '';
   const strategies = [
     process.env.DATABASE_URL,
-    `postgresql://postgres:${password}@db.amyttoowrroajffqubpd.supabase.co:5432/postgres`,
-    `postgresql://postgres.amyttoowrroajffqubpd:${password}@aws-0-us-east-1.pooler.supabase.com:5432/postgres`,
-    `postgresql://postgres.amyttoowrroajffqubpd:${password}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`,
+    process.env.POSTGRES_URL,
+    process.env.POSTGRES_URL_NON_POOLING,
+    process.env.SUPABASE_DB_URL,
+    // Direct connection (IPv6, may work on Vercel)
+    password ? `postgresql://postgres:${password}@db.amyttoowrroajffqubpd.supabase.co:5432/postgres` : null,
+    // Session mode pooler
+    password ? `postgresql://postgres.amyttoowrroajffqubpd:${password}@aws-0-us-east-1.pooler.supabase.com:5432/postgres` : null,
+    // Transaction mode pooler  
+    password ? `postgresql://postgres.amyttoowrroajffqubpd:${password}@aws-0-us-east-1.pooler.supabase.com:6543/postgres` : null,
   ].filter(Boolean);
 
+  const errors = [];
   for (let i = 0; i < strategies.length; i++) {
     const client = new Client({
       connectionString: strategies[i],
@@ -44,7 +49,7 @@ export async function POST(request) {
       await client.end();
       return NextResponse.json({ ok: true, rowCount: result.rowCount, strategyIndex: i });
     } catch (e) {
-      errors.push({ strategy: i, error: e.message });
+      errors.push({ strategy: i, host: strategies[i].split('@')[1]?.split('/')[0] || '?', error: e.message });
       await client.end().catch(() => {});
     }
   }
