@@ -39,6 +39,11 @@ export async function GET() {
       activity = actData || [];
     } catch { /* empty or table issue */ }
 
+    // Separate closed/referred cases
+    const activeCases = cases.filter(c => c.status !== "Closed" && c.status !== "Referred");
+    const closed_count = cases.filter(c => c.status === "Closed").length;
+    const referred_count = cases.filter(c => c.status === "Referred").length;
+
     // Compute stats
     const total_cases = activeCases.length;
 
@@ -53,11 +58,6 @@ export async function GET() {
     let cases_opened_this_year = 0;
     const sol_urgent_list = [];
     let sol_expired_count = 0;
-
-    // Separate closed cases
-    const activeCases = cases.filter(c => c.status !== "Closed" && c.status !== "Referred");
-    const closed_count = cases.filter(c => c.status === "Closed").length;
-    const referred_count = cases.filter(c => c.status === "Referred").length;
 
     for (const c of activeCases) {
       // Status
