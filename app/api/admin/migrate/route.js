@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import pg from "pg";
+
+const { Client } = pg;
 
 // Temporary admin endpoint for running migrations
-// Uses service role key to execute SQL via pg_dump workaround
+// Connects to Supabase Postgres directly (Vercel has IPv6)
 export async function POST(request) {
   const { sql, secret } = await request.json();
   
@@ -10,28 +12,23 @@ export async function POST(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    { db: { schema: 'public' } }
-  );
+  // Build connection string from existing env vars
+  // DB_PASSWORD must be set on Vercel, or fall back to DATABASE_URL
+  const connStr = process.env.DATABASE_URL || 
+    `postgresql://postgres:${process.env.DB_PASSWORD}@db.amyttoowrroajffqubpd.supabase.co:5432/postgres`;
 
-  // Split SQL into individual statements and execute via rpc if available
-  // Actually, supabase-js can't run raw DDL. We need pg directly.
-  // On Vercel, we can use @vercel/postgres or pg with the connection string.
-  
+  const client = new Client({
+    connectionString: connStr,
+    ssl: { rejectUnauthorized: false }
+  });
+
   try {
-    const { Client } = require('pg');
-    const client = new Client({
-      connectionString: process.env.DATABASE_URL || 
-        `postgresql://postgres:${process.env.DB_PASSWORD}@db.${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://','').replace('.supabase.co','')}supabase.co:5432/postgres`,
-      ssl: { rejectUnauthorized: false }
-    });
     await client.connect();
     const result = await client.query(sql);
     await client.end();
     return NextResponse.json({ ok: true, rowCount: result.rowCount });
   } catch (e) {
+    await client.end().catch(() => {});
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
