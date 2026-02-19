@@ -4100,8 +4100,17 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
           <AiSummaryPanel caseId={c.id} />
         </div>
 
-        {/* Right column - Activity log + Quick actions */}
+        {/* Right column - Activity feed (top) + Quick actions */}
         <div>
+          {/* Activity Feed - top right */}
+          <div style={{ ...S.card, marginBottom: 12, padding: 16, maxHeight: 400, overflowY: "auto", border: `1px solid ${B.gold}20` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: B.gold }}>📋 Activity Feed</div>
+              <button onClick={() => setTab("activity")} style={{ ...S.btnO, fontSize: 10, padding: "3px 10px" }}>View All →</button>
+            </div>
+            <ComprehensiveActivityFeed caseId={c.id} limit={8} onNavigate={setTab} />
+          </div>
+
           {/* Quick Actions */}
           <div style={{ ...S.card, padding: "12px 16px", marginBottom: 12 }}>
             <div style={{ fontSize: 11, color: B.txtD, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Quick Actions</div>
@@ -4114,19 +4123,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
               <CaseExportButton caseId={c.id} />
             </div>
           </div>
-
-          {/* Recent Activity - API-based sidebar feed */}
-          <SidebarActivityFeed caseId={c.id} onViewAll={() => setTab("activity")} />
         </div>
-      </div>
-
-      {/* ═══ ACTIVITY FEED - always visible, prominent ═══ */}
-      <div style={{ marginBottom: 20, background: B.card, borderRadius: 12, border: `1px solid ${B.gold}30`, padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: B.gold }}>📋 Activity Feed</h3>
-          <button onClick={() => setTab("activity")} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>View Full Feed →</button>
-        </div>
-        <ComprehensiveActivityFeed caseId={c.id} limit={10} onNavigate={setTab} />
       </div>
 
       {/* Tabs */}
@@ -4602,7 +4599,12 @@ function CalendarView({ cases, onOpen }) {
 // MAIN PORTAL
 // ═══════════════════════════════════════════════════════════
 export default function DenhamStaffPortal() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    if (typeof window !== "undefined") {
+      try { const saved = localStorage.getItem("denham_user"); return saved ? JSON.parse(saved) : null; } catch { return null; }
+    }
+    return null;
+  });
   const [page, setPage] = useState("dashboard");
   const [selCase, setSelCase] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
@@ -4787,7 +4789,7 @@ export default function DenhamStaffPortal() {
     );
   }
 
-  if (!user) return <Login onLogin={setUser} team={team} />;
+  if (!user) return <Login onLogin={(u) => { setUser(u); try { localStorage.setItem("denham_user", JSON.stringify(u)); } catch {} }} team={team} />;
 
   const openC = async (c) => {
     try {
@@ -4834,7 +4836,7 @@ export default function DenhamStaffPortal() {
       <div style={isMobile && !sidebarOpen ? { position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100, transform: "translateX(-100%)", transition: "transform 0.2s ease" } : isMobile ? { position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100, transform: "translateX(0)", transition: "transform 0.2s ease", overflowY: "auto" } : {}}>
         <Side user={user} active={page === "caseDetail" ? "cases" : page}
           onNav={p => { navTo(p, null, "All"); if (isMobile) setSidebarOpen(false); }}
-          onOut={() => { setUser(null); setSidebarOpen(false); if (supabase) api.signOut().catch(() => {}); }}
+          onOut={() => { setUser(null); try { localStorage.removeItem("denham_user"); } catch {} setSidebarOpen(false); if (supabase) api.signOut().catch(() => {}); }}
           onCmdK={() => { setCmdBarOpen(true); if (isMobile) setSidebarOpen(false); }}
           mobileOpen={isMobile ? sidebarOpen : true} onToggleMobile={() => setSidebarOpen(false)} counts={sidebarCounts} />
       </div>
