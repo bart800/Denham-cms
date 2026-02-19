@@ -429,6 +429,8 @@ function sbToCase(row) {
     pn: row.policy_number,
     totalRec: Number(row.total_recovery) || 0,
     attFees: Number(row.attorney_fees) || 0,
+    settlement_amount: Number(row.settlement_amount) || 0,
+    undisputed_amount: Number(row.undisputed_amount) || 0,
     cd: {
       policyNumber: cd?.policy_number || row.policy_number,
       claimNumber: cd?.claim_number || row.claim_number,
@@ -817,25 +819,25 @@ function AiSummaryPanel({ caseId }) {
           </div>
 
           {/* Financial Summary */}
-          {(summary.lastDemand || summary.lastOffer || summary.highestEstimate > 0) && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: B.txtD, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>💰 Financial Summary</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                {summary.highestEstimate > 0 && (
-                  <div style={{ fontSize: 12, color: B.txtM }}>Highest Estimate: <span style={{ ...S.mono, color: B.green, fontWeight: 600 }}>{fmt(summary.highestEstimate)}</span></div>
-                )}
-                {summary.lastDemand && (
-                  <div style={{ fontSize: 12, color: B.txtM }}>Last Demand: <span style={{ ...S.mono, color: B.gold, fontWeight: 600 }}>{fmt(summary.lastDemand.amount)}</span></div>
-                )}
-                {summary.lastOffer && (
-                  <div style={{ fontSize: 12, color: B.txtM }}>Last Offer: <span style={{ ...S.mono, color: "#5b8def", fontWeight: 600 }}>{fmt(summary.lastOffer.amount)}</span></div>
-                )}
-                {summary.totalRecovery > 0 && (
-                  <div style={{ fontSize: 12, color: B.txtM }}>Total Recovery: <span style={{ ...S.mono, color: B.green, fontWeight: 600 }}>{fmt(summary.totalRecovery)}</span></div>
-                )}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: B.txtD, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>💰 Financial Summary</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {summary.highestEstimate > 0 && (
+                <div style={{ fontSize: 12, color: B.txtM }}>Highest Estimate: <span style={{ ...S.mono, color: B.green, fontWeight: 600 }}>{fmt(summary.highestEstimate)}</span></div>
+              )}
+              {summary.lastDemand && (
+                <div style={{ fontSize: 12, color: B.txtM }}>Last Demand: <span style={{ ...S.mono, color: B.gold, fontWeight: 600 }}>{fmt(summary.lastDemand.amount)}</span></div>
+              )}
+              {summary.lastOffer && (
+                <div style={{ fontSize: 12, color: B.txtM }}>Last Offer: <span style={{ ...S.mono, color: "#5b8def", fontWeight: 600 }}>{fmt(summary.lastOffer.amount)}</span></div>
+              )}
+              <div style={{ fontSize: 12, color: B.txtM }}>Undisputed Payment: <span style={{ ...S.mono, color: "#7eb87e", fontWeight: 600 }}>{fmt(Number(c?.undisputed_amount) || 0)}</span></div>
+              <div style={{ fontSize: 12, color: B.txtM }}>Settlement: <span style={{ ...S.mono, color: "#50c878", fontWeight: 600 }}>{fmt(Number(c?.settlement_amount) || 0)}</span></div>
+              <div style={{ fontSize: 12, color: B.txtM, gridColumn: "1 / -1", borderTop: "1px solid #2a2a4a", paddingTop: 6, marginTop: 4 }}>
+                <strong>Total Recovery: <span style={{ ...S.mono, color: B.green, fontWeight: 700, fontSize: 14 }}>{fmt((Number(c?.undisputed_amount) || 0) + (Number(c?.settlement_amount) || 0))}</span></strong>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Next Steps */}
           {summary.nextSteps && summary.nextSteps.length > 0 && (
@@ -3901,6 +3903,8 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       claim_number: c.cn || "", policy_number: c.pn || "",
       date_of_loss: c.dol || "", statute_of_limitations: c.sol || "",
       client_phone: c.clientPhone || "", client_email: c.clientEmail || "",
+      settlement_amount: c.settlement_amount || 0,
+      undisputed_amount: c.undisputed_amount || 0,
     });
     setEditing(true);
     setFeedback(null);
@@ -4048,6 +4052,8 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
                   { k: "statute_of_limitations", l: "Statute of Limitations", type: "date" },
                   { k: "client_phone", l: "Client Phone" },
                   { k: "client_email", l: "Client Email" },
+                  { k: "undisputed_amount", l: "Undisputed Payment ($)", type: "number" },
+                  { k: "settlement_amount", l: "Settlement Amount ($)", type: "number" },
                 ].map(f => (
                   <div key={f.k}>
                     <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{f.l}</div>
@@ -4073,7 +4079,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
               { l: "Support", v: c.support?.name || "—", c: c.support?.clr || "#888" },
               { l: "Date of Loss", v: fmtD(c.dol), c: B.txtM },
               { l: "Negotiations", v: (c.negs || []).length, c: "#5b8def" },
-              { l: "Recovery", v: c.totalRec > 0 ? fmt(c.totalRec) : "—", c: c.totalRec > 0 ? B.green : B.txtD },
+              { l: "Recovery", v: ((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) > 0 ? fmt((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) : "—", c: ((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) > 0 ? B.green : B.txtD },
               { l: "Client Phone", v: c.clientPhone || "—", c: c.clientPhone ? B.gold : B.txtD },
             ].map((x, i) => (
               <div key={i} style={{ ...S.card, padding: "12px 16px" }}>
