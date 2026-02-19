@@ -29,7 +29,7 @@ export async function GET(request) {
           { count: "exact" }
         )
         .or(
-          `client_name.ilike.%${q}%,insurer.ilike.%${q}%,claim_number.ilike.%${q}%,policy_number.ilike.%${q}%,ref.ilike.%${q}%`
+          `client_name.ilike.%${q}%,insurer.ilike.%${q}%,claim_number.ilike.%${q}%,policy_number.ilike.%${q}%,ref.ilike.%${q}%,status.ilike.%${q}%,jurisdiction.ilike.%${q}%`
         );
 
       // Apply additional filters on top of text search

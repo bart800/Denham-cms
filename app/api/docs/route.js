@@ -38,7 +38,7 @@ export async function GET(request) {
 
     if (caseId) q = q.eq("case_id", caseId);
     if (category) q = q.eq("category", category);
-    if (search) q = q.or(`filename.ilike.%${search}%,original_path.ilike.%${search}%`);
+    if (search) q = q.or(`filename.ilike.%${search}%,original_path.ilike.%${search}%,ai_summary.ilike.%${search}%,ai_category.ilike.%${search}%,category.ilike.%${search}%`);
 
     q = q.order("category").order("filename");
 
