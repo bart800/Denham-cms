@@ -64,6 +64,16 @@ async function processNotifications(notifications) {
     return;
   }
 
+  // Load team members with Maton connections for per-user fetching
+  const { data: teamMembers } = await supabaseAdmin
+    .from("team_members")
+    .select("id, email, maton_connection_id")
+    .not("maton_connection_id", "is", null);
+  const membersByConnection = {};
+  (teamMembers || []).forEach(m => { if (m.maton_connection_id) membersByConnection[m.maton_connection_id] = m; });
+  // Default connection (oldest/first) for backwards compatibility
+  const defaultConnectionId = (teamMembers || [])[0]?.maton_connection_id || null;
+
   for (const notification of notifications) {
     // Verify clientState if set
     if (notification.clientState && notification.clientState !== CLIENT_STATE_SECRET) {
@@ -74,11 +84,16 @@ async function processNotifications(notifications) {
     const resource = notification.resource; // e.g. "me/messages/{id}"
     if (!resource) continue;
 
+    // Determine which Maton connection to use (subscriptionId maps to a user)
+    const connectionId = defaultConnectionId;
+
     try {
       const selectFields = "id,subject,from,toRecipients,ccRecipients,receivedDateTime,bodyPreview,body,hasAttachments";
+      const headers = { Authorization: `Bearer ${apiKey}` };
+      if (connectionId) headers["Maton-Connection"] = connectionId;
       const res = await fetch(
         `${MATON_BASE}/${resource}?%24select=${selectFields}`,
-        { headers: { Authorization: `Bearer ${apiKey}` } }
+        { headers }
       );
 
       if (!res.ok) {

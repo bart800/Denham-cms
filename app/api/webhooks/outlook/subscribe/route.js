@@ -1,82 +1,85 @@
 import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
 
-const MATON_BASE = "https://gateway.maton.ai/outlook/v1.0";
+const MATON_GATEWAY = "https://gateway.maton.ai/outlook/v1.0";
 const CLIENT_STATE_SECRET = process.env.OUTLOOK_WEBHOOK_SECRET || "denham-cms-webhook-secret";
 
-// Microsoft Graph message subscriptions expire after 3 days max.
-// This needs periodic renewal — consider a cron job every 2 days.
-
-// GET — list active subscriptions
+// GET — list active subscriptions across all connected team members
 export async function GET() {
   const apiKey = process.env.MATON_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Missing MATON_API_KEY" }, { status: 500 });
+  if (!apiKey) return NextResponse.json({ error: "Missing MATON_API_KEY" }, { status: 500 });
+
+  const { data: members } = await supabaseAdmin
+    .from("team_members")
+    .select("id, name, email, maton_connection_id")
+    .not("maton_connection_id", "is", null);
+
+  const results = [];
+  for (const m of (members || [])) {
+    const res = await fetch(`${MATON_GATEWAY}/subscriptions`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Maton-Connection": m.maton_connection_id,
+      },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      results.push({ member: m.name, email: m.email, subscriptions: data.value || [] });
+    }
   }
 
-  const res = await fetch(`${MATON_BASE}/subscriptions`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    return NextResponse.json({ error: `Failed to list subscriptions: ${res.status}`, detail: text }, { status: res.status });
-  }
-
-  const data = await res.json();
-  return NextResponse.json(data);
+  return NextResponse.json({ results });
 }
 
-// POST — create or renew a subscription
-export async function POST() {
+// POST — create/renew subscriptions for all connected team members (or a specific one)
+export async function POST(request) {
   const apiKey = process.env.MATON_API_KEY;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "https://denham-cms.vercel.app";
+  if (!apiKey) return NextResponse.json({ error: "Missing MATON_API_KEY" }, { status: 500 });
 
-  if (!apiKey) {
-    return NextResponse.json({ error: "Missing MATON_API_KEY" }, { status: 500 });
-  }
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://denham-cms.vercel.app");
 
-  // Expiration: 3 days from now (max for message resources)
+  let body = {};
+  try { body = await request.json(); } catch {}
+  const targetMemberId = body.memberId || null;
+
+  // Get connected team members
+  let query = supabaseAdmin.from("team_members").select("id, name, email, maton_connection_id").eq("microsoft_connected", true).not("maton_connection_id", "is", null);
+  if (targetMemberId) query = query.eq("id", targetMemberId);
+  const { data: members } = await query;
+
   const expiration = new Date();
   expiration.setDate(expiration.getDate() + 3);
 
-  const subscriptionBody = {
-    changeType: "created",
-    notificationUrl: `${baseUrl}/api/webhooks/outlook`,
-    resource: "me/messages",
-    expirationDateTime: expiration.toISOString(),
-    clientState: CLIENT_STATE_SECRET,
-  };
+  const results = [];
+  for (const m of (members || [])) {
+    try {
+      const res = await fetch(`${MATON_GATEWAY}/subscriptions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "Maton-Connection": m.maton_connection_id,
+        },
+        body: JSON.stringify({
+          changeType: "created",
+          notificationUrl: `${baseUrl}/api/webhooks/outlook`,
+          resource: "me/messages",
+          expirationDateTime: expiration.toISOString(),
+          clientState: CLIENT_STATE_SECRET,
+        }),
+      });
 
-  const res = await fetch(`${MATON_BASE}/subscriptions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(subscriptionBody),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    return NextResponse.json(
-      { error: `Failed to create subscription: ${res.status}`, detail: text },
-      { status: res.status }
-    );
+      if (res.ok) {
+        const sub = await res.json();
+        results.push({ member: m.name, success: true, subscriptionId: sub.id });
+      } else {
+        const text = await res.text();
+        results.push({ member: m.name, success: false, error: text });
+      }
+    } catch (err) {
+      results.push({ member: m.name, success: false, error: err.message });
+    }
   }
 
-  const subscription = await res.json();
-
-  // NOTE: Store subscription.id if you need to renew (PATCH) instead of recreating.
-  // Subscription ID: subscription.id
-  // Expires: subscription.expirationDateTime
-  // Renew before expiry with PATCH /subscriptions/{id} with new expirationDateTime.
-
-  return NextResponse.json({
-    success: true,
-    subscriptionId: subscription.id,
-    expirationDateTime: subscription.expirationDateTime,
-    notificationUrl: subscriptionBody.notificationUrl,
-  });
+  return NextResponse.json({ results });
 }

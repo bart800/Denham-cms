@@ -82,7 +82,7 @@ function OnboardForm() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setSuccess(true);
+      setSuccess(data.member?.id || true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -113,23 +113,52 @@ function OnboardForm() {
     </div>
   );
 
+  const [m365Loading, setM365Loading] = useState(false);
+  const [m365Done, setM365Done] = useState(false);
+
+  const connectM365 = async () => {
+    setM365Loading(true);
+    try {
+      const res = await fetch("/api/team/connect-m365", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: success }),
+      });
+      const data = await res.json();
+      if (data.oauthUrl) {
+        window.location.href = data.oauthUrl;
+      } else {
+        setError(data.error || "Failed to start M365 connection");
+        setM365Loading(false);
+      }
+    } catch (e) {
+      setError(e.message);
+      setM365Loading(false);
+    }
+  };
+
   if (success) return (
     <div style={{ minHeight: "100vh", background: "#08080f", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ background: "#111119", border: "1px solid #1e1e2e", borderRadius: 16, padding: "48px 40px", maxWidth: 480, textAlign: "center" }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
         <h2 style={{ color: "#e8e8f0", margin: "0 0 12px" }}>Welcome to Denham Law!</h2>
-        <p style={{ color: "#a0a0b0", marginBottom: 32 }}>Your account has been created. Connect Microsoft 365 to sync your email and calendar.</p>
-        <a
-          href="/"
+        <p style={{ color: "#a0a0b0", marginBottom: 32 }}>Your account has been created. Connect your Microsoft 365 account to sync emails and calendar.</p>
+        <button
+          onClick={connectM365}
+          disabled={m365Loading}
           style={{
             display: "inline-flex", alignItems: "center", gap: 10,
             padding: "14px 28px", background: "#ebb003", color: "#08080f",
-            borderRadius: 10, fontWeight: 700, fontSize: 16, textDecoration: "none",
+            borderRadius: 10, fontWeight: 700, fontSize: 16, border: "none", cursor: "pointer",
+            opacity: m365Loading ? 0.6 : 1,
           }}
         >
-          Go to CMS →
-        </a>
-        <p style={{ color: "#666", fontSize: 12, marginTop: 16 }}>Microsoft 365 email sync will be configured by your administrator.</p>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11.5 3v8.5H3V3h8.5zm1 0H21v8.5h-8.5V3zM3 12.5h8.5V21H3v-8.5zm9.5 0H21V21h-8.5v-8.5z" fill="currentColor"/></svg>
+          {m365Loading ? "Connecting..." : "Connect Microsoft 365"}
+        </button>
+        <div style={{ marginTop: 24 }}>
+          <a href="/" style={{ color: "#ebb003", fontSize: 14 }}>Skip for now → Go to CMS</a>
+        </div>
       </div>
     </div>
   );
