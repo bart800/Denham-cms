@@ -170,7 +170,7 @@ function solMetStatus(c) {
   return "not_met";
 }
 
-// SOL Confirmation Status — human-in-the-loop confirmation tracking
+// SOL Confirmation Status - human-in-the-loop confirmation tracking
 // Uses heuristic: if SOL === DOL + 365 days exactly, it was auto-estimated
 function solConfirmationStatus(c) {
   if (!c.sol) return { status: "not_set", label: "SOL Not Set", color: B.danger };
@@ -214,7 +214,7 @@ function solBadge(sol, status, c) {
         </span>
       );
     }
-    const filedLabel = c?.ld?.filedDate ? ` — Filed ${fmtD(c.ld.filedDate)}` : "";
+    const filedLabel = c?.ld?.filedDate ? ` - Filed ${fmtD(c.ld.filedDate)}` : "";
     return (
       <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: B.greenBg, color: B.green, border: `1px solid ${B.green}30`, whiteSpace: "nowrap" }}>
         ✅ SOL Met{filedLabel}
@@ -282,14 +282,14 @@ function printCaseSummary(c) {
     </div>
     <h2>Case Information</h2>
     <div class="grid">
-      <div><div class="label">Attorney</div><div class="val">${c.attorney?.name || "—"}</div></div>
-      <div><div class="label">Support</div><div class="val">${c.support?.name || "—"}</div></div>
-      <div><div class="label">Date of Loss</div><div class="val">${c.dol || "—"}</div></div>
-      <div><div class="label">Date Opened</div><div class="val">${c.dop || "—"}</div></div>
-      <div><div class="label">SOL</div><div class="val" style="${c.sol && Math.ceil((new Date(c.sol+'T00:00:00')-new Date())/86400000) < 90 ? 'color:red;font-weight:700' : ''}">${c.sol || "—"}</div></div>
-      <div><div class="label">Claim #</div><div class="val">${c.cn || "—"}</div></div>
-      <div><div class="label">Policy #</div><div class="val">${c.pn || "—"}</div></div>
-      <div><div class="label">Client Phone</div><div class="val">${c.clientPhone || "—"}</div></div>
+      <div><div class="label">Attorney</div><div class="val">${c.attorney?.name || "-"}</div></div>
+      <div><div class="label">Support</div><div class="val">${c.support?.name || "-"}</div></div>
+      <div><div class="label">Date of Loss</div><div class="val">${c.dol || "-"}</div></div>
+      <div><div class="label">Date Opened</div><div class="val">${c.dop || "-"}</div></div>
+      <div><div class="label">SOL</div><div class="val" style="${c.sol && Math.ceil((new Date(c.sol+'T00:00:00')-new Date())/86400000) < 90 ? 'color:red;font-weight:700' : ''}">${c.sol || "-"}</div></div>
+      <div><div class="label">Claim #</div><div class="val">${c.cn || "-"}</div></div>
+      <div><div class="label">Policy #</div><div class="val">${c.pn || "-"}</div></div>
+      <div><div class="label">Client Phone</div><div class="val">${c.clientPhone ? `<a href="tel:${c.clientPhone.replace(/[^0-9+]/g, '')}">${c.clientPhone}</a>` : "-"}</div></div>
     </div>
     ${negs.length > 0 ? `<h2>Negotiations</h2><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Notes</th></tr></thead><tbody>${negs.map(n => `<tr><td>${n.date}</td><td>${(n.type||"").replace(/_/g," ")}</td><td>$${Number(n.amount).toLocaleString()}</td><td>${n.notes||""}</td></tr>`).join("")}</tbody></table>` : ""}
     ${ests.length > 0 ? `<h2>Estimates</h2><table><thead><tr><th>Date</th><th>Type</th><th>Vendor</th><th>Amount</th></tr></thead><tbody>${ests.map(e => `<tr><td>${e.date}</td><td>${e.type||""}</td><td>${e.vendor||""}</td><td>$${Number(e.amount).toLocaleString()}</td></tr>`).join("")}</tbody></table>` : ""}
@@ -302,7 +302,7 @@ function printCaseSummary(c) {
 // ─── Utilities ──────────────────────────────────────────────
 const fmt = n => "$" + Number(n).toLocaleString("en-US");
 const fmtD = d => {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 const dU = d => Math.ceil((new Date(d + "T00:00:00") - new Date()) / 86400000);
@@ -339,7 +339,7 @@ function calcRiskScore(c, litDetails) {
   const now = new Date();
   const conf = solConfirmationStatus(c);
   if (conf.status === "not_set") {
-    // No SOL at all — critical risk
+    // No SOL at all - critical risk
     score += 30;
     // If DOL exists, check proximity to 1-year floor
     if (c.dol) {
@@ -361,7 +361,7 @@ function calcRiskScore(c, litDetails) {
       else if (sd <= 60) score += 25;
     }
   } else if (c.sol && !solIsMet(c.status)) {
-    // Confirmed SOL — existing proximity scoring
+    // Confirmed SOL - existing proximity scoring
     const sd = dU(c.sol);
     if (sd < 0) score += 50;
     else if (sd <= 30) score += 40;
@@ -807,8 +807,8 @@ function AiSummaryPanel({ caseId }) {
           {/* Key Metrics */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
             {[
-              { l: "SOL", v: summary.solDays != null ? `${summary.solDays}d` : "—", c: summary.solDays < 30 ? B.danger : summary.solDays < 90 ? B.gold : B.green },
-              { l: "Last Activity", v: summary.daysSinceActivity != null ? `${summary.daysSinceActivity}d ago` : "—", c: summary.daysSinceActivity > 60 ? B.danger : B.txtM },
+              { l: "SOL", v: summary.solDays != null ? `${summary.solDays}d` : "-", c: summary.solDays < 30 ? B.danger : summary.solDays < 90 ? B.gold : B.green },
+              { l: "Last Activity", v: summary.daysSinceActivity != null ? `${summary.daysSinceActivity}d ago` : "-", c: summary.daysSinceActivity > 60 ? B.danger : B.txtM },
               { l: "Negotiations", v: summary.negotiationCount, c: "#5b8def" },
             ].map((x, i) => (
               <div key={i} style={{ padding: "8px 12px", background: "#0a0a14", borderRadius: 6 }}>
@@ -1079,9 +1079,9 @@ function DocumentBrowser({ caseId, clientName }) {
                       {doc.original_path && <div style={{ fontSize: 11, color: B.txtD, marginTop: 2 }}>{doc.original_path}</div>}
                     </div>
                   </td>
-                  <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{doc.category || "—"}</td>
+                  <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{doc.category || "-"}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtSize(doc.size_bytes)}</td>
-                  <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{doc.uploaded_at ? fmtD(doc.uploaded_at.split("T")[0]) : "—"}</td>
+                  <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{doc.uploaded_at ? fmtD(doc.uploaded_at.split("T")[0]) : "-"}</td>
                   <td style={S.td}>{aiStatusBadge(doc.ai_status)}</td>
                   <td style={S.td}>
                     <span onClick={(e) => { e.stopPropagation(); handleDelete(doc); }}
@@ -1214,7 +1214,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
             {n.dot && <span style={{ width: 7, height: 7, borderRadius: "50%", background: B.danger, marginLeft: n.count != null ? 6 : "auto", flexShrink: 0 }} />}
           </button>
         ))}
-        {/* Cmd+K hint — clickable */}
+        {/* Cmd+K hint - clickable */}
         <div style={{ padding: "12px 12px 0", marginTop: 8, borderTop: `1px solid ${B.bdr}` }}>
           <div onClick={onCmdK} style={{ fontSize: 11, color: B.txtD, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "6px 8px", borderRadius: 6, transition: "background 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.background = `${B.gold}15`; e.currentTarget.style.color = B.gold; }}
@@ -1288,9 +1288,9 @@ function SolRemindersPanel({ onOpen }) {
         <span>🚨</span> SOL Reminders
         <span style={{ ...S.badge, background: data.critical.length > 0 ? B.dangerBg : B.goldBg, color: data.critical.length > 0 ? B.danger : B.gold, marginLeft: 8 }}>{data.total} cases</span>
       </h3>
-      <Section title="Critical — Under 30 Days" items={data.critical} color={B.danger} icon="🔴" />
-      <Section title="Warning — Under 60 Days" items={data.warning} color={B.gold} icon="🟡" />
-      <Section title="Attention — Under 90 Days" items={data.attention} color="#5b8def" icon="🔵" />
+      <Section title="Critical - Under 30 Days" items={data.critical} color={B.danger} icon="🔴" />
+      <Section title="Warning - Under 60 Days" items={data.warning} color={B.gold} icon="🟡" />
+      <Section title="Attention - Under 90 Days" items={data.attention} color="#5b8def" icon="🔵" />
     </div>
   );
 }
@@ -1495,15 +1495,15 @@ function TasksPanel({ caseId, userId, team, showCaseColumn }) {
                       <div style={{ fontSize: 13, fontWeight: 500, textDecoration: t.status === "completed" ? "line-through" : "none", color: t.status === "completed" ? B.txtD : B.txt }}>{t.title}</div>
                       {t.description && <div style={{ fontSize: 11, color: B.txtD, marginTop: 2 }}>{t.description}</div>}
                     </td>
-                    {showCaseColumn && <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{t.case_id ? "📁" : "—"}</td>}
+                    {showCaseColumn && <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{t.case_id ? "📁" : "-"}</td>}
                     <td style={S.td}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         {t.assigned && <div style={{ width: 22, height: 22, borderRadius: "50%", background: t.assigned.color || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff" }}>{t.assigned.initials || "?"}</div>}
-                        <span style={{ fontSize: 12 }}>{t.assigned?.name?.split(" ")[0] || "—"}</span>
+                        <span style={{ fontSize: 12 }}>{t.assigned?.name?.split(" ")[0] || "-"}</span>
                       </div>
                     </td>
                     <td style={{ ...S.td, ...S.mono, fontSize: 12, color: overdue ? B.danger : B.txtM, fontWeight: overdue ? 600 : 400 }}>
-                      {t.due_date ? fmtD(t.due_date) : "—"}{overdue ? " ⚠️" : ""}
+                      {t.due_date ? fmtD(t.due_date) : "-"}{overdue ? " ⚠️" : ""}
                     </td>
                     <td style={S.td}>
                       <span style={{ ...S.badge, background: `${priClr(t.priority)}18`, color: priClr(t.priority) }}>
@@ -1812,7 +1812,7 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
 
   const getLastActivity = (c) => {
     const acts = (c.acts || []).sort((a, b) => new Date(b.date) - new Date(a.date));
-    return acts[0] ? fmtD(acts[0].date) : "—";
+    return acts[0] ? fmtD(acts[0].date) : "-";
   };
 
   // Batch operations
@@ -1995,19 +1995,19 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
                   </td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.gold, fontWeight: 500 }}>{c.ref}</td>
                   <td style={{ ...S.td, fontWeight: 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.client}</td>
-                  <td style={{ ...S.td, fontSize: 12, whiteSpace: "nowrap" }}>{LOSS_ICON[c.type] || "❓"} {c.type || "—"}</td>
+                  <td style={{ ...S.td, fontSize: 12, whiteSpace: "nowrap" }}>{LOSS_ICON[c.type] || "❓"} {c.type || "-"}</td>
                   <td style={S.td}><span style={{ ...S.badge, background: sc.bg, color: sc.t }}>{c.status}</span></td>
                   <td style={{ ...S.td, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.insurer}</td>
                   <td style={S.td}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       {c.attorney?.ini && <div style={{ width: 22, height: 22, borderRadius: "50%", background: c.attorney.clr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.attorney.ini}</div>}
-                      <span style={{ fontSize: 12 }}>{c.attorney?.name?.split(" ")[0] || "—"}</span>
+                      <span style={{ fontSize: 12 }}>{c.attorney?.name?.split(" ")[0] || "-"}</span>
                     </div>
                   </td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{c.juris || c.jurisdiction}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, color: B.txtM }}>{fmtD(c.dop)}</td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 12, fontWeight: 600, color: sd != null ? (sd < 30 ? B.danger : sd < 90 ? B.gold : B.txtM) : B.txtD }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{c.sol ? fmtD(c.sol) : "—"}{solBadge(c.sol, c.status, c)}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{c.sol ? fmtD(c.sol) : "-"}{solBadge(c.sol, c.status, c)}</div>
                   </td>
                   <td style={S.td}><RiskBadge score={calcRiskScore(c, {})} /></td>
                   <td style={{ ...S.td, ...S.mono, fontSize: 11, color: B.txtD }}>{getLastActivity(c)}</td>
@@ -2134,7 +2134,7 @@ function ComprehensiveActivityFeed({ caseId, limit, onNavigate }) {
   const types = Object.keys(typeCounts).sort();
 
   const fmtDate = (d) => {
-    if (!d) return "—";
+    if (!d) return "-";
     try {
       const dt = new Date(d);
       const now = new Date();
@@ -2249,7 +2249,7 @@ function SidebarActivityFeed({ caseId, onViewAll }) {
   }, [caseId]);
 
   const fmtDate = (d) => {
-    if (!d) return "—";
+    if (!d) return "-";
     const dt = new Date(d);
     const now = new Date();
     const diff = now - dt;
@@ -2301,8 +2301,8 @@ function ClaimDetails({ c }) {
   const F = ({ l, v, m, clr, href }) => (
     <div style={{ marginBottom: 14 }}>
       <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 3 }}>{l}</div>
-      {href ? <a href={href} style={{ fontSize: m ? 13 : 14, fontWeight: 500, color: clr || B.gold, ...(m ? S.mono : {}), textDecoration: "none" }}>{v || "—"}</a>
-        : <div style={{ fontSize: m ? 13 : 14, fontWeight: 500, color: clr || B.txt, ...(m ? S.mono : {}) }}>{v || "—"}</div>}
+      {href ? <a href={href} style={{ fontSize: m ? 13 : 14, fontWeight: 500, color: clr || B.gold, ...(m ? S.mono : {}), textDecoration: "none" }}>{v || "-"}</a>
+        : <div style={{ fontSize: m ? 13 : 14, fontWeight: 500, color: clr || B.txt, ...(m ? S.mono : {}) }}>{v || "-"}</div>}
     </div>
   );
   const telHref = p => p ? `tel:${p.replace(/[^0-9+]/g, "")}` : "";
@@ -2340,8 +2340,8 @@ function LitDetails({ c }) {
   const F = ({ l: lb, v, m, clr, href }) => (
     <div style={{ marginBottom: 14 }}>
       <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 3 }}>{lb}</div>
-      {href ? <a href={href} style={{ fontSize: m ? 13 : 14, fontWeight: 500, color: clr || B.gold, ...(m ? S.mono : {}), textDecoration: "none" }}>{v || "—"}</a>
-        : <div style={{ fontSize: m ? 13 : 14, fontWeight: 500, color: clr || B.txt, ...(m ? S.mono : {}) }}>{v || "—"}</div>}
+      {href ? <a href={href} style={{ fontSize: m ? 13 : 14, fontWeight: 500, color: clr || B.gold, ...(m ? S.mono : {}), textDecoration: "none" }}>{v || "-"}</a>
+        : <div style={{ fontSize: m ? 13 : 14, fontWeight: 500, color: clr || B.txt, ...(m ? S.mono : {}) }}>{v || "-"}</div>}
     </div>
   );
   const telHref = p => p ? `tel:${p.replace(/[^0-9+]/g, "")}` : "";
@@ -2393,10 +2393,10 @@ function Negotiations({ c }) {
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
         {[
-          { l: "Bottom Line", v: bl ? fmt(bl.amount) : "—", c: B.gold },
-          { l: "Last Plaintiff Offer", v: lp ? fmt(lp.amount) : "—", c: B.green },
-          { l: "Last Defendant Offer", v: ld ? fmt(ld.amount) : "—", c: "#5b8def" },
-          { l: "Presuit Demand", v: psd ? fmt(psd.amount) : "—", c: "#e0a050" },
+          { l: "Bottom Line", v: bl ? fmt(bl.amount) : "-", c: B.gold },
+          { l: "Last Plaintiff Offer", v: lp ? fmt(lp.amount) : "-", c: B.green },
+          { l: "Last Defendant Offer", v: ld ? fmt(ld.amount) : "-", c: "#5b8def" },
+          { l: "Presuit Demand", v: psd ? fmt(psd.amount) : "-", c: "#e0a050" },
         ].map((x, i) => (
           <div key={i} style={{ ...S.card, padding: "12px 16px" }}>
             <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{x.l}</div>
@@ -2406,10 +2406,10 @@ function Negotiations({ c }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
         {[
-          { l: "Settlement", v: sett ? fmt(sett.amount) : "—", c: "#50c878" },
-          { l: "Undisputed Payment", v: und ? fmt(und.amount) : "—", c: "#7eb87e" },
-          { l: "Denial", v: den ? "DENIED" : "—", c: den ? B.danger : B.txtD },
-          { l: "Appraisal Award", v: apr ? fmt(apr.amount) : "—", c: B.purple },
+          { l: "Settlement", v: sett ? fmt(sett.amount) : "-", c: "#50c878" },
+          { l: "Undisputed Payment", v: und ? fmt(und.amount) : "-", c: "#7eb87e" },
+          { l: "Denial", v: den ? "DENIED" : "-", c: den ? B.danger : B.txtD },
+          { l: "Appraisal Award", v: apr ? fmt(apr.amount) : "-", c: B.purple },
         ].map((x, i) => (
           <div key={i} style={{ ...S.card, padding: "12px 16px" }}>
             <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{x.l}</div>
@@ -2452,7 +2452,7 @@ function Negotiations({ c }) {
               <tr key={i}>
                 <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{fmtD(n.date)}</td>
                 <td style={S.td}><span style={{ ...S.badge, background: `${nClr(n.type)}18`, color: nClr(n.type) }}>{nLbl(n.type)}</span></td>
-                <td style={{ ...S.td, ...S.mono, fontSize: 13, fontWeight: 600, color: nClr(n.type) }}>{n.type === "denial" ? "—" : fmt(n.amount)}</td>
+                <td style={{ ...S.td, ...S.mono, fontSize: 13, fontWeight: 600, color: nClr(n.type) }}>{n.type === "denial" ? "-" : fmt(n.amount)}</td>
                 <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{n.notes}</td>
                 <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{n.by}</td>
               </tr>
@@ -2476,9 +2476,9 @@ function Estimates({ c }) {
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
         {[
-          { l: "Highest Estimate", v: hi > 0 ? fmt(hi) : "—", c: B.green },
-          { l: "Lowest Estimate", v: lo > 0 ? fmt(lo) : "—", c: B.danger },
-          { l: "Average Estimate", v: av > 0 ? fmt(av) : "—", c: B.gold },
+          { l: "Highest Estimate", v: hi > 0 ? fmt(hi) : "-", c: B.green },
+          { l: "Lowest Estimate", v: lo > 0 ? fmt(lo) : "-", c: B.danger },
+          { l: "Average Estimate", v: av > 0 ? fmt(av) : "-", c: B.gold },
         ].map((x, i) => (
           <div key={i} style={{ ...S.card, padding: "12px 16px" }}>
             <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{x.l}</div>
@@ -2546,8 +2546,8 @@ function Pleadings({ c }) {
               <td style={{ ...S.td, fontSize: 13, fontWeight: 500 }}>{p.type}</td>
               <td style={S.td}><span style={{ ...S.badge, background: p.filedBy === "Plaintiff" ? B.greenBg : "rgba(91,141,239,0.12)", color: p.filedBy === "Plaintiff" ? B.green : "#5b8def" }}>{p.filedBy}</span></td>
               <td style={S.td}><span style={{ ...S.badge, background: p.status === "Granted" ? B.greenBg : p.status === "Denied" ? B.dangerBg : B.goldBg, color: p.status === "Granted" ? B.green : p.status === "Denied" ? B.danger : B.gold }}>{p.status}</span></td>
-              <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{p.notes || "—"}</td>
-              <td style={S.td}>{p.docUrl ? <span style={{ fontSize: 12, color: B.gold, cursor: "pointer" }}>📎 View</span> : <span style={{ fontSize: 12, color: B.txtD }}>—</span>}</td>
+              <td style={{ ...S.td, fontSize: 12, color: B.txtM }}>{p.notes || "-"}</td>
+              <td style={S.td}>{p.docUrl ? <span style={{ fontSize: 12, color: B.gold, cursor: "pointer" }}>📎 View</span> : <span style={{ fontSize: 12, color: B.txtD }}>-</span>}</td>
             </tr>
           ))}
         </tbody></table>
@@ -2701,7 +2701,7 @@ function NewCaseModal({ open, onClose, cases, team, onCreated }) {
       if (form.attorney_id) caseData.attorney_id = form.attorney_id;
       const row = await api.createCase(caseData);
       // Log case creation activity
-      try { await api.createActivity({ case_id: row.id, type: "creation", description: `Case created: ${ref} — ${form.client_name.trim()}` }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
+      try { await api.createActivity({ case_id: row.id, type: "creation", description: `Case created: ${ref} - ${form.client_name.trim()}` }); } catch (logErr) { console.warn("Activity log failed:", logErr); }
       toast.success(`Case ${ref} created`);
       if (onCreated) onCreated(row);
       onClose();
@@ -2723,7 +2723,7 @@ function NewCaseModal({ open, onClose, cases, team, onCreated }) {
           {duplicates.length > 0 && (
             <div style={{ padding: "10px 14px", marginBottom: 16, borderRadius: 8, background: B.goldBg, border: `1px solid ${B.gold}30` }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: B.gold, marginBottom: 6 }}>⚠️ Possible duplicates:</div>
-              {duplicates.map(d => <div key={d.id} style={{ fontSize: 11, color: B.txtM, padding: "2px 0" }}><span style={{ ...S.mono, color: B.gold }}>{d.ref}</span> — {d.client} ({d.status})</div>)}
+              {duplicates.map(d => <div key={d.id} style={{ fontSize: 11, color: B.txtM, padding: "2px 0" }}><span style={{ ...S.mono, color: B.gold }}>{d.ref}</span> - {d.client} ({d.status})</div>)}
             </div>
           )}
           <div style={{ display: "grid", gap: 14 }}>
@@ -2914,7 +2914,7 @@ function ComplianceDash({ cases, onOpen }) {
 
       {/* SOL Needs Review */}
       <div style={{ ...S.card, marginBottom: 20 }}>
-        <div style={S.secT}>🔍 SOL Needs Review — Human Confirmation Required</div>
+        <div style={S.secT}>🔍 SOL Needs Review - Human Confirmation Required</div>
         {solNeedsReview.length === 0 ? (
           <div style={{ padding: 20, textAlign: "center", color: B.green, fontSize: 13 }}>✅ All cases have confirmed SOL dates</div>
         ) : (
@@ -2938,7 +2938,7 @@ function ComplianceDash({ cases, onOpen }) {
                       </span>
                     </td>
                     <td style={{ ...S.td, ...S.mono, fontSize: 12, color: c._solConf.status === "not_set" ? B.txtD : B.txtM }}>
-                      {c.sol ? fmtD(c.sol) : estSol ? <span style={{ opacity: 0.5 }}>~{fmtD(estSol)}</span> : "—"}
+                      {c.sol ? fmtD(c.sol) : estSol ? <span style={{ opacity: 0.5 }}>~{fmtD(estSol)}</span> : "-"}
                       {estDays !== null && <span style={{ marginLeft: 6, fontSize: 10, color: estDays <= 30 ? B.danger : estDays <= 90 ? B.gold : B.txtD }}>({estDays}d)</span>}
                     </td>
                     <td style={{ ...S.td, ...S.mono, fontWeight: 600 }}>{c._daysOpen}d</td>
@@ -3029,8 +3029,8 @@ function ComplianceDash({ cases, onOpen }) {
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <td style={S.td}><div style={{ fontWeight: 600, fontSize: 13 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
                   <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
-                  <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{c.sol ? fmtD(c.sol) : "—"}</td>
-                  <td style={{ ...S.td, fontSize: 12 }}>{c.attorney?.name || "—"}</td>
+                  <td style={{ ...S.td, ...S.mono, fontSize: 12 }}>{c.sol ? fmtD(c.sol) : "-"}</td>
+                  <td style={{ ...S.td, fontSize: 12 }}>{c.attorney?.name || "-"}</td>
                   <td style={S.td}><RiskBadge score={c._risk} /></td>
                 </tr>
               ))}
@@ -3041,7 +3041,7 @@ function ComplianceDash({ cases, onOpen }) {
 
       {/* Litigation Missing Deadlines */}
       <div style={{ ...S.card, marginBottom: 20 }}>
-        <div style={S.secT}>⚖️ Litigation Cases — Scheduling Order Compliance</div>
+        <div style={S.secT}>⚖️ Litigation Cases - Scheduling Order Compliance</div>
         <div style={{ fontSize: 12, color: B.txtM, marginBottom: 12 }}>Cases in litigation without discovery deadlines, trial dates, or mediation dates set. Add deadlines in the case detail Litigation tab.</div>
         {litMissing.length === 0 ? (
           <div style={{ padding: 20, textAlign: "center", color: B.green, fontSize: 13 }}>✅ No litigation cases found</div>
@@ -3088,7 +3088,7 @@ function ComplianceDash({ cases, onOpen }) {
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <td style={S.td}><div style={{ fontWeight: 600 }}>{c.client}</div><div style={{ fontSize: 11, color: B.txtD, ...S.mono }}>{c.ref}</div></td>
                   <td style={S.td}><span style={{ ...S.badge, ...stClr(c.status), background: stClr(c.status).bg, color: stClr(c.status).t }}>{c.status}</span></td>
-                  <td style={S.td}>{c.sol ? <>{fmtD(c.sol)} {solBadge(c.sol, c.status, c)}</> : "—"}</td>
+                  <td style={S.td}>{c.sol ? <>{fmtD(c.sol)} {solBadge(c.sol, c.status, c)}</> : "-"}</td>
                   <td style={{ ...S.td, ...S.mono }}>{c._daysOpen}d</td>
                   <td style={S.td}><RiskBadge score={c._risk} /></td>
                 </tr>
@@ -3140,7 +3140,7 @@ function FiledComplaintSection({ c, onCaseUpdate }) {
       {hasFiled ? (
         <div>
           <div style={{ padding: 12, borderRadius: 8, background: B.greenBg, border: `1px solid ${B.green}20`, fontSize: 13, color: B.green, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            ✅ Complaint filed {c.ld?.filedDate ? fmtD(c.ld.filedDate) : ""}{c.ld?.caseNum ? ` — ${c.ld.caseNum}` : ""}{c.ld?.court ? ` — ${c.ld.court}` : ""}
+            ✅ Complaint filed {c.ld?.filedDate ? fmtD(c.ld.filedDate) : ""}{c.ld?.caseNum ? ` - ${c.ld.caseNum}` : ""}{c.ld?.court ? ` - ${c.ld.court}` : ""}
             {c.ld?.docUrl && <a href={c.ld.docUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#5b8def", fontSize: 12, textDecoration: "underline" }}>View Document</a>}
           </div>
         </div>
@@ -3205,7 +3205,7 @@ function ComplianceTab({ c, onCaseUpdate }) {
 
   const breakdown = [];
   if (conf.status === "not_set") {
-    breakdown.push({ label: "SOL Not Set — Critical Risk", pts: 30, color: B.danger });
+    breakdown.push({ label: "SOL Not Set - Critical Risk", pts: 30, color: B.danger });
     if (estimatedSol) {
       const floorDays = dU(estimatedSol);
       if (floorDays < 0) breakdown.push({ label: `1-year floor PASSED ${Math.abs(floorDays)}d ago`, pts: 20, color: B.danger });
@@ -3213,16 +3213,16 @@ function ComplianceTab({ c, onCaseUpdate }) {
       else if (floorDays <= 60) breakdown.push({ label: `1-year floor in ${floorDays}d`, pts: 10, color: B.gold });
     }
   } else if (conf.status === "auto") {
-    breakdown.push({ label: "SOL Auto-Estimated — Needs Confirmation", pts: 15, color: B.gold });
+    breakdown.push({ label: "SOL Auto-Estimated - Needs Confirmation", pts: 15, color: B.gold });
     if (c.sol && !solIsMet(c.status)) {
-      if (sd < 0) breakdown.push({ label: "SOL Expired — NOT MET", pts: 50, color: B.danger });
-      else if (sd <= 30) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 40, color: B.danger });
-      else if (sd <= 60) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 25, color: B.gold });
+      if (sd < 0) breakdown.push({ label: "SOL Expired - NOT MET", pts: 50, color: B.danger });
+      else if (sd <= 30) breakdown.push({ label: `SOL in ${sd} days - NOT MET`, pts: 40, color: B.danger });
+      else if (sd <= 60) breakdown.push({ label: `SOL in ${sd} days - NOT MET`, pts: 25, color: B.gold });
     }
   } else if (c.sol && !solIsMet(c.status)) {
-    if (sd < 0) breakdown.push({ label: "SOL Expired — NOT MET", pts: 50, color: B.danger });
-    else if (sd <= 30) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 40, color: B.danger });
-    else if (sd <= 60) breakdown.push({ label: `SOL in ${sd} days — NOT MET`, pts: 25, color: B.gold });
+    if (sd < 0) breakdown.push({ label: "SOL Expired - NOT MET", pts: 50, color: B.danger });
+    else if (sd <= 30) breakdown.push({ label: `SOL in ${sd} days - NOT MET`, pts: 40, color: B.danger });
+    else if (sd <= 60) breakdown.push({ label: `SOL in ${sd} days - NOT MET`, pts: 25, color: B.gold });
   }
   if (isLit) {
     if (!hasFiledComplaint(c)) breakdown.push({ label: "No filed complaint on file", pts: 20, color: B.danger });
@@ -3501,7 +3501,7 @@ function CaseOverview({ c }) {
             ].map(([l, v], i) => (
               <div key={i}>
                 <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>{l}</div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: B.txt, ...S.mono }}>{v || "—"}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: B.txt, ...S.mono }}>{v || "-"}</div>
               </div>
             ))}
           </div>
@@ -3544,13 +3544,13 @@ function CaseOverview({ c }) {
 
 function CaseTimeline({ c }) {
   const events = [];
-  if (c.dop) events.push({ date: c.dop, type: "open", icon: "📂", label: "Case Opened", desc: `${c.type} — ${c.juris}` });
+  if (c.dop) events.push({ date: c.dop, type: "open", icon: "📂", label: "Case Opened", desc: `${c.type} - ${c.juris}` });
   if (c.dol) events.push({ date: c.dol, type: "loss", icon: "🏠", label: "Date of Loss", desc: c.cd?.causeOfLoss || "" });
   if (c.cd?.dateReported) events.push({ date: c.cd.dateReported, type: "reported", icon: "📞", label: "Claim Reported" });
   if (c.cd?.dateDenied) events.push({ date: c.cd.dateDenied, type: "denied", icon: "❌", label: "Claim Denied", color: B.danger });
   (c.negs || []).forEach(n => events.push({ date: n.date, type: "neg", icon: "💰", label: `${nLbl(n.type)}${n.type !== "denial" ? ": " + fmt(n.amount) : ""}`, desc: n.notes, color: nClr(n.type) }));
-  (c.ests || []).forEach(e => events.push({ date: e.date, type: "est", icon: "📊", label: `Estimate: ${fmt(e.amount)}`, desc: `${e.type} — ${e.vendor}`, color: B.green }));
-  (c.pleads || []).forEach(p => events.push({ date: p.date, type: "plead", icon: "⚖️", label: p.type, desc: `Filed by ${p.filedBy} — ${p.status}`, color: B.purple }));
+  (c.ests || []).forEach(e => events.push({ date: e.date, type: "est", icon: "📊", label: `Estimate: ${fmt(e.amount)}`, desc: `${e.type} - ${e.vendor}`, color: B.green }));
+  (c.pleads || []).forEach(p => events.push({ date: p.date, type: "plead", icon: "⚖️", label: p.type, desc: `Filed by ${p.filedBy} - ${p.status}`, color: B.purple }));
   if (c.ld?.filedDate) events.push({ date: c.ld.filedDate, type: "filed", icon: "⚖️", label: "Complaint Filed", desc: c.ld.court, color: B.purple });
   (c.acts || []).forEach(a => events.push({ date: a.date, type: "act", icon: aIcon(a.type), label: a.title, desc: a.desc, actor: a.actor, aClr: a.aClr, aIni: a.aIni }));
 
@@ -4063,7 +4063,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
                     <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{f.l}</div>
                     {f.type === "select" ? (
                       <select value={editForm[f.k] || ""} onChange={e => setEditForm({ ...editForm, [f.k]: e.target.value })} style={S.input}>
-                        <option value="">—</option>
+                        <option value="">-</option>
                         {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     ) : f.k === "insurer" ? (
@@ -4079,16 +4079,19 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
             {[
-              { l: "Attorney", v: c.attorney?.name || "—", c: c.attorney?.clr || "#888" },
-              { l: "Support", v: c.support?.name || "—", c: c.support?.clr || "#888" },
+              { l: "Attorney", v: c.attorney?.name || "-", c: c.attorney?.clr || "#888" },
+              { l: "Support", v: c.support?.name || "-", c: c.support?.clr || "#888" },
               { l: "Date of Loss", v: fmtD(c.dol), c: B.txtM },
               { l: "Negotiations", v: (c.negs || []).length, c: "#5b8def" },
-              { l: "Recovery", v: ((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) > 0 ? fmt((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) : "—", c: ((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) > 0 ? B.green : B.txtD },
-              { l: "Client Phone", v: c.clientPhone || "—", c: c.clientPhone ? B.gold : B.txtD },
+              { l: "Recovery", v: ((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) > 0 ? fmt((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) : "-", c: ((Number(c.undisputed_amount)||0) + (Number(c.settlement_amount)||0)) > 0 ? B.green : B.txtD },
+              { l: "Client Phone", v: c.clientPhone || "—", c: c.clientPhone ? B.gold : B.txtD, href: c.clientPhone ? `tel:${c.clientPhone.replace(/[^0-9+]/g, "")}` : null },
+              { l: "Client Email", v: c.clientEmail || "—", c: c.clientEmail ? "#5b8def" : B.txtD, href: c.clientEmail ? `mailto:${c.clientEmail}` : null },
             ].map((x, i) => (
               <div key={i} style={{ ...S.card, padding: "12px 16px" }}>
                 <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{x.l}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: x.c, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.v}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: x.c, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {x.href ? <a href={x.href} style={{ color: x.c, textDecoration: "none" }}>{x.v}</a> : x.v}
+                </div>
               </div>
             ))}
           </div>
@@ -4117,7 +4120,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
         </div>
       </div>
 
-      {/* ═══ ACTIVITY FEED — always visible, prominent ═══ */}
+      {/* ═══ ACTIVITY FEED - always visible, prominent ═══ */}
       <div style={{ marginBottom: 20, background: B.card, borderRadius: 12, border: `1px solid ${B.gold}30`, padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: B.gold }}>📋 Activity Feed</h3>
@@ -4182,7 +4185,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
   );
 }
 
-// Demand Writer integration — links to external Demand Writer app with case data pre-loaded
+// Demand Writer integration - links to external Demand Writer app with case data pre-loaded
 function DemandWriterTab({ caseData }) {
   const c = caseData;
   const dwUrl = "https://demand-writer.vercel.app";
@@ -4202,7 +4205,7 @@ function DemandWriterTab({ caseData }) {
   }, [c.id]);
 
   const statusClr = { draft: "#ebb003", sent: "#5b8def", final: "#386f4a" };
-  
+
   return (
     <div style={{ padding: 20 }}>
       <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 24, marginBottom: 20 }}>
@@ -4210,16 +4213,16 @@ function DemandWriterTab({ caseData }) {
         <p style={{ color: "#8888a0", fontSize: 13, margin: "0 0 20px 0" }}>
           Generate a professional demand letter using the Demand Writer. Case data will be pre-loaded.
         </p>
-        
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20, fontSize: 13 }}>
-          <div><span style={{ color: "#8888a0" }}>Client:</span> <span style={{ color: "#e0e0ff" }}>{c.client_name || "—"}</span></div>
-          <div><span style={{ color: "#8888a0" }}>Insurer:</span> <span style={{ color: "#e0e0ff" }}>{c.insurer || "—"}</span></div>
-          <div><span style={{ color: "#8888a0" }}>Claim #:</span> <span style={{ color: "#e0e0ff" }}>{c.claim_number || "—"}</span></div>
-          <div><span style={{ color: "#8888a0" }}>Policy #:</span> <span style={{ color: "#e0e0ff" }}>{c.policy_number || "—"}</span></div>
-          <div><span style={{ color: "#8888a0" }}>Date of Loss:</span> <span style={{ color: "#e0e0ff" }}>{c.date_of_loss || "—"}</span></div>
-          <div><span style={{ color: "#8888a0" }}>Jurisdiction:</span> <span style={{ color: "#e0e0ff" }}>{c.jurisdiction || "—"}</span></div>
-          <div><span style={{ color: "#8888a0" }}>Property:</span> <span style={{ color: "#e0e0ff" }}>{c.property_address || "—"}</span></div>
-          <div><span style={{ color: "#8888a0" }}>Status:</span> <span style={{ color: "#e0e0ff" }}>{c.status || "—"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Client:</span> <span style={{ color: "#e0e0ff" }}>{c.client_name || "-"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Insurer:</span> <span style={{ color: "#e0e0ff" }}>{c.insurer || "-"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Claim #:</span> <span style={{ color: "#e0e0ff" }}>{c.claim_number || "-"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Policy #:</span> <span style={{ color: "#e0e0ff" }}>{c.policy_number || "-"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Date of Loss:</span> <span style={{ color: "#e0e0ff" }}>{c.date_of_loss || "-"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Jurisdiction:</span> <span style={{ color: "#e0e0ff" }}>{c.jurisdiction || "-"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Property:</span> <span style={{ color: "#e0e0ff" }}>{c.property_address || "-"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Status:</span> <span style={{ color: "#e0e0ff" }}>{c.status || "-"}</span></div>
         </div>
 
         <a
@@ -4240,7 +4243,7 @@ function DemandWriterTab({ caseData }) {
         </span>
       </div>
 
-      {/* View Demands — past demand letters */}
+      {/* View Demands - past demand letters */}
       <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <h4 style={{ margin: "0 0 12px 0", color: "#e0e0ff", fontSize: 14, fontWeight: 700 }}>📋 Past Demand Letters</h4>
         {demandsLoading ? (
@@ -4269,7 +4272,7 @@ function DemandWriterTab({ caseData }) {
                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                 <div>
                   <span style={{ fontSize: 13, color: "#e0e0ff", fontWeight: 500 }}>Version {d.version || i + 1}</span>
-                  <span style={{ fontSize: 11, color: "#55556a", marginLeft: 8 }}>{d.generated_at ? new Date(d.generated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
+                  <span style={{ fontSize: 11, color: "#55556a", marginLeft: 8 }}>{d.generated_at ? new Date(d.generated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "-"}</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 600, background: `${statusClr[d.status] || "#55556a"}20`, color: statusClr[d.status] || "#55556a" }}>{d.status}</span>
@@ -4311,12 +4314,12 @@ function DemandNegotiationSummary({ caseId }) {
         <tbody>
           {negs.map((n, i) => (
             <tr key={i} style={{ borderBottom: "1px solid #1a1a2e", color: "#c8c8e0" }}>
-              <td style={{ padding: "6px 8px" }}>{n.date ? new Date(n.date).toLocaleDateString() : "—"}</td>
-              <td style={{ padding: "6px 8px" }}>{n.type || "—"}</td>
+              <td style={{ padding: "6px 8px" }}>{n.date ? new Date(n.date).toLocaleDateString() : "-"}</td>
+              <td style={{ padding: "6px 8px" }}>{n.type || "-"}</td>
               <td style={{ padding: "6px 8px", textAlign: "right", fontFamily: "monospace", color: n.type?.includes("Demand") ? "#50c878" : "#e0a050" }}>
-                {n.amount ? `$${Number(n.amount).toLocaleString()}` : "—"}
+                {n.amount ? `$${Number(n.amount).toLocaleString()}` : "-"}
               </td>
-              <td style={{ padding: "6px 8px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.notes || "—"}</td>
+              <td style={{ padding: "6px 8px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.notes || "-"}</td>
             </tr>
           ))}
         </tbody>

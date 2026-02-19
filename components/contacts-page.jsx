@@ -211,8 +211,8 @@ export default function ContactsPage() {
                 {(c.tags || []).map((t) => <span key={t} style={s.badge(TAG_COLORS[t])}>{t.replace("_", " ")}</span>)}
               </div>
               <div style={{ marginTop: 8, fontSize: 13, color: "#bbb" }}>
-                {c.phone && <div>📞 {c.phone}</div>}
-                {c.email && <div>✉️ {c.email}</div>}
+                {c.phone && <div>📞 <a href={`tel:${c.phone.replace(/[^0-9+]/g, "")}`} style={{ color: "#ebb003", textDecoration: "none" }}>{c.phone}</a></div>}
+                {c.email && <div>✉️ <a href={`mailto:${c.email}`} style={{ color: "#5b8def", textDecoration: "none" }}>{c.email}</a></div>}
               </div>
             </div>
 

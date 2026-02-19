@@ -171,8 +171,8 @@ export default function CaseContacts({ caseId }) {
           </div>
           {c.company && c.type === "person" && <div style={{ fontSize: 12, color: "#aaa", marginTop: 2 }}>{c.company}</div>}
           <div style={{ fontSize: 12, color: "#bbb", marginTop: 4 }}>
-            {c.phone && <span style={{ marginRight: 12 }}>📞 {c.phone}</span>}
-            {c.email && <span>✉️ {c.email}</span>}
+            {c.phone && <span style={{ marginRight: 12 }}>📞 <a href={`tel:${c.phone.replace(/[^0-9+]/g, "")}`} style={{ color: "#ebb003", textDecoration: "none" }}>{c.phone}</a></span>}
+            {c.email && <span>✉️ <a href={`mailto:${c.email}`} style={{ color: "#5b8def", textDecoration: "none" }}>{c.email}</a></span>}
           </div>
           {expanded === c.id && (
             <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #333", fontSize: 12, color: "#999" }}>
