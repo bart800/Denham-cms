@@ -35,6 +35,11 @@ const CaseStrategy = dynamic(() => import("./case-strategy"), { ssr: false, load
 const EmailAutoFile = dynamic(() => import("./EmailAutoFile"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading email filing...</div> });
 const CaseMessagesNew = dynamic(() => import("./case-messages"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading messages...</div> });
 const VoiceNotes = dynamic(() => import("./VoiceNotes"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading voice notes...</div> });
+const CommunicationTimeline = dynamic(() => import("./communication-timeline"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading communications...</div> });
+const SettlementCalculator = dynamic(() => import("./settlement-calculator"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading settlement calculator...</div> });
+const CourtDeadlines = dynamic(() => import("./court-deadlines"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading deadlines...</div> });
+const CaseRemindersTab = dynamic(() => import("./case-reminders"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading reminders...</div> });
+const AttorneyDashboard = dynamic(() => import("./attorney-dashboard"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading attorney dashboard...</div> });
 // ComprehensiveActivityFeed is defined inline below (not imported)
 
 // ─── Brand Colors ───────────────────────────────────────────
@@ -1173,6 +1178,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
     { id: "settings", label: "Settings", icon: "⚙️" },
     { id: "counsel", label: "Counsel Intel", icon: "⚖️" },
     { id: "emailFiling", label: "Email Filing", icon: "📧" },
+    { id: "attorneys", label: "Attorneys", icon: "👨‍⚖️" },
     { id: "compliance", label: "Compliance", icon: "🛡️", dot: counts?.criticalCases > 0 },
   ];
 
@@ -3942,6 +3948,10 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "workflow", l: "⚙️ Workflow" },
     { id: "strategy", l: "🧠 Strategy" },
     { id: "voicenotes", l: "🎙️ Voice Notes" },
+    { id: "communications", l: "📋 Comms" },
+    { id: "settlement", l: "💰 Settlement" },
+    { id: "deadlines", l: "⏰ Deadlines" },
+    { id: "reminders", l: "🔔 Reminders" },
   ];
   const sc = stClr(c.status);
   const sd = c.sol ? dU(c.sol) : null;
@@ -4144,6 +4154,10 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "workflow" && <WorkflowEngine caseId={c.id} caseStatus={c.status} />}
       {tab === "strategy" && <CaseStrategy caseData={c} />}
       {tab === "voicenotes" && <VoiceNotes caseId={c.id} user={user} />}
+      {tab === "communications" && <CommunicationTimeline caseId={c.id} />}
+      {tab === "settlement" && <SettlementCalculator caseId={c.id} />}
+      {tab === "deadlines" && <CourtDeadlines caseId={c.id} />}
+      {tab === "reminders" && <CaseRemindersTab caseId={c.id} />}
     </div>
   );
 }
@@ -4696,6 +4710,7 @@ export default function DenhamStaffPortal() {
         {!loading && page === "emailFiling" && <EmailAutoFile />}
         {!loading && page === "counsel" && <OpposingCounsel />}
         {!loading && page === "compare" && <CaseCompare onSelectCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
+        {!loading && page === "attorneys" && <AttorneyDashboard onNavigateCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "intake" && <CaseIntakeForm onClose={() => navTo("cases")} onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
         {!loading && page === "docs" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Documents</h2>

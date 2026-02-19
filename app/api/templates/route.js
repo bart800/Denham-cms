@@ -52,6 +52,20 @@ const TEMPLATES = [
     icon: "📝",
     category: "Records",
   },
+  {
+    id: "complaint",
+    name: "Complaint",
+    description: "Civil complaint / petition for breach of insurance contract",
+    icon: "📜",
+    category: "Litigation",
+  },
+  {
+    id: "discovery-requests",
+    name: "Discovery Requests",
+    description: "Interrogatories and requests for production to insurer",
+    icon: "🔍",
+    category: "Litigation",
+  },
 ];
 
 function formatDate(d) {
@@ -329,6 +343,115 @@ function generatePiDemandLetter(c) {
   return wrap(body);
 }
 
+function generateComplaint(c) {
+  const claim = c.claim_details || {};
+  const body = `
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:13px;margin-bottom:4px;">IN THE CIRCUIT COURT OF ${v(c.jurisdiction, "[JURISDICTION]").toUpperCase()}</div>
+      <div style="font-size:13px;margin-bottom:16px;">[DIVISION]</div>
+      <div style="margin-bottom:8px;"><strong>${v(c.client_name, "[PLAINTIFF]").toUpperCase()}</strong></div>
+      <div style="margin-bottom:4px;">Plaintiff,</div>
+      <div style="margin-bottom:8px;">v.</div>
+      <div style="margin-bottom:8px;"><strong>${v(c.insurer, "[DEFENDANT INSURANCE COMPANY]").toUpperCase()}</strong></div>
+      <div style="margin-bottom:8px;">Defendant.</div>
+      <div style="margin-bottom:4px;">Case No. _______________</div>
+    </div>
+    <div style="text-align:center;margin-bottom:24px;"><h2 style="text-decoration:underline;">COMPLAINT</h2></div>
+    <p>Plaintiff, <strong>${v(c.client_name)}</strong>, by and through undersigned counsel, hereby files this Complaint against Defendant, <strong>${v(c.insurer)}</strong>, and states as follows:</p>
+
+    <h3 style="color:#000066;">I. PARTIES</h3>
+    <p>1. Plaintiff ${v(c.client_name)} is an individual residing in ${v(c.jurisdiction, "[State]")}.</p>
+    <p>2. Defendant ${v(c.insurer)} is an insurance company authorized to do business in the State of ${v(c.jurisdiction, "[State]")}.</p>
+
+    <h3 style="color:#000066;">II. JURISDICTION AND VENUE</h3>
+    <p>3. This Court has jurisdiction over this matter as the amount in controversy exceeds the jurisdictional minimum.</p>
+    <p>4. Venue is proper in this county as the subject property is located herein and the cause of action arose in this jurisdiction.</p>
+
+    <h3 style="color:#000066;">III. FACTUAL ALLEGATIONS</h3>
+    <p>5. At all times relevant hereto, Plaintiff was the owner of real property located at ${v(c.property_address, "[property address]")}.</p>
+    <p>6. At all times relevant hereto, said property was insured under a policy of insurance issued by Defendant, Policy No. ${v(c.policy_number, "[Policy Number]")}.</p>
+    <p>7. On or about ${v(c.date_of_loss ? formatDate(c.date_of_loss) : "[Date of Loss]")}, the insured property sustained damage as a result of ${v(c.cause_of_loss, "[cause of loss]")}.</p>
+    <p>8. Plaintiff timely reported the loss to Defendant and submitted Claim No. ${v(c.claim_number, "[Claim Number]")}.</p>
+    <p>9. The damages to Plaintiff's property are covered under the terms and conditions of the policy.</p>
+    <p>10. Defendant has failed and refused to pay the full amount owed under the policy.</p>
+
+    <h3 style="color:#000066;">IV. COUNT I — BREACH OF CONTRACT</h3>
+    <p>11. Plaintiff incorporates by reference the allegations set forth in paragraphs 1 through 10.</p>
+    <p>12. The insurance policy constitutes a valid and binding contract between Plaintiff and Defendant.</p>
+    <p>13. Plaintiff has performed all conditions precedent under the policy.</p>
+    <p>14. Defendant has breached the insurance contract by failing to pay the full amount of covered damages.</p>
+    <p>15. As a direct and proximate result of Defendant's breach, Plaintiff has suffered damages.</p>
+
+    <h3 style="color:#000066;">V. COUNT II — BAD FAITH</h3>
+    <p>16. Plaintiff incorporates by reference the allegations set forth above.</p>
+    <p>17. Defendant's failure to properly investigate, evaluate, and pay Plaintiff's claim constitutes bad faith claims handling.</p>
+    <p>18. Plaintiff is entitled to recover damages for Defendant's bad faith, including consequential damages and attorney's fees.</p>
+
+    <h3 style="color:#000066;">PRAYER FOR RELIEF</h3>
+    <p>WHEREFORE, Plaintiff respectfully requests this Court enter judgment against Defendant for:</p>
+    <ol type="a">
+      <li>Compensatory damages in an amount to be determined at trial;</li>
+      <li>Consequential damages;</li>
+      <li>Pre-judgment and post-judgment interest;</li>
+      <li>Attorney's fees and costs;</li>
+      <li>Such other and further relief as this Court deems just and proper.</li>
+    </ol>
+
+    <p style="margin-top:24px;"><strong>JURY DEMAND</strong></p>
+    <p>Plaintiff hereby demands a trial by jury on all issues so triable.</p>`;
+  return wrap(body);
+}
+
+function generateDiscoveryRequests(c) {
+  const body = `
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:13px;margin-bottom:4px;">IN THE CIRCUIT COURT OF ${v(c.jurisdiction, "[JURISDICTION]").toUpperCase()}</div>
+      <div style="margin-bottom:8px;">${v(c.client_name, "[PLAINTIFF]").toUpperCase()} v. ${v(c.insurer, "[DEFENDANT]").toUpperCase()}</div>
+      <div>Case No. ${v(c.case_ref, "_______________")}</div>
+    </div>
+
+    <div style="text-align:center;margin-bottom:24px;"><h2 style="text-decoration:underline;">PLAINTIFF'S FIRST SET OF INTERROGATORIES AND<br/>REQUESTS FOR PRODUCTION OF DOCUMENTS</h2></div>
+
+    <p>Plaintiff, <strong>${v(c.client_name)}</strong>, through undersigned counsel, propounds the following Interrogatories and Requests for Production upon Defendant <strong>${v(c.insurer)}</strong>:</p>
+
+    <h3 style="color:#000066;">INTERROGATORIES</h3>
+
+    <p><strong>INTERROGATORY NO. 1:</strong> Identify each person who participated in the investigation, evaluation, and adjustment of Claim No. ${v(c.claim_number, "[Claim Number]")}, including their name, title, and role.</p>
+
+    <p><strong>INTERROGATORY NO. 2:</strong> State the total amount of all reserves set for this claim at any time, including the date each reserve was set and any subsequent changes.</p>
+
+    <p><strong>INTERROGATORY NO. 3:</strong> Identify each estimate, appraisal, or engineering report obtained by Defendant in connection with this claim, including the name and qualifications of each estimator or engineer.</p>
+
+    <p><strong>INTERROGATORY NO. 4:</strong> State the basis for Defendant's valuation of the claim, including the methodology used to calculate ACV and RCV.</p>
+
+    <p><strong>INTERROGATORY NO. 5:</strong> Describe all communications between Defendant and any third-party contractor, engineer, or consultant regarding this claim.</p>
+
+    <p><strong>INTERROGATORY NO. 6:</strong> State whether Defendant utilized any software, algorithm, or AI-based tool in evaluating this claim, and if so, identify the tool and describe how it was used.</p>
+
+    <p><strong>INTERROGATORY NO. 7:</strong> Identify all persons with knowledge of facts relevant to the investigation and handling of this claim.</p>
+
+    <h3 style="color:#000066;">REQUESTS FOR PRODUCTION</h3>
+
+    <p><strong>REQUEST NO. 1:</strong> Produce the complete claim file for Claim No. ${v(c.claim_number, "[Claim Number]")}, including all notes, logs, diaries, memoranda, and correspondence.</p>
+
+    <p><strong>REQUEST NO. 2:</strong> Produce all estimates, appraisals, and engineering reports obtained or generated in connection with this claim.</p>
+
+    <p><strong>REQUEST NO. 3:</strong> Produce all photographs, videos, and inspection documentation of the insured property.</p>
+
+    <p><strong>REQUEST NO. 4:</strong> Produce a complete, certified copy of the policy in effect on ${v(c.date_of_loss ? formatDate(c.date_of_loss) : "[Date of Loss]")}, including all endorsements and declarations pages.</p>
+
+    <p><strong>REQUEST NO. 5:</strong> Produce all electronically stored information (ESI), including emails, text messages, and internal communications relating to this claim.</p>
+
+    <p><strong>REQUEST NO. 6:</strong> Produce all training materials, claim handling guidelines, and standard operating procedures applicable to the handling of this type of claim.</p>
+
+    <p><strong>REQUEST NO. 7:</strong> Produce all documents reflecting payments made, reserves set, or valuations calculated for this claim.</p>
+
+    <p><strong>REQUEST NO. 8:</strong> Produce all recorded statements of the insured or any witnesses obtained in connection with this claim.</p>
+
+    <p style="margin-top:24px;">Pursuant to the applicable Rules of Civil Procedure, Defendant shall respond to these discovery requests within <strong>thirty (30) days</strong> of service.</p>`;
+  return wrap(body);
+}
+
 const GENERATORS = {
   "demand-letter": generateDemandLetter,
   "pi-demand-letter": generatePiDemandLetter,
@@ -336,6 +459,8 @@ const GENERATORS = {
   "status-update-client": generateStatusUpdateClient,
   "preservation-letter": generatePreservationLetter,
   "authorization-release": generateAuthorizationRelease,
+  "complaint": generateComplaint,
+  "discovery-requests": generateDiscoveryRequests,
 };
 
 export async function GET() {
