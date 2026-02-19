@@ -46,7 +46,7 @@ export default function GlobalSearch({ onSelect }) {
       const res = await fetch(`/api/cases/search?q=${encodeURIComponent(q)}&limit=8`);
       if (res.ok) {
         const data = await res.json();
-        setResults(data.cases || data.results || data || []);
+        setResults(Array.isArray(data) ? data : data.cases || data.results || data.data || []);
       } else {
         setResults([]);
       }
