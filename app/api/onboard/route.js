@@ -107,7 +107,7 @@ export async function POST(request) {
       member = updated;
     } else {
       const { data: created, error: memErr } = await db.from("team_members")
-        .insert({ name, email: invite.email, role: invite.role, phone: phone || null, bar_number: bar_number || null, profile_picture_url: profile_picture_url || null, initials, color, auth_user_id: authUserId, onboarded_at: new Date().toISOString() })
+        .insert({ name, email: invite.email, role: invite.role, title: invite.role, phone: phone || null, bar_number: bar_number || null, profile_picture_url: profile_picture_url || null, initials, color, auth_user_id: authUserId, onboarded_at: new Date().toISOString() })
         .select().single();
       if (memErr) throw memErr;
       member = created;
