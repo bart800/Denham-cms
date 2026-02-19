@@ -118,7 +118,7 @@ function Grid({ data, onNavigate }) {
   const {
     total_cases, cases_by_status, cases_by_type, cases_by_jurisdiction, top_insurers, sol_urgent,
     cases_opened_this_month, cases_opened_this_year, total_recovery_sum,
-    total_fees_sum, cases_by_attorney, recent_activity,
+    total_fees_sum, cases_by_attorney, recent_activity, data_quality, comms, sol_expired,
   } = data;
 
   const typeMax = Math.max(...Object.values(cases_by_type || {}), 1);
@@ -230,6 +230,41 @@ function Grid({ data, onNavigate }) {
             <div style={{ fontSize: 40, fontWeight: 700, color: GREEN }}>{cases_opened_this_year}</div>
           </div>
         </div>
+      </Card>
+
+      {/* Communications */}
+      <Card title="Communications">
+        {(() => {
+          const items = [
+            { label: "📧 Emails", value: comms?.email_count || 0 },
+            { label: "📞 Calls (linked)", value: `${comms?.linked_calls || 0} / ${comms?.call_count || 0}` },
+            { label: "📄 Docs (linked)", value: `${comms?.linked_docs || 0} / ${comms?.doc_count || 0}` },
+          ];
+          return items.map(({ label, value }) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13 }}>
+              <span style={{ color: TEXT }}>{label}</span>
+              <span style={{ color: GOLD, fontWeight: 600 }}>{typeof value === "number" ? value.toLocaleString() : value}</span>
+            </div>
+          ));
+        })()}
+      </Card>
+
+      {/* Data Quality */}
+      <Card title="Data Quality">
+        {(() => {
+          const dq = data_quality || {};
+          const items = [
+            { label: "Missing SOL dates", value: dq.missing_sol || 0, color: dq.missing_sol > 10 ? RED : GOLD },
+            { label: "Missing insurer", value: dq.missing_insurer || 0, color: dq.missing_insurer > 10 ? RED : GOLD },
+            { label: "Expired SOL", value: sol_expired?.count || 0, color: RED },
+          ];
+          return items.map(({ label, value, color }) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13 }}>
+              <span style={{ color: TEXT }}>{label}</span>
+              <span style={{ color, fontWeight: 600 }}>{value}</span>
+            </div>
+          ));
+        })()}
       </Card>
 
       {/* Recent Activity */}

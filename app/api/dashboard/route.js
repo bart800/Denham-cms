@@ -137,6 +137,27 @@ export async function GET(request) {
       .map(m => ({ id: m.id, name: m.name }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
+    // Data quality metrics
+    const missing_sol = activeCases.filter(c => !c.statute_of_limitations).length;
+    const missing_insurer = activeCases.filter(c => !c.insurer).length;
+
+    // Communication stats (counts only, fast)
+    let email_count = 0, call_count = 0, linked_calls = 0, doc_count = 0, linked_docs = 0;
+    try {
+      const [emailRes, callRes, linkedCallRes, docRes, linkedDocRes] = await Promise.all([
+        supabaseAdmin.from("case_emails").select("id", { count: "exact", head: true }),
+        supabaseAdmin.from("case_calls").select("id", { count: "exact", head: true }),
+        supabaseAdmin.from("case_calls").select("id", { count: "exact", head: true }).not("case_id", "is", null),
+        supabaseAdmin.from("documents").select("id", { count: "exact", head: true }),
+        supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).not("case_id", "is", null),
+      ]);
+      email_count = emailRes.count || 0;
+      call_count = callRes.count || 0;
+      linked_calls = linkedCallRes.count || 0;
+      doc_count = docRes.count || 0;
+      linked_docs = linkedDocRes.count || 0;
+    } catch { /* counts optional */ }
+
     return NextResponse.json({
       total_cases,
       attorneys,
@@ -154,6 +175,8 @@ export async function GET(request) {
       total_fees_sum,
       cases_by_attorney,
       recent_activity,
+      data_quality: { missing_sol, missing_insurer },
+      comms: { email_count, call_count, linked_calls, doc_count, linked_docs },
     });
   } catch (err) {
     console.error("Dashboard API error:", err);
