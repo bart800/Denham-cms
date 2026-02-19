@@ -508,7 +508,7 @@ const PORTAL_STAGES = [
   { key: "Intake", label: "Intake", icon: "📥", desc: "Case opened and initial review" },
   { key: "Investigation", label: "Investigation", icon: "🔍", desc: "Gathering evidence and documents" },
   { key: "Presuit", label: "Pre-Suit", icon: "📋", desc: "Preparing demand to insurance" },
-  { key: "Negotiation", label: "Negotiation", icon: "🤝", desc: "Negotiating with insurance company" },
+  { key: "Demand", label: "Demand Sent", icon: "📤", desc: "Demand sent to insurance company" },
   { key: "Litigation", label: "Litigation", icon: "⚖️", desc: "Filed lawsuit, active litigation" },
   { key: "Settlement", label: "Settlement", icon: "💰", desc: "Case settled or resolved" },
 ];
@@ -517,7 +517,7 @@ function PortalStatusTimeline({ status, progress }) {
   const stageIndex = PORTAL_STAGES.findIndex(s => {
     if (!status) return false;
     const st = status.toLowerCase();
-    return st.includes(s.key.toLowerCase()) || (s.key === "Presuit" && st.includes("presuit")) || (s.key === "Negotiation" && (st.includes("negotiat") || st.includes("demand"))) || (s.key === "Litigation" && st.includes("litigat")) || (s.key === "Settlement" && (st.includes("settled") || st.includes("closed")));
+    return st.includes(s.key.toLowerCase()) || (s.key === "Presuit" && st.includes("presuit")) || (s.key === "Demand" && (st.includes("demand") || st.includes("presuit demand"))) || (s.key === "Litigation" && st.includes("litigat")) || (s.key === "Settlement" && (st.includes("settled") || st.includes("closed")));
   });
   const activeIdx = stageIndex >= 0 ? stageIndex : 0;
 
