@@ -74,34 +74,38 @@ const CardHeader = ({ icon, title }) => (
 );
 
 // 1. Property Info Card
-const PropertyInfoCard = ({ caseData }) => (
-  <div style={cardStyle}>
-    <CardHeader icon={getCauseEmoji(caseData.cause_of_loss)} title="Property Info" />
-    <Field label="Address" value={caseData.property_address} />
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-      <Field label="Cause of Loss" value={caseData.cause_of_loss} />
-      <Field label="Date of Loss" value={formatDate(caseData.date_of_loss)} />
+const PropertyInfoCard = ({ caseData }) => {
+  const cd = caseData.cd || caseData.claim_details || {};
+  return (
+    <div style={cardStyle}>
+      <CardHeader icon={getCauseEmoji(cd.causeOfLoss || caseData.cause_of_loss)} title="Property Info" />
+      <Field label="Address" value={cd.propAddr || caseData.property_address} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <Field label="Cause of Loss" value={cd.causeOfLoss || caseData.cause_of_loss} />
+        <Field label="Date of Loss" value={formatDate(cd.dateOfLoss || caseData.date_of_loss || caseData.dol)} />
+      </div>
+      <Field label="Type" value={caseData.type} />
     </div>
-    <Field label="Type" value={caseData.type} />
-  </div>
-);
+  );
+};
 
 // 2. Insurance Card
 const InsuranceCard = ({ caseData }) => {
-  const cd = caseData.claim_details || {};
-  const insurer = cd.insurer || caseData.insurer;
-  const claimNum = cd.claim_number || caseData.claim_number;
-  const policyNum = cd.policy_number || caseData.policy_number;
-  const adjName = cd.adjuster_name || caseData.adjuster_name;
-  const adjPhone = cd.adjuster_phone || caseData.adjuster_phone;
-  const adjEmail = cd.adjuster_email || caseData.adjuster_email;
-  const dateDenied = cd.date_denied;
-  const dateReported = cd.date_reported;
+  const raw = caseData.claim_details || {};
+  const cd = caseData.cd || {};
+  const insurer = cd.insurer || raw.insurer || caseData.insurer;
+  const claimNum = cd.claimNumber || raw.claim_number || caseData.cn;
+  const policyNum = cd.policyNumber || raw.policy_number || caseData.pn;
+  const adjName = cd.adjuster || raw.adjuster_name;
+  const adjPhone = cd.adjPhone || raw.adjuster_phone;
+  const adjEmail = cd.adjEmail || raw.adjuster_email;
+  const dateDenied = cd.dateDenied || raw.date_denied;
+  const dateReported = cd.dateReported || raw.date_reported;
   const coverages = [
-    ['Dwelling', cd.coverage_dwelling],
-    ['Other Structure', cd.coverage_other_structure],
-    ['Contents', cd.coverage_contents],
-    ['ALE', cd.coverage_ale],
+    ['Dwelling', cd.coverageDwelling || raw.coverage_dwelling],
+    ['Other Structure', cd.coverageOtherStructure || raw.coverage_other_structure],
+    ['Contents', cd.coverageContents || raw.coverage_contents],
+    ['ALE', cd.coverageAle || raw.coverage_ale],
   ].filter(([, v]) => v);
 
   return (
@@ -152,13 +156,13 @@ const FinancialCard = ({ caseData }) => (
       <div>
         <p style={labelStyle}>Total Recovery</p>
         <p style={{ ...valueStyle, fontSize: '20px', color: COLORS.green, fontWeight: 700 }}>
-          {formatCurrency(caseData.total_recovery)}
+          {formatCurrency(caseData.total_recovery || caseData.totalRec)}
         </p>
       </div>
       <div>
         <p style={labelStyle}>Attorney Fees</p>
         <p style={{ ...valueStyle, fontSize: '20px', color: COLORS.gold, fontWeight: 700 }}>
-          {formatCurrency(caseData.attorney_fees)}
+          {formatCurrency(caseData.attorney_fees || caseData.attFees)}
         </p>
       </div>
     </div>
@@ -168,14 +172,20 @@ const FinancialCard = ({ caseData }) => (
 
 // 4. Timeline Card
 const TimelineCard = ({ caseData }) => {
-  const cd = caseData.claim_details || {};
+  const raw = caseData.claim_details || {};
+  const cd = caseData.cd || {};
   const events = useMemo(() => {
     const e = [];
-    if (caseData.date_of_loss) e.push({ label: 'Date of Loss', date: caseData.date_of_loss, color: COLORS.red });
-    if (cd.date_reported) e.push({ label: 'Claim Reported', date: cd.date_reported, color: COLORS.gold });
-    if (cd.date_denied) e.push({ label: 'Claim Denied', date: cd.date_denied, color: '#cc3333' });
-    if (caseData.date_opened) e.push({ label: 'Case Opened', date: caseData.date_opened, color: COLORS.gold });
-    if (caseData.statute_of_limitations) e.push({ label: 'SOL Deadline', date: caseData.statute_of_limitations, color: COLORS.orange });
+    const dol = cd.dateOfLoss || caseData.date_of_loss || caseData.dol;
+    const reported = cd.dateReported || raw.date_reported;
+    const denied = cd.dateDenied || raw.date_denied;
+    const opened = caseData.date_opened || caseData.dop;
+    const sol = caseData.statute_of_limitations || caseData.sol;
+    if (dol) e.push({ label: 'Date of Loss', date: dol, color: COLORS.red });
+    if (reported) e.push({ label: 'Claim Reported', date: reported, color: COLORS.gold });
+    if (denied) e.push({ label: 'Claim Denied', date: denied, color: '#cc3333' });
+    if (opened) e.push({ label: 'Case Opened', date: opened, color: COLORS.gold });
+    if (sol) e.push({ label: 'SOL Deadline', date: sol, color: COLORS.orange });
     return e.sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [caseData]);
 
@@ -207,7 +217,7 @@ const TimelineCard = ({ caseData }) => {
 
 // 5. Status Card
 const StatusCard = ({ caseData }) => {
-  const solDays = daysUntil(caseData.statute_of_limitations);
+  const solDays = daysUntil(caseData.statute_of_limitations || caseData.sol);
   const statusColor = caseData.status === 'Closed' ? COLORS.textMuted
     : caseData.status === 'Active' ? COLORS.green : COLORS.gold;
   const solColor = solDays === null ? COLORS.textMuted : solDays <= 30 ? COLORS.red : solDays <= 90 ? COLORS.orange : COLORS.green;
@@ -224,13 +234,13 @@ const StatusCard = ({ caseData }) => {
           {caseData.status || 'Unknown'}
         </span>
       </div>
-      {caseData.statute_of_limitations && (
+      {(caseData.statute_of_limitations || caseData.sol) && (
         <div style={{ marginTop: '8px' }}>
           <p style={labelStyle}>Statute of Limitations</p>
           <p style={{ ...valueStyle, color: solColor, fontSize: '18px', fontWeight: 700 }}>
             {solDays !== null ? (solDays > 0 ? `${solDays} days remaining` : 'EXPIRED') : '—'}
           </p>
-          <p style={{ ...valueStyle, fontSize: '12px', color: COLORS.textMuted }}>{formatDate(caseData.statute_of_limitations)}</p>
+          <p style={{ ...valueStyle, fontSize: '12px', color: COLORS.textMuted }}>{formatDate(caseData.statute_of_limitations || caseData.sol)}</p>
         </div>
       )}
     </div>

@@ -30,10 +30,11 @@ const WORKFLOW_TEMPLATES = {
     { title: "Evaluate settlement vs litigation", priority: "high" },
   ],
   "Litigation - Filed": [
-    { title: "Draft and file complaint", priority: "urgent" },
-    { title: "Serve defendant", priority: "high" },
-    { title: "Calendar answer deadline", priority: "high" },
-    { title: "Prepare initial disclosures", priority: "medium" },
+    { title: "Confirm service on defendant", priority: "high" },
+    { title: "Calendar answer deadline (21 days from service)", priority: "high" },
+    { title: "Prepare initial disclosures", priority: "high" },
+    { title: "Review and calendar scheduling order deadlines", priority: "high" },
+    { title: "Propound written discovery (interrogatories, RFPs, RFAs)", priority: "medium" },
   ],
   "Litigation - Discovery": [
     { title: "Draft interrogatories", priority: "high" },

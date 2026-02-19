@@ -2025,7 +2025,7 @@ const TYPE_COLORS = {
   estimate: "#7b68ee", status_change: "#17a2b8", deadline: "#dc3545",
 };
 
-function ComprehensiveActivityFeed({ caseId, limit }) {
+function ComprehensiveActivityFeed({ caseId, limit, onNavigate }) {
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -2111,6 +2111,14 @@ function ComprehensiveActivityFeed({ caseId, limit }) {
               borderBottom: i < filtered.length - 1 ? `1px solid ${B.bdr}15` : "none",
               borderLeft: `3px solid ${clr}`,
               transition: "background 0.15s",
+              cursor: onNavigate ? "pointer" : "default",
+            }}
+            onClick={() => {
+              if (onNavigate) {
+                const tabMap = { email: "emails", call: "calls", negotiation: "negotiations", estimate: "estimates", pleading: "pleadings", task: "tasks", note: "notes" };
+                const targetTab = tabMap[a.type];
+                if (targetTab) onNavigate(targetTab);
+              }
             }}
             onMouseEnter={e => e.currentTarget.style.background = B.bdr + "20"}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}
@@ -4018,7 +4026,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: B.gold }}>📋 Activity Feed</h3>
           <button onClick={() => setTab("activity")} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>View Full Feed →</button>
         </div>
-        <ComprehensiveActivityFeed caseId={c.id} limit={10} />
+        <ComprehensiveActivityFeed caseId={c.id} limit={10} onNavigate={setTab} />
       </div>
 
       {/* Tabs */}
@@ -4041,7 +4049,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
 
       {noteModal && <AddNoteModal caseId={c.id} user={user} onClose={() => setNoteModal(false)} onSaved={() => setRefreshKey(k => k + 1)} />}
 
-      {tab === "activity" && <ComprehensiveActivityFeed caseId={c.id} />}
+      {tab === "activity" && <ComprehensiveActivityFeed caseId={c.id} onNavigate={setTab} />}
       {tab === "overview" && <>
         <CaseDetailCardsNew caseData={c} />
         <div style={{ marginTop: 16 }}><CaseOverview c={c} /></div>
