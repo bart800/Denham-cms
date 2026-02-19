@@ -63,11 +63,24 @@ export async function GET(req) {
   return NextResponse.json({ emails, total: count, suggestions });
 }
 
-// POST — manually assign an email to a case
+// POST — manually assign email(s) to a case (supports bulk)
 export async function POST(req) {
   if (!supabaseAdmin) return NextResponse.json({ error: "DB not configured" }, { status: 500 });
 
-  const { emailId, caseId } = await req.json();
+  const body = await req.json();
+  
+  // Bulk filing: { emailIds: [...], caseId }
+  if (body.emailIds && Array.isArray(body.emailIds) && body.caseId) {
+    const { error } = await supabaseAdmin
+      .from("case_emails")
+      .update({ case_id: body.caseId, matched_by: "manual_bulk" })
+      .in("id", body.emailIds);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, updated: body.emailIds.length });
+  }
+
+  // Single filing: { emailId, caseId }
+  const { emailId, caseId } = body;
   if (!emailId || !caseId) return NextResponse.json({ error: "emailId and caseId required" }, { status: 400 });
 
   const { data, error } = await supabaseAdmin

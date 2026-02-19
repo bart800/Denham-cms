@@ -36,6 +36,36 @@ export default function CaseDocumentsTab({ caseId }) {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(null);
   const [analyzing, setAnalyzing] = useState(null);
+  const [selected, setSelected] = useState(new Set());
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+
+  const toggleSelect = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    if (selected.size === docs.length) setSelected(new Set());
+    else setSelected(new Set(docs.map(d => d.id)));
+  };
+  const handleBulkCategorize = async () => {
+    if (!bulkCategory || selected.size === 0) return;
+    setBulkUpdating(true);
+    try {
+      await fetch("/api/docs/bulk-categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [...selected], category: bulkCategory }),
+      });
+      setSelected(new Set());
+      setBulkCategory("");
+      fetchDocs();
+    } catch (e) { console.error(e); }
+    setBulkUpdating(false);
+  };
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -78,6 +108,11 @@ export default function CaseDocumentsTab({ caseId }) {
     <div style={{ color: TEXT }}>
       {/* Category filter buttons */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 13, color: TEXT }}>
+          <input type="checkbox" checked={docs.length > 0 && selected.size === docs.length} onChange={toggleAll}
+            style={{ cursor: "pointer", accentColor: GOLD }} />
+          All
+        </label>
         <button
           onClick={() => setActiveCategory(null)}
           style={{
@@ -95,6 +130,31 @@ export default function CaseDocumentsTab({ caseId }) {
         ))}
       </div>
 
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+          background: DARK_BG, borderRadius: 8, marginBottom: 12, border: "1px solid " + GOLD,
+        }}>
+          <span style={{ color: GOLD, fontWeight: 600, fontSize: 13 }}>{selected.size} selected</span>
+          <select value={bulkCategory} onChange={e => setBulkCategory(e.target.value)} style={{
+            background: CARD_BG, color: TEXT, border: "1px solid " + BORDER, borderRadius: 6,
+            padding: "6px 10px", fontSize: 13,
+          }}>
+            <option value="">Set category...</option>
+            {ALL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button onClick={handleBulkCategorize} disabled={!bulkCategory || bulkUpdating} style={{
+            padding: "6px 14px", borderRadius: 6, background: bulkCategory ? GREEN : "#444",
+            color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}>{bulkUpdating ? "Updating..." : "Apply"}</button>
+          <button onClick={() => setSelected(new Set())} style={{
+            padding: "6px 10px", borderRadius: 6, background: "transparent",
+            color: "#888", border: "1px solid #444", fontSize: 12, cursor: "pointer",
+          }}>Clear</button>
+        </div>
+      )}
+
       {loading ? (
         <div style={{ textAlign: "center", padding: 40, color: GOLD }}>Loading documents...</div>
       ) : docs.length === 0 ? (
@@ -109,8 +169,11 @@ export default function CaseDocumentsTab({ caseId }) {
               {catDocs.map((doc) => (
                 <div key={doc.id} style={{
                   display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
-                  background: CARD_BG, borderRadius: 6, border: "1px solid " + BORDER,
+                  background: selected.has(doc.id) ? "rgba(235,176,3,0.08)" : CARD_BG,
+                  borderRadius: 6, border: "1px solid " + (selected.has(doc.id) ? GOLD : BORDER),
                 }}>
+                  <input type="checkbox" checked={selected.has(doc.id)} onChange={() => toggleSelect(doc.id)}
+                    style={{ cursor: "pointer", accentColor: GOLD }} />
                   <span style={{ fontSize: 20 }}>{FILE_ICONS[doc.extension?.toLowerCase()] || FILE_ICONS.default}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.filename}</div>
