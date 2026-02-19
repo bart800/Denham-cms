@@ -72,8 +72,7 @@ export async function GET(request, { params }) {
 
     // Emails
     for (const e of emailsRes.data || []) {
-      // Truncate body for the detail view
-      const bodyPreview = e.body_text ? (e.body_text.length > 500 ? e.body_text.slice(0, 500) + "..." : e.body_text) : null;
+      const bodyPreview = e.body_text || null;
       events.push({
         id: `email-${e.id}`, type: "email",
         date: e.received_at,
@@ -87,7 +86,7 @@ export async function GET(request, { params }) {
     // Calls
     for (const c of callsRes.data || []) {
       const dur = c.duration_seconds ? `${Math.floor(c.duration_seconds / 60)}:${String(c.duration_seconds % 60).padStart(2, "0")}` : "";
-      const detail = c.ai_summary || (c.transcript ? (c.transcript.length > 500 ? c.transcript.slice(0, 500) + "..." : c.transcript) : null);
+      const detail = [c.ai_summary ? `**Summary:** ${c.ai_summary}` : null, c.transcript ? `**Transcript:**\n${c.transcript}` : null].filter(Boolean).join("\n\n") || null;
       events.push({
         id: `call-${c.id}`, type: "call",
         date: c.started_at,

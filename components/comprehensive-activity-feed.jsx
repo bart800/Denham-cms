@@ -126,13 +126,16 @@ export default function ComprehensiveActivityFeed({ caseId, compact = false, lim
             return (
               <div key={evt.id || i} 
                 onClick={() => { if (isClickable) setExpandedId(isExpanded ? null : (evt.id || i)); }}
+                onMouseEnter={e => { if (isClickable) e.currentTarget.style.background = isExpanded ? `${cfg.color}12` : `${cfg.color}06`; }}
+                onMouseLeave={e => { e.currentTarget.style.background = isExpanded ? `${cfg.color}08` : "transparent"; }}
                 style={{
-                  display: "flex", gap: compact ? 8 : 12, padding: compact ? "6px 0" : "8px 0",
+                  display: "flex", gap: compact ? 8 : 12, padding: compact ? "6px 0" : "8px 4px",
                   borderBottom: `1px solid ${B.bdr}08`,
                   cursor: isClickable ? "pointer" : "default",
                   borderRadius: 6,
                   background: isExpanded ? `${cfg.color}08` : "transparent",
                   transition: "background 0.15s",
+                  ...(isClickable ? { borderLeft: `2px solid transparent` } : {}),
                 }}>
                 {/* Timeline dot */}
                 {!compact && (
@@ -157,10 +160,10 @@ export default function ComprehensiveActivityFeed({ caseId, compact = false, lim
                       {cfg.label}
                     </span>
                     {evt.actor && (
-                      <span style={{ fontSize: 11, color: B.txtM, fontWeight: 500 }}>{evt.actor}</span>
+                      <span style={{ fontSize: 11, color: B.txtM, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{evt.actor}</span>
                     )}
                     {isClickable && !compact && (
-                      <span style={{ fontSize: 10, color: B.txtD }}>{isExpanded ? "▾" : "▸"}</span>
+                      <span style={{ fontSize: 10, color: B.txtD, transition: "transform 0.15s", transform: isExpanded ? "rotate(0)" : "rotate(-90deg)" }}>▾</span>
                     )}
                     <span style={{ fontSize: 10, color: B.txtD, fontFamily: "'JetBrains Mono', monospace", marginLeft: "auto", flexShrink: 0 }}
                       title={fmtFullDate(evt.date)}>
@@ -171,9 +174,14 @@ export default function ComprehensiveActivityFeed({ caseId, compact = false, lim
                     {evt.description}
                   </div>
                   {isExpanded && (evt.detail || evt.body || evt.notes || evt.amount) && (
-                    <div style={{ marginTop: 8, padding: "8px 12px", background: `${B.card}`, border: `1px solid ${B.bdr}`, borderRadius: 6, fontSize: 12, color: B.txtM, lineHeight: 1.5, maxHeight: 200, overflow: "auto", whiteSpace: "pre-wrap" }}>
-                      {evt.amount && <div style={{ marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", color: B.green, fontWeight: 600 }}>${Number(evt.amount).toLocaleString()}</div>}
-                      {evt.body || evt.detail || evt.notes || "No additional details available."}
+                    <div onClick={e => e.stopPropagation()} style={{
+                      marginTop: 8, padding: "12px 16px", background: B.card, border: `1px solid ${B.bdr}`,
+                      borderLeft: `3px solid ${cfg.color}`, borderRadius: 6, fontSize: 12, color: B.txtM,
+                      lineHeight: 1.6, maxHeight: 400, overflow: "auto", whiteSpace: "pre-wrap",
+                      cursor: "text", userSelect: "text",
+                    }}>
+                      {evt.amount && <div style={{ marginBottom: 6, fontFamily: "'JetBrains Mono', monospace", color: B.green, fontWeight: 600, fontSize: 14 }}>${Number(evt.amount).toLocaleString()}</div>}
+                      {(evt.body || evt.detail || evt.notes || "No additional details available.").split(/\*\*(.+?)\*\*/g).map((part, pi) => pi % 2 === 1 ? <strong key={pi} style={{ color: B.txt }}>{part}</strong> : part)}
                     </div>
                   )}
                 </div>
