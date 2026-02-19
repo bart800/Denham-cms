@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function OnboardPage() {
+function OnboardForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -125,7 +125,6 @@ export default function OnboardPage() {
             display: "inline-flex", alignItems: "center", gap: 10,
             padding: "14px 28px", background: "#ebb003", color: "#08080f",
             borderRadius: 10, fontWeight: 700, fontSize: 16, textDecoration: "none",
-            transition: "opacity 0.2s",
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11.5 3v8.5H3V3h8.5zm1 0H21v8.5h-8.5V3zM3 12.5h8.5V21H3v-8.5zm9.5 0H21V21h-8.5v-8.5z" fill="currentColor"/></svg>
@@ -167,7 +166,6 @@ export default function OnboardPage() {
                 border: `2px dashed ${dragOver ? "#ebb003" : "#1e1e2e"}`,
                 borderRadius: 12, padding: 24, textAlign: "center", cursor: "pointer",
                 background: dragOver ? "rgba(235,176,3,0.05)" : "transparent",
-                transition: "all 0.2s",
               }}
             >
               {profilePreview ? (
@@ -231,7 +229,6 @@ export default function OnboardPage() {
               width: "100%", padding: "14px", background: submitting ? "#8a6a02" : "#ebb003",
               color: "#08080f", border: "none", borderRadius: 10, fontSize: 16,
               fontWeight: 700, cursor: submitting ? "not-allowed" : "pointer",
-              transition: "background 0.2s",
             }}
           >
             {submitting ? "Creating your account..." : "Complete Onboarding"}
@@ -239,5 +236,17 @@ export default function OnboardPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function OnboardPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", background: "#08080f", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "#e8e8f0", fontSize: 18 }}>Loading...</div>
+      </div>
+    }>
+      <OnboardForm />
+    </Suspense>
   );
 }
