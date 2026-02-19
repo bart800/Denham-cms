@@ -44,6 +44,7 @@ const DemandGenerator = dynamic(() => import("./demand-generator"), { ssr: false
 const LienTracker = dynamic(() => import("./lien-tracker"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading liens...</div> });
 const ExpenseTracker = dynamic(() => import("./expense-tracker"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading expenses...</div> });
 const InsurerScorecard = dynamic(() => import("./insurer-scorecard"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading scorecard...</div> });
+const WelcomeModal = dynamic(() => import("./welcome-modal"), { ssr: false });
 // ComprehensiveActivityFeed is defined inline below (not imported)
 
 // ─── Brand Colors ───────────────────────────────────────────
@@ -4886,6 +4887,7 @@ export default function DenhamStaffPortal() {
         {/* Shimmer animation for skeletons */}
         <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } } @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
         <ToastContainer />
+        <WelcomeModal user={user} />
         {/* Global Header Bar */}
         {!loading && user && (
           <GlobalHeader user={user} page={page} selCase={selCase} solCases={solCases} allCases={cases} onOpenCase={openC} onCmdK={() => setCmdBarOpen(true)} criticalCount={criticalCases.length} onNavCompliance={() => navTo("compliance")} />

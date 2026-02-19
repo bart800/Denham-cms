@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import TeamInvitePanel from "./team-invite-panel";
 
 const NAVY = "#000066";
 const GOLD = "#ebb003";
@@ -184,6 +185,7 @@ export default function SettingsPage() {
             </div>
             <button style={btnStyle} onClick={addMember} disabled={saving}>{saving ? "Adding..." : "Add Member"}</button>
           </div>
+          <TeamInvitePanel />
         </div>
       )}
 
