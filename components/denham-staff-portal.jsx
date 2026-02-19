@@ -425,11 +425,17 @@ function sbToCase(row) {
       dateOfLoss: cd?.date_of_loss || row.date_of_loss,
       dateReported: cd?.date_reported,
       dateDenied: cd?.date_denied,
+      claimStatus: cd?.claim_status,
       policyType: cd?.policy_type,
       policyLimits: cd?.policy_limits,
       deductible: cd?.deductible,
       causeOfLoss: cd?.cause_of_loss,
       propAddr: cd?.property_address,
+      coverageDwelling: cd?.coverage_dwelling,
+      coverageOtherStructure: cd?.coverage_other_structure,
+      coverageContents: cd?.coverage_contents,
+      coverageAle: cd?.coverage_ale,
+      estimateTotal: cd?.estimate_total,
     },
     ld: ld ? {
       caseNum: ld.case_number, court: ld.court, judge: ld.judge,
@@ -1951,10 +1957,26 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
 // ═══════════════════════════════════════════════════════════
 // ACTIVITY FEED
 // ═══════════════════════════════════════════════════════════
-function ActivityFeed({ c }) {
+function ActivityFeed({ c, activityFeed: feedProp }) {
   const [ft, setFt] = useState("all");
   const [sd, setSd] = useState("desc");
-  const acts = (c.acts || []).filter(a => ft === "all" || a.type === ft)
+  const [localFeed, setLocalFeed] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Use prop if available, otherwise fetch
+  useEffect(() => {
+    if (feedProp && feedProp.length > 0) { setLocalFeed(feedProp); return; }
+    if (!c?.id) return;
+    setLoading(true);
+    fetch(`/api/cases/${c.id}/activity-feed`)
+      .then(r => r.json())
+      .then(d => setLocalFeed(d.feed || []))
+      .catch(() => setLocalFeed([]))
+      .finally(() => setLoading(false));
+  }, [c?.id, feedProp]);
+
+  // Exclude documents from activity feed
+  const acts = localFeed.filter(a => a.type !== "document").filter(a => ft === "all" || a.type === ft)
     .sort((a, b) => sd === "desc" ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date));
 
   return (
@@ -2196,11 +2218,14 @@ function ClaimDetails({ c }) {
       <div style={S.card}><h3 style={{ ...S.secT, marginBottom: 20 }}>Policy Information</h3>
         <F l="Policy Number" v={d.policyNumber} m /><F l="Claim Number" v={d.claimNumber} m />
         <F l="Insurance Company" v={d.insurer} /><F l="Policy Type" v={d.policyType} />
-        <F l="Policy Limits" v={d.policyLimits} m clr={B.gold} /><F l="Deductible" v={d.deductible} m />
+        <F l="Policy Limits" v={d.policyLimits || (d.coverageDwelling || d.coverageOtherStructure || d.coverageContents ? [d.coverageDwelling && `Dwelling: ${fmt(d.coverageDwelling)}`, d.coverageOtherStructure && `Other Structure: ${fmt(d.coverageOtherStructure)}`, d.coverageContents && `Contents: ${fmt(d.coverageContents)}`, d.coverageAle && `ALE: ${fmt(d.coverageAle)}`].filter(Boolean).join('; ') : null)} m clr={B.gold} />
+        <F l="Deductible" v={d.deductible} m />
+        {d.estimateTotal > 0 && <F l="Estimate Total" v={fmt(d.estimateTotal)} m clr={B.green} />}
       </div>
       <div style={S.card}><h3 style={{ ...S.secT, marginBottom: 20 }}>Claim Information</h3>
         <F l="Date of Loss" v={fmtD(d.dateOfLoss)} m /><F l="Date Reported" v={fmtD(d.dateReported)} m />
-        <F l="Date Denied" v={d.dateDenied ? fmtD(d.dateDenied) : "—"} m clr={d.dateDenied ? B.danger : B.txtD} />
+        <F l="Claim Status" v={d.claimStatus || (d.dateDenied ? "Denied" : "Open")} m clr={d.claimStatus === "Denied" || d.dateDenied ? B.danger : d.claimStatus === "Underpaid" ? B.gold : B.green} />
+        {d.dateDenied && <F l="Date Denied" v={fmtD(d.dateDenied)} m clr={B.danger} />}
         <F l="Cause of Loss" v={d.causeOfLoss} />{d.propAddr && <F l="Property Address" v={d.propAddr} />}
       </div>
       <div style={{ ...S.card, gridColumn: "1/-1" }}><h3 style={{ ...S.secT, marginBottom: 20 }}>Adjuster Contact</h3>
@@ -3306,7 +3331,11 @@ function CaseOverview({ c }) {
           <div style={{ fontSize: 11, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 12 }}>📋 Claim Info</div>
           {[
             ["Claim #", d.claimNumber], ["Policy #", d.policyNumber], ["Insurer", d.insurer],
+            ["Claim Status", d.claimStatus], ["Policy Type", d.policyType],
             ["Cause of Loss", d.causeOfLoss], ["Property", d.propAddr],
+            ["Date Reported", d.dateReported ? fmtD(d.dateReported) : null],
+            ["Date Denied", d.dateDenied ? fmtD(d.dateDenied) : null],
+            ["Deductible", d.deductible],
           ].map(([l, v], i) => v ? (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 12 }}>
               <span style={{ color: B.txtD }}>{l}</span>
@@ -3334,9 +3363,35 @@ function CaseOverview({ c }) {
               <span style={{ ...S.mono, color: B.danger, fontWeight: 600 }}>{fmt(loEst)}</span>
             </div>
             <div style={{ fontSize: 11, color: B.txtD, marginTop: 4 }}>{ests.length} estimate{ests.length !== 1 ? "s" : ""} on file</div>
+          </> : d.estimateTotal > 0 ? <>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
+              <span style={{ color: B.txtD }}>Total Estimate</span>
+              <span style={{ ...S.mono, color: B.green, fontWeight: 600 }}>{fmt(d.estimateTotal)}</span>
+            </div>
           </> : <div style={{ fontSize: 12, color: B.txtD }}>No estimates yet</div>}
         </div>
       </div>
+
+      {/* Coverage breakdown */}
+      {(d.coverageDwelling || d.coverageOtherStructure || d.coverageContents || d.coverageAle || d.policyLimits) && (
+        <div style={{ ...S.card, marginBottom: 20 }}>
+          <div style={{ fontSize: 11, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 12 }}>🛡️ Policy Coverage</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
+            {[
+              ["Dwelling", d.coverageDwelling],
+              ["Other Structure", d.coverageOtherStructure],
+              ["Contents", d.coverageContents],
+              ["ALE", d.coverageAle],
+              ...(d.policyLimits && !d.coverageDwelling ? [["Total Limits", d.policyLimits]] : []),
+            ].filter(([, v]) => v).map(([l, v], i) => (
+              <div key={i}>
+                <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>{l}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: B.green, ...S.mono }}>{typeof v === "number" || !isNaN(Number(v)) ? fmt(v) : v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Litigation summary if in litigation */}
       {c.ld && (

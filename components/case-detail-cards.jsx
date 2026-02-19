@@ -87,28 +87,62 @@ const PropertyInfoCard = ({ caseData }) => (
 );
 
 // 2. Insurance Card
-const InsuranceCard = ({ caseData }) => (
-  <div style={cardStyle}>
-    <CardHeader icon="🛡️" title="Insurance" />
-    <Field label="Insurer" value={caseData.insurer} />
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-      <Field label="Claim #" value={caseData.claim_number} />
-      <Field label="Policy #" value={caseData.policy_number} />
+const InsuranceCard = ({ caseData }) => {
+  const cd = caseData.claim_details || {};
+  const insurer = cd.insurer || caseData.insurer;
+  const claimNum = cd.claim_number || caseData.claim_number;
+  const policyNum = cd.policy_number || caseData.policy_number;
+  const adjName = cd.adjuster_name || caseData.adjuster_name;
+  const adjPhone = cd.adjuster_phone || caseData.adjuster_phone;
+  const adjEmail = cd.adjuster_email || caseData.adjuster_email;
+  const dateDenied = cd.date_denied;
+  const dateReported = cd.date_reported;
+  const coverages = [
+    ['Dwelling', cd.coverage_dwelling],
+    ['Other Structure', cd.coverage_other_structure],
+    ['Contents', cd.coverage_contents],
+    ['ALE', cd.coverage_ale],
+  ].filter(([, v]) => v);
+
+  return (
+    <div style={cardStyle}>
+      <CardHeader icon="🛡️" title="Insurance" />
+      <Field label="Insurer" value={insurer} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <Field label="Claim #" value={claimNum} />
+        <Field label="Policy #" value={policyNum} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        {dateReported && <Field label="Date Reported" value={formatDate(dateReported)} />}
+        {dateDenied && <Field label="Date Denied" value={formatDate(dateDenied)} />}
+      </div>
+      {coverages.length > 0 && (
+        <>
+          <div style={{ borderTop: `1px solid ${COLORS.cardBorder}`, paddingTop: '10px', marginTop: '4px' }}>
+            <p style={{ ...labelStyle, marginBottom: '6px' }}>Coverage Limits</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {coverages.map(([label, val], i) => (
+              <Field key={i} label={label} value={formatCurrency(val)} />
+            ))}
+          </div>
+        </>
+      )}
+      {(adjName || adjPhone || adjEmail) && (
+        <>
+          <div style={{ borderTop: `1px solid ${COLORS.cardBorder}`, paddingTop: '10px', marginTop: '4px' }}>
+            <p style={{ ...labelStyle, marginBottom: '6px' }}>Adjuster</p>
+          </div>
+          <Field label="Name" value={adjName} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Field label="Phone" value={adjPhone} />
+            <Field label="Email" value={adjEmail} />
+          </div>
+        </>
+      )}
     </div>
-    {(caseData.adjuster_name || caseData.adjuster_phone || caseData.adjuster_email) && (
-      <>
-        <div style={{ borderTop: `1px solid ${COLORS.cardBorder}`, paddingTop: '10px', marginTop: '4px' }}>
-          <p style={{ ...labelStyle, marginBottom: '6px' }}>Adjuster</p>
-        </div>
-        <Field label="Name" value={caseData.adjuster_name} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <Field label="Phone" value={caseData.adjuster_phone} />
-          <Field label="Email" value={caseData.adjuster_email} />
-        </div>
-      </>
-    )}
-  </div>
-);
+  );
+};
 
 // 3. Financial Card
 const FinancialCard = ({ caseData }) => (
@@ -134,9 +168,12 @@ const FinancialCard = ({ caseData }) => (
 
 // 4. Timeline Card
 const TimelineCard = ({ caseData }) => {
+  const cd = caseData.claim_details || {};
   const events = useMemo(() => {
     const e = [];
     if (caseData.date_of_loss) e.push({ label: 'Date of Loss', date: caseData.date_of_loss, color: COLORS.red });
+    if (cd.date_reported) e.push({ label: 'Claim Reported', date: cd.date_reported, color: COLORS.gold });
+    if (cd.date_denied) e.push({ label: 'Claim Denied', date: cd.date_denied, color: '#cc3333' });
     if (caseData.date_opened) e.push({ label: 'Case Opened', date: caseData.date_opened, color: COLORS.gold });
     if (caseData.statute_of_limitations) e.push({ label: 'SOL Deadline', date: caseData.statute_of_limitations, color: COLORS.orange });
     return e.sort((a, b) => new Date(a.date) - new Date(b.date));
