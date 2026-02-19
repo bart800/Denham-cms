@@ -28,6 +28,7 @@ const CaseDocumentsTab = dynamic(() => import("./case-documents-tab"), { ssr: fa
 const CalendarPage = dynamic(() => import("./calendar-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calendar...</div> });
 const CaseCalendarTab = dynamic(() => import("./case-calendar-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calendar...</div> });
 const CaseEstimatesTab = dynamic(() => import("./case-estimates-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading estimates...</div> });
+const WorkflowEngine = dynamic(() => import("./workflow-engine"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading workflow...</div> });
 const CasePleadingsTab = dynamic(() => import("./case-pleadings-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading pleadings...</div> });
 const CaseMessagesNew = dynamic(() => import("./case-messages"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading messages...</div> });
 // ComprehensiveActivityFeed is defined inline below (not imported)
@@ -3858,6 +3859,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "calendar", l: "📅 Calendar" },
     { id: "messages", l: "💬 Messages" },
     { id: "compliance", l: "⚠️ Compliance" },
+    { id: "workflow", l: "⚙️ Workflow" },
   ];
   const sc = stClr(c.status);
   const sd = c.sol ? dU(c.sol) : null;
@@ -4057,6 +4059,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "calendar" && <CaseCalendarTab caseId={c.id} />}
       {tab === "messages" && <CaseMessagesNew caseId={c.id} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
+      {tab === "workflow" && <WorkflowEngine caseId={c.id} caseStatus={c.status} />}
     </div>
   );
 }
