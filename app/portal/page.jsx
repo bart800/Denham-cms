@@ -61,6 +61,7 @@ export default function ClientPortal() {
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
   const [msgLoading, setMsgLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const getToken = () => localStorage.getItem("portal_token");
 
@@ -156,7 +157,7 @@ export default function ClientPortal() {
       const resp = await fetch("/api/portal/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ref: ref.trim(), code: code.trim() }),
+        body: JSON.stringify({ ref: ref.trim(), code: code.trim(), rememberMe }),
       });
       const data = await resp.json();
       if (data.error) { setError(data.error); }
@@ -246,11 +247,16 @@ export default function ClientPortal() {
                     <input value={ref} onChange={e => setRef(e.target.value)} placeholder="e.g. DL-2025-0001" style={S.input}
                       onKeyDown={e => e.key === "Enter" && requestCode()} />
                   </div>
-                  <div style={{ marginBottom: 24 }}>
+                  <div style={{ marginBottom: 16 }}>
                     <label style={{ fontSize: 12, color: B.txtM, marginBottom: 6, display: "block", fontWeight: 600 }}>Last Name</label>
                     <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Your last name" style={S.input}
                       onKeyDown={e => e.key === "Enter" && requestCode()} />
                   </div>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, cursor: "pointer", fontSize: 13, color: B.txtM }}>
+                    <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: B.gold, cursor: "pointer" }} />
+                    Remember me for 30 days
+                  </label>
                   {error && <p style={{ fontSize: 13, color: B.danger, marginBottom: 16 }}>{error}</p>}
                   <button onClick={requestCode} disabled={loading} style={{ ...S.btn, width: "100%", opacity: loading ? 0.6 : 1 }}>
                     {loading ? "Verifying..." : "Continue"}
@@ -299,7 +305,7 @@ export default function ClientPortal() {
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
               <div style={{ display: "flex", gap: 0, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 8, overflow: "hidden" }}>
-                {[["case", "📋 Case"], ["messages", "💬 Messages"]].map(([key, label]) => (
+                {[["case", "📋 Case"], ["documents", "📄 Documents"], ["schedule", "📅 Schedule"], ["messages", "💬 Messages"]].map(([key, label]) => (
                   <button key={key} onClick={() => setActiveTab(key)}
                     style={{ background: activeTab === key ? B.navy : "transparent", color: activeTab === key ? "#fff" : B.txtM, border: "none", padding: "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s" }}>
                     {label}
@@ -329,13 +335,10 @@ export default function ClientPortal() {
                 </div>
               </div>
 
-              {/* Progress bar */}
+              {/* Status Timeline Stepper */}
               <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 11, color: B.txtD, marginBottom: 6, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Case Progress</div>
-                <div style={{ height: 6, background: B.bdr, borderRadius: 3, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${caseData.statusProgress}%`, background: `linear-gradient(90deg,${B.navy},${B.gold})`, borderRadius: 3, transition: "width 0.5s" }} />
-                </div>
-                <div style={{ fontSize: 10, color: B.txtM, marginTop: 4 }}>{caseData.statusProgress}% complete</div>
+                <div style={{ fontSize: 11, color: B.txtD, marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Where Is My Case?</div>
+                <PortalStatusTimeline status={caseData.status} progress={caseData.statusProgress} />
               </div>
             </div>
 
@@ -439,8 +442,17 @@ export default function ClientPortal() {
               )}
             </div>
 
-            </>) : (
-              /* Messages Tab */
+            </>)}
+
+            {activeTab === "documents" && (
+              <PortalDocRequests caseId={caseData.id} token={getToken()} />
+            )}
+
+            {activeTab === "schedule" && (
+              <PortalAppointments caseId={caseData.id} token={getToken()} />
+            )}
+
+            {activeTab === "messages" && (
               <div style={{ background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
                   <span>💬</span> Messages
@@ -487,6 +499,241 @@ export default function ClientPortal() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Status Timeline Stepper ────────────────────────────
+const PORTAL_STAGES = [
+  { key: "Intake", label: "Intake", icon: "📥", desc: "Case opened and initial review" },
+  { key: "Investigation", label: "Investigation", icon: "🔍", desc: "Gathering evidence and documents" },
+  { key: "Presuit", label: "Pre-Suit", icon: "📋", desc: "Preparing demand to insurance" },
+  { key: "Negotiation", label: "Negotiation", icon: "🤝", desc: "Negotiating with insurance company" },
+  { key: "Litigation", label: "Litigation", icon: "⚖️", desc: "Filed lawsuit, active litigation" },
+  { key: "Settlement", label: "Settlement", icon: "💰", desc: "Case settled or resolved" },
+];
+
+function PortalStatusTimeline({ status, progress }) {
+  const stageIndex = PORTAL_STAGES.findIndex(s => {
+    if (!status) return false;
+    const st = status.toLowerCase();
+    return st.includes(s.key.toLowerCase()) || (s.key === "Presuit" && st.includes("presuit")) || (s.key === "Negotiation" && (st.includes("negotiat") || st.includes("demand"))) || (s.key === "Litigation" && st.includes("litigat")) || (s.key === "Settlement" && (st.includes("settled") || st.includes("closed")));
+  });
+  const activeIdx = stageIndex >= 0 ? stageIndex : 0;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 8 }}>
+        {PORTAL_STAGES.map((stage, i) => {
+          const done = i < activeIdx;
+          const active = i === activeIdx;
+          const clr = done ? "#386f4a" : active ? "#ebb003" : "#55556a";
+          return (
+            <div key={stage.key} style={{ flex: 1, display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "#386f4a" : active ? "#ebb003" : "#1e1e2e", border: `2px solid ${clr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
+                  {done ? "✓" : stage.icon}
+                </div>
+                <div style={{ fontSize: 9, color: clr, fontWeight: active ? 700 : 500, marginTop: 4, textAlign: "center", whiteSpace: "nowrap" }}>{stage.label}</div>
+              </div>
+              {i < PORTAL_STAGES.length - 1 && (
+                <div style={{ flex: 1, height: 2, background: done ? "#386f4a" : "#1e1e2e", margin: "0 -4px", marginBottom: 16 }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {PORTAL_STAGES[activeIdx] && (
+        <div style={{ fontSize: 12, color: "#8888a0", textAlign: "center", marginTop: 4 }}>
+          Current: <span style={{ color: "#ebb003", fontWeight: 600 }}>{PORTAL_STAGES[activeIdx].label}</span> — {PORTAL_STAGES[activeIdx].desc}
+        </div>
+      )}
+      <div style={{ height: 4, background: "#1e1e2e", borderRadius: 2, overflow: "hidden", marginTop: 8 }}>
+        <div style={{ height: "100%", width: `${progress || 0}%`, background: "linear-gradient(90deg,#000066,#ebb003)", borderRadius: 2, transition: "width 0.5s" }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Portal Document Requests ───────────────────────────
+function PortalDocRequests({ caseId, token }) {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`/api/portal/doc-requests?caseId=${caseId}`, { headers: { "x-portal-token": token } });
+        const d = await r.json();
+        if (Array.isArray(d)) setRequests(d);
+        else if (d.data) setRequests(d.data);
+      } catch {}
+      setLoading(false);
+    })();
+  }, [caseId]);
+
+  const handleUpload = async (reqId, file) => {
+    setUploading(reqId);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("requestId", reqId);
+      fd.append("caseId", caseId);
+      const r = await fetch("/api/portal/doc-requests/upload", { method: "POST", body: fd, headers: { "x-portal-token": token } });
+      const d = await r.json();
+      if (!d.error) setRequests(prev => prev.map(x => x.id === reqId ? { ...x, status: "uploaded" } : x));
+    } catch {}
+    setUploading(null);
+  };
+
+  const STATUS_CLR = { pending: "#ebb003", uploaded: "#386f4a", reviewed: "#5b8def" };
+
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading...</div>;
+
+  return (
+    <div style={{ background: "#111119", border: "1px solid #1e1e2e", borderRadius: 12, padding: 20 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+        <span>📄</span> Document Requests
+      </div>
+      <p style={{ fontSize: 12, color: "#8888a0", marginBottom: 16 }}>
+        Your legal team has requested the following documents. Please upload them as soon as possible.
+      </p>
+      {requests.length === 0 ? (
+        <div style={{ padding: 32, textAlign: "center", color: "#55556a", fontSize: 13 }}>No document requests at this time. ✓</div>
+      ) : requests.map(req => (
+        <div key={req.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1e1e2e06" }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8f0" }}>{req.description}</div>
+            <div style={{ fontSize: 11, color: "#55556a", marginTop: 2 }}>Requested {new Date(req.created_at).toLocaleDateString()}</div>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: `${STATUS_CLR[req.status] || "#55556a"}20`, color: STATUS_CLR[req.status] || "#55556a" }}>{req.status}</span>
+            {req.status === "pending" && (
+              <>
+                <input type="file" id={`doc-req-${req.id}`} style={{ display: "none" }} onChange={e => e.target.files[0] && handleUpload(req.id, e.target.files[0])} />
+                <button onClick={() => document.getElementById(`doc-req-${req.id}`).click()} disabled={uploading === req.id}
+                  style={{ background: "#ebb003", color: "#000", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                  {uploading === req.id ? "..." : "📤 Upload"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Portal Appointments ────────────────────────────────
+function PortalAppointments({ caseId, token }) {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showBook, setShowBook] = useState(false);
+  const [form, setForm] = useState({ type: "consultation", date: "", time: "10:00", notes: "" });
+  const [booking, setBooking] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`/api/portal/appointments?caseId=${caseId}`, { headers: { "x-portal-token": token } });
+        const d = await r.json();
+        if (Array.isArray(d)) setAppointments(d);
+        else if (d.data) setAppointments(d.data);
+      } catch {}
+      setLoading(false);
+    })();
+  }, [caseId]);
+
+  const book = async () => {
+    if (!form.date || !form.time) return;
+    setBooking(true);
+    try {
+      const dt = new Date(`${form.date}T${form.time}:00`).toISOString();
+      const r = await fetch("/api/portal/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-portal-token": token },
+        body: JSON.stringify({ caseId, datetime: dt, type: form.type, notes: form.notes }),
+      });
+      const d = await r.json();
+      if (!d.error) { setAppointments(prev => [...prev, d.data || d]); setShowBook(false); setForm({ type: "consultation", date: "", time: "10:00", notes: "" }); }
+    } catch {}
+    setBooking(false);
+  };
+
+  const TYPE_ICON = { consultation: "📞", deposition: "📝", mediation: "🤝" };
+  const STATUS_CLR = { scheduled: "#ebb003", confirmed: "#386f4a", cancelled: "#e04050", completed: "#55556a" };
+
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading...</div>;
+
+  // Generate available time slots (weekdays 9-5)
+  const timeSlots = [];
+  for (let h = 9; h <= 16; h++) {
+    timeSlots.push(`${h.toString().padStart(2, "0")}:00`);
+    timeSlots.push(`${h.toString().padStart(2, "0")}:30`);
+  }
+
+  return (
+    <div style={{ background: "#111119", border: "1px solid #1e1e2e", borderRadius: 12, padding: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+          <span>📅</span> Appointments
+        </div>
+        <button onClick={() => setShowBook(!showBook)} style={{ background: "#ebb003", color: "#000", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+          + Request Appointment
+        </button>
+      </div>
+
+      {showBook && (
+        <div style={{ background: "#0a0a14", border: "1px solid #1e1e2e", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 10, color: "#55556a", textTransform: "uppercase", marginBottom: 4 }}>Type</div>
+              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} style={{ background: "#0a0a14", border: "1px solid #1e1e2e", borderRadius: 6, padding: "8px 12px", color: "#e8e8f0", fontSize: 13, width: "100%" }}>
+                <option value="consultation">📞 Consultation</option>
+                <option value="deposition">📝 Deposition</option>
+                <option value="mediation">🤝 Mediation</option>
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#55556a", textTransform: "uppercase", marginBottom: 4 }}>Preferred Date</div>
+              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} min={new Date().toISOString().slice(0, 10)}
+                style={{ background: "#0a0a14", border: "1px solid #1e1e2e", borderRadius: 6, padding: "8px 12px", color: "#e8e8f0", fontSize: 13, width: "100%" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#55556a", textTransform: "uppercase", marginBottom: 4 }}>Preferred Time</div>
+              <select value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} style={{ background: "#0a0a14", border: "1px solid #1e1e2e", borderRadius: 6, padding: "8px 12px", color: "#e8e8f0", fontSize: 13, width: "100%" }}>
+                {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#55556a", textTransform: "uppercase", marginBottom: 4 }}>Notes</div>
+              <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes..."
+                style={{ background: "#0a0a14", border: "1px solid #1e1e2e", borderRadius: 6, padding: "8px 12px", color: "#e8e8f0", fontSize: 13, width: "100%" }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
+            <button onClick={() => setShowBook(false)} style={{ background: "transparent", border: "1px solid #1e1e2e", borderRadius: 6, padding: "6px 14px", fontSize: 12, color: "#8888a0", cursor: "pointer" }}>Cancel</button>
+            <button onClick={book} disabled={booking} style={{ background: "#ebb003", color: "#000", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", opacity: booking ? 0.5 : 1 }}>{booking ? "..." : "Request"}</button>
+          </div>
+        </div>
+      )}
+
+      {appointments.length === 0 ? (
+        <div style={{ padding: 32, textAlign: "center", color: "#55556a", fontSize: 13 }}>No upcoming appointments.</div>
+      ) : appointments.map(apt => (
+        <div key={apt.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1e1e2e06" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <span style={{ fontSize: 20 }}>{TYPE_ICON[apt.type] || "📅"}</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8f0" }}>{(apt.type || "Appointment").charAt(0).toUpperCase() + (apt.type || "").slice(1)}</div>
+              <div style={{ fontSize: 12, color: "#8888a0", fontFamily: "'JetBrains Mono',monospace" }}>{new Date(apt.datetime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</div>
+              {apt.notes && <div style={{ fontSize: 11, color: "#55556a", marginTop: 2 }}>{apt.notes}</div>}
+            </div>
+          </div>
+          <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: `${STATUS_CLR[apt.status] || "#55556a"}20`, color: STATUS_CLR[apt.status] || "#55556a" }}>{apt.status}</span>
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, Fragment } from "react";
+import dynamic from "next/dynamic";
+const InsurerScorecard = dynamic(() => import("./insurer-scorecard"), { ssr: false });
 
 const B = {
   navy: "#000066", gold: "#ebb003", green: "#386f4a",
@@ -27,6 +29,7 @@ export default function InsuranceAnalytics() {
   const [sortKey, setSortKey] = useState("totalCases");
   const [sortAsc, setSortAsc] = useState(false);
   const [expanded, setExpanded] = useState(null);
+  const [scorecardInsurer, setScorecardInsurer] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -90,6 +93,10 @@ export default function InsuranceAnalytics() {
     { key: "avgRecovery", label: "Avg Recovery", align: "right" },
     { key: "winRate", label: "Win Rate", align: "right" },
   ];
+
+  if (scorecardInsurer) {
+    return <InsurerScorecard insurerName={scorecardInsurer} onClose={() => setScorecardInsurer(null)} />;
+  }
 
   return (
     <div>
@@ -163,7 +170,13 @@ export default function InsuranceAnalytics() {
                     onMouseLeave={(e) => { if (!isExp) e.currentTarget.style.background = "transparent"; }}
                   >
                     <td style={{ padding: "10px 16px", borderBottom: `1px solid ${B.border}06`, color: B.text, fontWeight: 600 }}>
-                      {isExp ? "▼" : "▶"} {row.insurer}
+                      {isExp ? "▼" : "▶"}{" "}
+                      <span
+                        onClick={(e) => { e.stopPropagation(); setScorecardInsurer(row.insurer); }}
+                        style={{ cursor: "pointer", borderBottom: `1px dashed ${B.gold}40` }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = B.gold}
+                        onMouseLeave={(e) => e.currentTarget.style.color = B.text}
+                      >{row.insurer}</span>
                     </td>
                     <td style={{ padding: "10px 16px", borderBottom: `1px solid ${B.border}06`, textAlign: "right", ...mono, color: B.text }}>
                       {row.totalCases}
@@ -203,7 +216,7 @@ export default function InsuranceAnalytics() {
                               </div>
                             ))}
                           </div>
-                          <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 12 }}>
+                          <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 12, alignItems: "center" }}>
                             <span style={{ color: B.textMuted }}>
                               Settled: <span style={{ ...mono, color: B.green }}>{row.settledCount}</span>
                             </span>
@@ -213,6 +226,9 @@ export default function InsuranceAnalytics() {
                             <span style={{ color: B.textMuted }}>
                               Closed ($0): <span style={{ ...mono, color: B.textDim }}>{row.closedZeroCount}</span>
                             </span>
+                            <button onClick={(e) => { e.stopPropagation(); setScorecardInsurer(row.insurer); }} style={{ background: B.gold, color: "#000", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", marginLeft: "auto" }}>
+                              📊 Full Scorecard →
+                            </button>
                           </div>
                         </div>
                       </td>

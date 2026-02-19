@@ -9,7 +9,7 @@ export async function POST(request) {
   try {
     if (!supabase) return Response.json({ error: "Server configuration error" }, { status: 500 });
 
-    const { ref, code } = await request.json();
+    const { ref, code, rememberMe } = await request.json();
     if (!ref || !code) return Response.json({ error: "Reference and code are required" }, { status: 400 });
 
     // Find case by ref
@@ -33,9 +33,10 @@ export async function POST(request) {
       return Response.json({ error: "Invalid or expired code. Please request a new one." }, { status: 401 });
     }
 
-    // Generate token, update session
+    // Generate token, update session — 30 days if remember me, 24 hours otherwise
     const token = crypto.randomBytes(32).toString("hex");
-    const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+    const durationMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const tokenExpiresAt = new Date(Date.now() + durationMs).toISOString();
 
     await supabase.from("portal_sessions").update({
       token,

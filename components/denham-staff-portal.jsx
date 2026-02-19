@@ -40,6 +40,10 @@ const SettlementCalculator = dynamic(() => import("./settlement-calculator"), { 
 const CourtDeadlines = dynamic(() => import("./court-deadlines"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading deadlines...</div> });
 const CaseRemindersTab = dynamic(() => import("./case-reminders"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading reminders...</div> });
 const AttorneyDashboard = dynamic(() => import("./attorney-dashboard"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading attorney dashboard...</div> });
+const DemandGenerator = dynamic(() => import("./demand-generator"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading demand generator...</div> });
+const LienTracker = dynamic(() => import("./lien-tracker"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading liens...</div> });
+const ExpenseTracker = dynamic(() => import("./expense-tracker"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading expenses...</div> });
+const InsurerScorecard = dynamic(() => import("./insurer-scorecard"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading scorecard...</div> });
 // ComprehensiveActivityFeed is defined inline below (not imported)
 
 // ─── Brand Colors ───────────────────────────────────────────
@@ -3952,7 +3956,9 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "settlement", l: "💰 Settlement" },
     { id: "deadlines", l: "⏰ Deadlines" },
     { id: "reminders", l: "🔔 Reminders" },
-    { id: "demand", l: "📄 Demand Letter" },
+    { id: "demand", l: "📄 Demand" },
+    { id: "liens", l: "🔗 Liens" },
+    { id: "expenses", l: "💵 Expenses" },
   ];
   const sc = stClr(c.status);
   const sd = c.sol ? dU(c.sol) : null;
@@ -4159,7 +4165,9 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "settlement" && <SettlementCalculator caseId={c.id} />}
       {tab === "deadlines" && <CourtDeadlines caseId={c.id} />}
       {tab === "reminders" && <CaseRemindersTab caseId={c.id} />}
-      {tab === "demand" && <DemandWriterTab caseData={c} />}
+      {tab === "demand" && <DemandGenerator caseId={c.id} />}
+      {tab === "liens" && <LienTracker caseId={c.id} />}
+      {tab === "expenses" && <ExpenseTracker caseId={c.id} />}
     </div>
   );
 }
@@ -4168,6 +4176,22 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
 function DemandWriterTab({ caseData }) {
   const c = caseData;
   const dwUrl = "https://demand-writer.vercel.app";
+  const [demands, setDemands] = useState([]);
+  const [demandsLoading, setDemandsLoading] = useState(true);
+  const [viewingDemand, setViewingDemand] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`/api/cases/${c.id}/demands`);
+        const d = await r.json();
+        if (Array.isArray(d)) setDemands(d);
+      } catch {}
+      setDemandsLoading(false);
+    })();
+  }, [c.id]);
+
+  const statusClr = { draft: "#ebb003", sent: "#5b8def", final: "#386f4a" };
   
   return (
     <div style={{ padding: 20 }}>
@@ -4204,6 +4228,47 @@ function DemandWriterTab({ caseData }) {
         <span style={{ color: "#8888a0", fontSize: 11, marginLeft: 12 }}>
           Use "Import from CMS" in the Demand Writer to pull this case's data
         </span>
+      </div>
+
+      {/* View Demands — past demand letters */}
+      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <h4 style={{ margin: "0 0 12px 0", color: "#e0e0ff", fontSize: 14, fontWeight: 700 }}>📋 Past Demand Letters</h4>
+        {demandsLoading ? (
+          <div style={{ padding: 20, textAlign: "center", color: "#8888a0", fontSize: 13 }}>Loading demands...</div>
+        ) : demands.length === 0 ? (
+          <div style={{ padding: 24, textAlign: "center", color: "#55556a", fontSize: 13 }}>
+            No demand letters generated yet. Use the Demand Writer above to create one.
+          </div>
+        ) : viewingDemand ? (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div>
+                <span style={{ fontSize: 13, color: "#e0e0ff", fontWeight: 600 }}>Version {viewingDemand.version}</span>
+                <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 600, marginLeft: 8, background: `${statusClr[viewingDemand.status] || "#55556a"}20`, color: statusClr[viewingDemand.status] || "#55556a" }}>{viewingDemand.status}</span>
+              </div>
+              <button onClick={() => setViewingDemand(null)} style={{ background: "transparent", border: "1px solid #2a2a4a", borderRadius: 6, padding: "4px 12px", color: "#8888a0", fontSize: 11, cursor: "pointer" }}>← Back</button>
+            </div>
+            <div style={{ background: "#0a0a14", border: "1px solid #1e1e2e", borderRadius: 8, padding: 20, maxHeight: 500, overflowY: "auto", fontSize: 13, lineHeight: 1.6, color: "#e0e0ff" }}
+              dangerouslySetInnerHTML={{ __html: viewingDemand.content_html || "<em>No content</em>" }} />
+          </div>
+        ) : (
+          <div>
+            {demands.map((d, i) => (
+              <div key={d.id} onClick={() => setViewingDemand(d)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < demands.length - 1 ? "1px solid #2a2a4a06" : "none", cursor: "pointer" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <div>
+                  <span style={{ fontSize: 13, color: "#e0e0ff", fontWeight: 500 }}>Version {d.version || i + 1}</span>
+                  <span style={{ fontSize: 11, color: "#55556a", marginLeft: 8 }}>{d.generated_at ? new Date(d.generated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 600, background: `${statusClr[d.status] || "#55556a"}20`, color: statusClr[d.status] || "#55556a" }}>{d.status}</span>
+                  <span style={{ fontSize: 11, color: "#ebb003" }}>View →</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Quick reference: recent negotiations */}
