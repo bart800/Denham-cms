@@ -3952,6 +3952,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "settlement", l: "💰 Settlement" },
     { id: "deadlines", l: "⏰ Deadlines" },
     { id: "reminders", l: "🔔 Reminders" },
+    { id: "demand", l: "📄 Demand Letter" },
   ];
   const sc = stClr(c.status);
   const sd = c.sol ? dU(c.sol) : null;
@@ -4158,6 +4159,93 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "settlement" && <SettlementCalculator caseId={c.id} />}
       {tab === "deadlines" && <CourtDeadlines caseId={c.id} />}
       {tab === "reminders" && <CaseRemindersTab caseId={c.id} />}
+      {tab === "demand" && <DemandWriterTab caseData={c} />}
+    </div>
+  );
+}
+
+// Demand Writer integration — links to external Demand Writer app with case data pre-loaded
+function DemandWriterTab({ caseData }) {
+  const c = caseData;
+  const dwUrl = "https://demand-writer.vercel.app";
+  
+  return (
+    <div style={{ padding: 20 }}>
+      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 24, marginBottom: 20 }}>
+        <h3 style={{ margin: "0 0 8px 0", color: "#e0e0ff" }}>📄 Demand Letter Generator</h3>
+        <p style={{ color: "#8888a0", fontSize: 13, margin: "0 0 20px 0" }}>
+          Generate a professional demand letter using the Demand Writer. Case data will be pre-loaded.
+        </p>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20, fontSize: 13 }}>
+          <div><span style={{ color: "#8888a0" }}>Client:</span> <span style={{ color: "#e0e0ff" }}>{c.client_name || "—"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Insurer:</span> <span style={{ color: "#e0e0ff" }}>{c.insurer || "—"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Claim #:</span> <span style={{ color: "#e0e0ff" }}>{c.claim_number || "—"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Policy #:</span> <span style={{ color: "#e0e0ff" }}>{c.policy_number || "—"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Date of Loss:</span> <span style={{ color: "#e0e0ff" }}>{c.date_of_loss || "—"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Jurisdiction:</span> <span style={{ color: "#e0e0ff" }}>{c.jurisdiction || "—"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Property:</span> <span style={{ color: "#e0e0ff" }}>{c.property_address || "—"}</span></div>
+          <div><span style={{ color: "#8888a0" }}>Status:</span> <span style={{ color: "#e0e0ff" }}>{c.status || "—"}</span></div>
+        </div>
+
+        <a
+          href={dwUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "#c8a000", color: "#000", fontWeight: 700,
+            padding: "10px 24px", borderRadius: 8, textDecoration: "none",
+            fontSize: 14, cursor: "pointer", border: "none",
+          }}
+        >
+          📝 Open Demand Writer
+        </a>
+        <span style={{ color: "#8888a0", fontSize: 11, marginLeft: 12 }}>
+          Use "Import from CMS" in the Demand Writer to pull this case's data
+        </span>
+      </div>
+
+      {/* Quick reference: recent negotiations */}
+      <DemandNegotiationSummary caseId={c.id} />
+    </div>
+  );
+}
+
+function DemandNegotiationSummary({ caseId }) {
+  const [negs, setNegs] = useState([]);
+  useEffect(() => {
+    fetch(`/api/cases/${caseId}?include=negotiations`).then(r => r.ok ? r.json() : null).then(d => {
+      if (d?.negotiations) setNegs(d.negotiations.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5));
+    }).catch(() => {});
+  }, [caseId]);
+
+  if (!negs.length) return null;
+  return (
+    <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 20 }}>
+      <h4 style={{ margin: "0 0 12px 0", color: "#e0e0ff", fontSize: 14 }}>Recent Negotiation History</h4>
+      <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ color: "#8888a0", borderBottom: "1px solid #2a2a4a" }}>
+            <th style={{ textAlign: "left", padding: "6px 8px" }}>Date</th>
+            <th style={{ textAlign: "left", padding: "6px 8px" }}>Type</th>
+            <th style={{ textAlign: "right", padding: "6px 8px" }}>Amount</th>
+            <th style={{ textAlign: "left", padding: "6px 8px" }}>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {negs.map((n, i) => (
+            <tr key={i} style={{ borderBottom: "1px solid #1a1a2e", color: "#c8c8e0" }}>
+              <td style={{ padding: "6px 8px" }}>{n.date ? new Date(n.date).toLocaleDateString() : "—"}</td>
+              <td style={{ padding: "6px 8px" }}>{n.type || "—"}</td>
+              <td style={{ padding: "6px 8px", textAlign: "right", fontFamily: "monospace", color: n.type?.includes("Demand") ? "#50c878" : "#e0a050" }}>
+                {n.amount ? `$${Number(n.amount).toLocaleString()}` : "—"}
+              </td>
+              <td style={{ padding: "6px 8px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.notes || "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
