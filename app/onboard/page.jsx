@@ -120,19 +120,16 @@ function OnboardForm() {
         <h2 style={{ color: "#e8e8f0", margin: "0 0 12px" }}>Welcome to Denham Law!</h2>
         <p style={{ color: "#a0a0b0", marginBottom: 32 }}>Your account has been created. Connect Microsoft 365 to sync your email and calendar.</p>
         <a
-          href="/api/webhooks/outlook/subscribe"
+          href="/"
           style={{
             display: "inline-flex", alignItems: "center", gap: 10,
             padding: "14px 28px", background: "#ebb003", color: "#08080f",
             borderRadius: 10, fontWeight: 700, fontSize: 16, textDecoration: "none",
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11.5 3v8.5H3V3h8.5zm1 0H21v8.5h-8.5V3zM3 12.5h8.5V21H3v-8.5zm9.5 0H21V21h-8.5v-8.5z" fill="currentColor"/></svg>
-          Connect Microsoft 365
+          Go to CMS →
         </a>
-        <div style={{ marginTop: 24 }}>
-          <a href="/" style={{ color: "#ebb003", fontSize: 14 }}>Skip for now → Go to CMS</a>
-        </div>
+        <p style={{ color: "#666", fontSize: 12, marginTop: 16 }}>Microsoft 365 email sync will be configured by your administrator.</p>
       </div>
     </div>
   );
