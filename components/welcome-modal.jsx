@@ -25,7 +25,7 @@ export default function WelcomeModal({ memberName, onClose }) {
 
   if (!visible) return null;
 
-  const tip = TIPS[step - 1];
+  const tip = TIPS[step - 1] || TIPS[0];
 
   return (
     <div style={{
