@@ -224,8 +224,8 @@ function computeNextSteps(ctx) {
   if (ctx.status === "Intake") steps.push("Complete intake documentation and initial evaluation");
   if (ctx.status === "Investigation") steps.push("Complete investigation and prepare demand package");
   if (ctx.status === "Presuit Demand") steps.push("Follow up on demand — check for response deadline");
-  if (ctx.status === "Presuit Negotiation" && !ctx.lastOffer) steps.push("Await insurer response to demand");
-  if (ctx.status === "Presuit Negotiation" && ctx.lastOffer) steps.push("Evaluate latest offer — prepare counter or file suit");
+  if (ctx.status === "Presuit Demand" && !ctx.lastOffer) steps.push("Await insurer response to demand");
+  if (ctx.status === "Presuit Demand" && ctx.lastOffer) steps.push("Evaluate latest offer — prepare counter or file suit");
   if (ctx.status?.startsWith("Litigation")) steps.push("Review litigation deadlines and discovery schedule");
   if (ctx.solDays != null && ctx.solDays < 90 && !ctx.status?.startsWith("Litigation")) steps.push("URGENT: File suit before SOL expires");
   return steps;

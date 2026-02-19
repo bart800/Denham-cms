@@ -23,7 +23,7 @@ const WORKFLOW_TEMPLATES = {
     { title: "Send demand to insurer", priority: "high" },
     { title: "Calendar 30-day follow-up", priority: "medium" },
   ],
-  "Presuit Negotiation": [
+  "Presuit Demand": [
     { title: "Review insurer response", priority: "high" },
     { title: "Prepare counter-offer if needed", priority: "medium" },
     { title: "Document all offers/counters", priority: "medium" },

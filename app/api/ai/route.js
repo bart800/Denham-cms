@@ -70,8 +70,8 @@ async function summarizeCase(caseId) {
   if (c.status === "Intake") nextSteps.push("Complete intake documentation and initial case evaluation");
   if (c.status === "Investigation") nextSteps.push("Complete investigation and prepare demand package");
   if (c.status === "Presuit Demand") nextSteps.push("Follow up on demand — check for response deadline");
-  if (c.status === "Presuit Negotiation" && !lastOffer) nextSteps.push("Await or follow up on insurer's response to demand");
-  if (c.status === "Presuit Negotiation" && lastOffer) nextSteps.push("Evaluate latest offer and prepare counter or file suit");
+  if (c.status === "Presuit Demand" && !lastOffer) nextSteps.push("Await or follow up on insurer's response to demand");
+  if (c.status === "Presuit Demand" && lastOffer) nextSteps.push("Evaluate latest offer and prepare counter or file suit");
   if (c.status?.startsWith("Litigation")) nextSteps.push("Review litigation deadlines and upcoming discovery due dates");
   if (solDays !== null && solDays < 90 && !c.status?.startsWith("Litigation")) nextSteps.push("URGENT: File suit before SOL expires");
   if (daysSinceActivity > 30) nextSteps.push("Update case file — no recent activity logged");
@@ -207,8 +207,8 @@ async function handleNaturalLanguageQuery(query) {
     supabaseQuery = supabaseQuery.eq("status", "Intake");
     matchedStatus = "Intake";
   } else if (/\bnegotiat/.test(q)) {
-    supabaseQuery = supabaseQuery.eq("status", "Presuit Negotiation");
-    matchedStatus = "Presuit Negotiation";
+    supabaseQuery = supabaseQuery.eq("status", "Presuit Demand");
+    matchedStatus = "Presuit Demand";
   } else if (/\bpresuit\b/.test(q)) {
     supabaseQuery = supabaseQuery.ilike("status", "Presuit%");
     matchedStatus = "Presuit";

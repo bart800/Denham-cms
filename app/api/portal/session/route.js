@@ -52,7 +52,7 @@ export async function GET(request) {
       .slice(0, 20)
       .map(a => ({ date: a.date, type: a.type, title: a.title }));
 
-    const statusOrder = ["Intake", "Investigation", "Presuit Demand", "Presuit Negotiation",
+    const statusOrder = ["Intake", "Investigation", "Presuit Demand", "Presuit Demand",
       "Litigation - Filed", "Litigation - Discovery", "Litigation - Mediation",
       "Litigation - Trial Prep", "Appraisal", "Settled", "Closed"];
     const currentIdx = statusOrder.indexOf(c.status);
@@ -61,7 +61,7 @@ export async function GET(request) {
     if (c.status === "Intake") nextSteps.push("Your case is being evaluated. We will contact you with next steps.");
     if (c.status === "Investigation") nextSteps.push("We are gathering evidence and documentation for your claim.");
     if (c.status === "Presuit Demand") nextSteps.push("A demand has been sent to the insurance company. Awaiting their response.");
-    if (c.status === "Presuit Negotiation") nextSteps.push("We are actively negotiating with the insurance company on your behalf.");
+    if (c.status === "Presuit Demand") nextSteps.push("We are actively negotiating with the insurance company on your behalf.");
     if (c.status?.startsWith("Litigation")) nextSteps.push("Your case is in active litigation. Your attorney will keep you updated on proceedings.");
     if (c.status === "Appraisal") nextSteps.push("Your claim is in the appraisal process.");
     if (c.status === "Settled") nextSteps.push("Your case has been settled. Disbursement details will be provided.");

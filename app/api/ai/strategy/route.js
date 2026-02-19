@@ -133,7 +133,7 @@ function buildStrategy(c, similar) {
     }
   }
 
-  if (c.status === "Presuit Negotiation") {
+  if (c.status === "Presuit Demand") {
     if (lastOffer && lastDemand) {
       const ratio = offerAmount / demandAmount;
       if (ratio < 0.3) {

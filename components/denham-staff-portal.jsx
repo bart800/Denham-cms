@@ -59,16 +59,15 @@ const B = {
 
 // ─── Constants ──────────────────────────────────────────────
 const JURIS = ["KY", "TN", "MT", "NC", "TX", "CA", "WA", "CO", "NY"];
-const CSTATS = ["Intake", "Investigation", "Presuit Demand", "Presuit Negotiation",
+const CSTATS = ["Intake", "Investigation", "Presuit Demand",
   "Litigation - Filed", "Litigation - Discovery", "Litigation - Mediation",
   "Litigation - Trial Prep", "Appraisal", "Settled", "Closed"];
 const WORKFLOW_STAGES = [
   { key: "Intake", label: "New", icon: "📥" },
   { key: "Investigation", label: "Review", icon: "🔍" },
   { key: "Presuit Demand", label: "Presuit", icon: "📋" },
-  { key: "Presuit Negotiation", label: "Demand Sent", icon: "📤" },
-  { key: "Litigation - Filed", label: "Negotiation", icon: "🤝" },
-  { key: "Litigation - Discovery", label: "Litigation", icon: "⚖️" },
+  { key: "Litigation - Filed", label: "Litigation", icon: "⚖️" },
+  { key: "Litigation - Discovery", label: "Discovery", icon: "🔎" },
   { key: "Appraisal", label: "Appraisal", icon: "📊" },
   { key: "Settled", label: "Settlement", icon: "💰" },
   { key: "Closed", label: "Closed", icon: "✅" },
