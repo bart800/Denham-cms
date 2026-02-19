@@ -25,7 +25,7 @@ export default function WelcomeModal({ memberName, onClose }) {
 
   if (!visible) return null;
 
-  const tip = TIPS[step];
+  const tip = TIPS[step - 1];
 
   return (
     <div style={{
@@ -91,6 +91,7 @@ export default function WelcomeModal({ memberName, onClose }) {
               </button>
               <button
                 onClick={() => step < TIPS.length ? setStep(step + 1) : handleClose()}
+
                 style={{
                   flex: 1, padding: 12, background: "#ebb003", color: "#08080f",
                   border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer",

@@ -4887,7 +4887,7 @@ export default function DenhamStaffPortal() {
         {/* Shimmer animation for skeletons */}
         <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } } @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
         <ToastContainer />
-        <WelcomeModal user={user} />
+        <WelcomeModal memberName={user?.name} />
         {/* Global Header Bar */}
         {!loading && user && (
           <GlobalHeader user={user} page={page} selCase={selCase} solCases={solCases} allCases={cases} onOpenCase={openC} onCmdK={() => setCmdBarOpen(true)} criticalCount={criticalCases.length} onNavCompliance={() => navTo("compliance")} />
