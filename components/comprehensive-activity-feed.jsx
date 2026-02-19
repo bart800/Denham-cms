@@ -34,11 +34,12 @@ const fmtFullDate = (d) => {
   return new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 };
 
-export default function ComprehensiveActivityFeed({ caseId, compact = false, limit: maxItems }) {
+export default function ComprehensiveActivityFeed({ caseId, compact = false, limit: maxItems, onNavigateEmail, onNavigateCall }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [showCount, setShowCount] = useState(maxItems || 50);
+  const [expandedId, setExpandedId] = useState(null);
 
   const fetchTimeline = useCallback(async () => {
     setLoading(true);
@@ -120,11 +121,19 @@ export default function ComprehensiveActivityFeed({ caseId, compact = false, lim
 
           {displayed.map((evt, i) => {
             const cfg = typeConfig[evt.type] || { icon: "•", color: "#888", label: evt.type };
+            const isExpanded = expandedId === (evt.id || i);
+            const isClickable = evt.type === "email" || evt.type === "call" || evt.type === "negotiation" || evt.type === "estimate" || evt.type === "pleading" || evt.detail;
             return (
-              <div key={evt.id || i} style={{
-                display: "flex", gap: compact ? 8 : 12, padding: compact ? "6px 0" : "8px 0",
-                borderBottom: `1px solid ${B.bdr}08`,
-              }}>
+              <div key={evt.id || i} 
+                onClick={() => { if (isClickable) setExpandedId(isExpanded ? null : (evt.id || i)); }}
+                style={{
+                  display: "flex", gap: compact ? 8 : 12, padding: compact ? "6px 0" : "8px 0",
+                  borderBottom: `1px solid ${B.bdr}08`,
+                  cursor: isClickable ? "pointer" : "default",
+                  borderRadius: 6,
+                  background: isExpanded ? `${cfg.color}08` : "transparent",
+                  transition: "background 0.15s",
+                }}>
                 {/* Timeline dot */}
                 {!compact && (
                   <div style={{
@@ -150,6 +159,9 @@ export default function ComprehensiveActivityFeed({ caseId, compact = false, lim
                     {evt.actor && (
                       <span style={{ fontSize: 11, color: B.txtM, fontWeight: 500 }}>{evt.actor}</span>
                     )}
+                    {isClickable && !compact && (
+                      <span style={{ fontSize: 10, color: B.txtD }}>{isExpanded ? "▾" : "▸"}</span>
+                    )}
                     <span style={{ fontSize: 10, color: B.txtD, fontFamily: "'JetBrains Mono', monospace", marginLeft: "auto", flexShrink: 0 }}
                       title={fmtFullDate(evt.date)}>
                       {fmtDate(evt.date)}
@@ -158,6 +170,12 @@ export default function ComprehensiveActivityFeed({ caseId, compact = false, lim
                   <div style={{ fontSize: 13, color: B.txt, marginTop: 2, lineHeight: 1.4 }}>
                     {evt.description}
                   </div>
+                  {isExpanded && (evt.detail || evt.body || evt.notes || evt.amount) && (
+                    <div style={{ marginTop: 8, padding: "8px 12px", background: `${B.card}`, border: `1px solid ${B.bdr}`, borderRadius: 6, fontSize: 12, color: B.txtM, lineHeight: 1.5, maxHeight: 200, overflow: "auto", whiteSpace: "pre-wrap" }}>
+                      {evt.amount && <div style={{ marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", color: B.green, fontWeight: 600 }}>${Number(evt.amount).toLocaleString()}</div>}
+                      {evt.body || evt.detail || evt.notes || "No additional details available."}
+                    </div>
+                  )}
                 </div>
               </div>
             );

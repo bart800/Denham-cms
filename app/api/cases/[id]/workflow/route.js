@@ -51,23 +51,58 @@ const WORKFLOW_TEMPLATES = {
   ],
 };
 
+// Build a smart template that accounts for existing case data
+function getSmartTemplate(status, caseContext) {
+  const base = WORKFLOW_TEMPLATES[status] || [];
+  const { hasLitigation, hasNegotiations, hasEstimates, hasPleadings, hasEmails, filedDate, hasDiscovery } = caseContext;
+  
+  // Filter out tasks that are clearly already done based on case data
+  return base.filter(task => {
+    const t = task.title.toLowerCase();
+    // If complaint already filed, skip drafting/filing/serving tasks
+    if (filedDate) {
+      if (t.includes("draft and file complaint")) return false;
+      if (t.includes("serve defendant")) return false;
+    }
+    // If we already have negotiations, skip "evaluate settlement vs litigation" in presuit
+    if (hasLitigation && t.includes("evaluate settlement vs litigation")) return false;
+    // If estimates exist, skip "obtain independent estimate"
+    if (hasEstimates && t.includes("obtain independent estimate")) return false;
+    return true;
+  });
+}
+
 export async function GET(request, { params }) {
   const { id } = await params;
   const db = supabaseAdmin || supabase;
 
-  // Get case status
-  const { data: caseData, error: caseErr } = await db
-    .from("cases")
-    .select("status")
-    .eq("id", id)
-    .single();
+  // Get case with related data counts
+  const [caseRes, litRes, negRes, estRes, pleadRes, discRes, emailRes] = await Promise.all([
+    db.from("cases").select("status").eq("id", id).single(),
+    db.from("litigation_details").select("filed_date").eq("case_id", id).maybeSingle(),
+    db.from("negotiations").select("id").eq("case_id", id),
+    db.from("estimates").select("id").eq("case_id", id),
+    db.from("pleadings").select("id").eq("case_id", id),
+    db.from("discovery_sets").select("id").eq("case_id", id),
+    db.from("case_emails").select("id").eq("case_id", id).limit(1),
+  ]);
 
-  if (caseErr || !caseData) {
+  if (caseRes.error || !caseRes.data) {
     return NextResponse.json({ error: "Case not found" }, { status: 404 });
   }
 
-  const status = caseData.status;
-  const template = WORKFLOW_TEMPLATES[status] || [];
+  const status = caseRes.data.status;
+  const caseContext = {
+    hasLitigation: !!litRes.data,
+    filedDate: litRes.data?.filed_date,
+    hasNegotiations: (negRes.data?.length || 0) > 0,
+    hasEstimates: (estRes.data?.length || 0) > 0,
+    hasPleadings: (pleadRes.data?.length || 0) > 0,
+    hasDiscovery: (discRes.data?.length || 0) > 0,
+    hasEmails: (emailRes.data?.length || 0) > 0,
+  };
+
+  const template = getSmartTemplate(status, caseContext);
 
   // Get existing tasks for this case
   const { data: existingTasks } = await db
@@ -81,6 +116,7 @@ export async function GET(request, { params }) {
     template,
     tasks: existingTasks || [],
     allTemplates: WORKFLOW_TEMPLATES,
+    context: caseContext,
   });
 }
 

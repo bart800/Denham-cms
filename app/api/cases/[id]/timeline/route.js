@@ -19,8 +19,8 @@ export async function GET(request, { params }) {
       db.from("negotiations").select("*").eq("case_id", id).order("date", { ascending: false }),
       db.from("estimates").select("*").eq("case_id", id).order("date", { ascending: false }),
       db.from("pleadings").select("*").eq("case_id", id).order("date", { ascending: false }),
-      db.from("case_emails").select("id, subject, from_address, to_address, direction, received_at").eq("case_id", id).order("received_at", { ascending: false }).limit(100),
-      db.from("case_calls").select("id, direction, category, caller_name, external_number, duration_seconds, started_at, ai_summary").eq("case_id", id).order("started_at", { ascending: false }).limit(100),
+      db.from("case_emails").select("id, subject, from_address, to_address, direction, received_at, body_text").eq("case_id", id).order("received_at", { ascending: false }).limit(100),
+      db.from("case_calls").select("id, direction, category, caller_name, external_number, duration_seconds, started_at, ai_summary, transcript").eq("case_id", id).order("started_at", { ascending: false }).limit(100),
       db.from("cases").select("client_name, date_opened, date_of_loss, statute_of_limitations").eq("id", id).single(),
     ]);
 
@@ -37,13 +37,14 @@ export async function GET(request, { params }) {
 
     // Negotiations
     for (const n of negotiationsRes.data || []) {
-      const isDemand = n.type === "demand";
+      const isDemand = n.type === "demand" || n.type === "presuit_demand";
       const amount = Number(n.amount).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 });
       events.push({
         id: `negotiation-${n.id}`, type: "negotiation",
         date: n.date || n.created_at,
-        description: isDemand ? `Demand sent ${amount}` : `Offer received ${amount}`,
-        actor: n.by_name || n.notes || null, source: "negotiations",
+        description: isDemand ? `Demand sent ${amount}` : `${n.type || "Offer"}: ${amount}`,
+        actor: n.by_name || null, source: "negotiations",
+        amount: n.amount, notes: n.notes,
       });
     }
 
@@ -55,6 +56,7 @@ export async function GET(request, { params }) {
         date: e.date || e.created_at,
         description: `${e.type || "Estimate"}: ${amount}${e.vendor ? ` (${e.vendor})` : ""}`,
         actor: null, source: "estimates",
+        amount: e.amount, notes: e.notes,
       });
     }
 
@@ -70,24 +72,29 @@ export async function GET(request, { params }) {
 
     // Emails
     for (const e of emailsRes.data || []) {
+      // Truncate body for the detail view
+      const bodyPreview = e.body_text ? (e.body_text.length > 500 ? e.body_text.slice(0, 500) + "..." : e.body_text) : null;
       events.push({
         id: `email-${e.id}`, type: "email",
         date: e.received_at,
         description: `${e.direction === "inbound" ? "📥" : "📤"} ${e.subject || "(no subject)"}`,
         actor: e.direction === "inbound" ? e.from_address : e.to_address,
         source: "case_emails",
+        detail: bodyPreview,
       });
     }
 
     // Calls
     for (const c of callsRes.data || []) {
       const dur = c.duration_seconds ? `${Math.floor(c.duration_seconds / 60)}:${String(c.duration_seconds % 60).padStart(2, "0")}` : "";
+      const detail = c.ai_summary || (c.transcript ? (c.transcript.length > 500 ? c.transcript.slice(0, 500) + "..." : c.transcript) : null);
       events.push({
         id: `call-${c.id}`, type: "call",
         date: c.started_at,
-        description: `${c.direction === "inbound" ? "📞 Incoming" : "📱 Outgoing"} call${c.caller_name ? ` — ${c.caller_name}` : ""}${dur ? ` (${dur})` : ""}${c.ai_summary ? `: ${c.ai_summary}` : ""}`,
+        description: `${c.direction === "inbound" ? "📞 Incoming" : "📱 Outgoing"} call${c.caller_name ? ` — ${c.caller_name}` : ""}${dur ? ` (${dur})` : ""}`,
         actor: c.caller_name || c.external_number || null,
         source: "case_calls",
+        detail: detail,
       });
     }
 
