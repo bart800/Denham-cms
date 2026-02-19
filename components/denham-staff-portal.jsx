@@ -1202,7 +1202,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
           </div>
         </div>
       </div>
-      <div style={{ padding: "12px 8px", flex: 1 }}>
+      <div style={{ padding: "12px 8px", flex: 1, overflowY: "auto" }}>
         {nav.map(n => (
           <button key={n.id} onClick={() => onNav(n.id)} style={{
             display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px",
