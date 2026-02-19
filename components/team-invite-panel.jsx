@@ -39,7 +39,8 @@ export default function TeamInvitePanel() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setMessage({ type: "success", text: "Invite sent!", link: data.link });
+      const emailMsg = data.emailSent ? "Invite email sent!" : "Invite created! Copy the link below to send manually.";
+      setMessage({ type: "success", text: emailMsg, link: data.link });
       setEmail("");
       fetchInvites();
     } catch (err) {
