@@ -76,10 +76,28 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [newMember, setNewMember] = useState({ name: "", email: "", role: "Paralegal", color: GOLD });
   const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState(null);
 
   useEffect(() => {
     fetch("/api/settings").then((r) => r.json()).then(setData).finally(() => setLoading(false));
   }, []);
+
+  const removeMember = async (member) => {
+    if (!confirm(`Remove ${member.name}? This will unassign them from all cases and tasks.`)) return;
+    setRemoving(member.id);
+    try {
+      const res = await fetch(`/api/settings?id=${member.id}`, { method: "DELETE" });
+      if (res.ok) {
+        const fresh = await fetch("/api/settings").then((r) => r.json());
+        setData(fresh);
+      } else {
+        const err = await res.json();
+        alert("Failed to remove: " + (err.error || "Unknown error"));
+      }
+    } finally {
+      setRemoving(null);
+    }
+  };
 
   const addMember = async () => {
     if (!newMember.name || !newMember.email) return;
@@ -151,7 +169,7 @@ export default function SettingsPage() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                  {["Name", "Email", "Role", "Color"].map((h) => (
+                  {["Name", "Email", "Role", "Color", ""].map((h) => (
                     <th key={h} style={{ textAlign: "left", padding: "8px 12px", color: MUTED, fontSize: 12, textTransform: "uppercase" }}>{h}</th>
                   ))}
                 </tr>
@@ -165,10 +183,16 @@ export default function SettingsPage() {
                     <td style={{ padding: "10px 12px" }}>
                       <span style={{ display: "inline-block", width: 16, height: 16, borderRadius: "50%", background: m.color || GOLD, verticalAlign: "middle" }} />
                     </td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <button onClick={() => removeMember(m)} disabled={removing === m.id}
+                        style={{ background: "transparent", border: `1px solid #e04050`, borderRadius: 6, padding: "4px 12px", color: "#e04050", fontSize: 12, cursor: "pointer", opacity: removing === m.id ? 0.5 : 1 }}>
+                        {removing === m.id ? "Removing..." : "Remove"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {!(data?.team_members?.length) && (
-                  <tr><td colSpan={4} style={{ padding: 20, textAlign: "center", color: MUTED }}>No team members found</td></tr>
+                  <tr><td colSpan={5} style={{ padding: 20, textAlign: "center", color: MUTED }}>No team members found</td></tr>
                 )}
               </tbody>
             </table>
