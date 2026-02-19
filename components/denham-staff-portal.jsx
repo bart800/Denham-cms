@@ -695,26 +695,53 @@ function CommandBar({ open, onClose, onOpenCase, cases }) {
 // ═══════════════════════════════════════════════════════════
 function AiSummaryPanel({ caseId }) {
   const [summary, setSummary] = useState(null);
+  const [summaryText, setSummaryText] = useState(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(true);
+  const [cached, setCached] = useState(false);
 
-  const loadSummary = async () => {
+  const loadSummary = async (forceRefresh) => {
     setLoading(true);
     try {
-      const resp = await fetch("/api/ai", {
+      if (!forceRefresh) {
+        // Try cached summary first
+        const cacheRes = await fetch(`/api/cases/${caseId}/summary`);
+        if (cacheRes.ok) {
+          const cacheData = await cacheRes.json();
+          if (cacheData.summary && !cacheData.stale) {
+            setSummary(cacheData.data || null);
+            setSummaryText(cacheData.summary);
+            setCached(true);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      // Generate fresh summary
+      const resp = await fetch(`/api/cases/${caseId}/summary`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseId, action: "summarize" }),
       });
       const data = await resp.json();
-      setSummary(data.summary || null);
+      setSummary(data.data || null);
+      setSummaryText(data.summary || null);
+      setCached(false);
+      // Also load legacy summary for backward compat
+      if (!data.summary) {
+        const legacyResp = await fetch("/api/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ caseId, action: "summarize" }),
+        });
+        const legacyData = await legacyResp.json();
+        setSummary(legacyData.summary || null);
+      }
     } catch (err) {
       console.error("Failed to load AI summary:", err);
     }
     setLoading(false);
   };
 
-  useEffect(() => { loadSummary(); }, [caseId]);
+  useEffect(() => { loadSummary(false); }, [caseId]);
 
   if (!expanded) {
     return (
@@ -735,9 +762,10 @@ function AiSummaryPanel({ caseId }) {
           <span style={{ fontSize: 14, fontWeight: 700, color: B.gold }}>AI Case Summary</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={loadSummary} disabled={loading} style={{ ...S.btnO, fontSize: 11, padding: "4px 10px" }}>
-            {loading ? "⏳ Loading..." : "🔄 Refresh"}
+          <button onClick={() => loadSummary(true)} disabled={loading} style={{ ...S.btnO, fontSize: 11, padding: "4px 10px" }}>
+            {loading ? "⏳ Generating..." : "🔄 Generate Summary"}
           </button>
+          {cached && <span style={{ fontSize: 10, color: B.txtD }}>cached</span>}
           <button onClick={() => setExpanded(false)} style={{ ...S.btnO, fontSize: 11, padding: "4px 10px" }}>Collapse</button>
         </div>
       </div>
@@ -811,6 +839,14 @@ function AiSummaryPanel({ caseId }) {
               ))}
             </div>
           )}
+
+          {/* AI-Generated Narrative Summary */}
+          {summaryText && (
+            <div style={{ marginTop: 16, padding: 14, background: "#0a0a14", borderRadius: 8, border: `1px solid ${B.gold}20` }}>
+              <div style={{ fontSize: 11, color: B.gold, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>📝 Executive Summary</div>
+              <div style={{ fontSize: 13, color: B.txt, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{summaryText}</div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -829,6 +865,8 @@ function DocumentBrowser({ caseId, clientName }) {
   const [search, setSearch] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [batchAnalyzing, setBatchAnalyzing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(null);
   const fileInputRef = useRef(null);
 
   const fetchDocs = useCallback(async () => {
@@ -953,6 +991,34 @@ function DocumentBrowser({ caseId, clientName }) {
               style={{ ...S.btn, opacity: uploading ? 0.5 : 1 }}>
               {uploading ? "Uploading..." : "📤 Upload"}
             </button>
+            <button
+              onClick={async () => {
+                setBatchAnalyzing(true);
+                setBatchProgress({ status: "Starting batch analysis..." });
+                try {
+                  const res = await fetch("/api/docs/batch-analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ case_id: caseId, limit: 30 }),
+                  });
+                  const data = await res.json();
+                  setBatchProgress({ status: `Done: ${data.succeeded || 0}/${data.processed || 0} analyzed`, done: true });
+                  fetchDocs();
+                } catch (err) {
+                  setBatchProgress({ status: `Error: ${err.message}`, done: true });
+                }
+                setTimeout(() => { setBatchAnalyzing(false); setBatchProgress(null); }, 5000);
+              }}
+              disabled={batchAnalyzing}
+              style={{ ...S.btnO, opacity: batchAnalyzing ? 0.5 : 1, fontSize: 12 }}
+            >
+              {batchAnalyzing ? "⏳ Analyzing..." : "🤖 Analyze All Docs"}
+            </button>
+          </div>
+        )}
+        {batchProgress && (
+          <div style={{ fontSize: 12, color: batchProgress.done ? B.green : B.gold, padding: "4px 0" }}>
+            {batchProgress.status}
           </div>
         )}
       </div>

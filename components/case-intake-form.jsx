@@ -92,7 +92,7 @@ const fieldWrap = { marginBottom: 14 };
 
 const errStyle = { color: DANGER, fontSize: 11, marginTop: 2 };
 
-export default function CaseIntakeForm({ onClose, onCreated, teamMembers: teamProp }) {
+export default function CaseIntakeForm({ onClose, onCreated, onNavigateToCase, teamMembers: teamProp }) {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -102,6 +102,9 @@ export default function CaseIntakeForm({ onClose, onCreated, teamMembers: teamPr
   const [insurerQuery, setInsurerQuery] = useState("");
   const [showInsurerDropdown, setShowInsurerDropdown] = useState(false);
   const [successData, setSuccessData] = useState(null);
+  const [conflicts, setConflicts] = useState([]);
+  const [conflictChecking, setConflictChecking] = useState(false);
+  const [conflictDismissed, setConflictDismissed] = useState(false);
 
   // Document upload state
   const [files, setFiles] = useState([]); // { file, category, preview? }
@@ -158,10 +161,50 @@ export default function CaseIntakeForm({ onClose, onCreated, teamMembers: teamPr
     setErrors((p) => ({ ...p, [field]: undefined }));
   };
 
+  // Conflict check
+  const runConflictCheck = useCallback(async () => {
+    if (!form.client_name.trim() && !form.property_address.trim()) return;
+    setConflictChecking(true);
+    try {
+      const res = await fetch("/api/cases/conflict-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_name: form.client_name,
+          property_address: form.property_address,
+          insurer: form.insurer,
+          claim_number: form.claim_number,
+        }),
+      });
+      const data = await res.json();
+      if (data.conflicts?.length) {
+        setConflicts(data.conflicts);
+        setConflictDismissed(false);
+      } else {
+        setConflicts([]);
+      }
+    } catch {}
+    setConflictChecking(false);
+  }, [form.client_name, form.property_address, form.insurer, form.claim_number]);
+
+  // Run conflict check when leaving step 0 or 1
+  useEffect(() => {
+    if (step === 1 && form.client_name.trim()) {
+      const t = setTimeout(runConflictCheck, 500);
+      return () => clearTimeout(t);
+    }
+  }, [step, runConflictCheck]);
+
   const validate = () => {
     const e = {};
     if (step === 0) {
       if (!form.client_name.trim()) e.client_name = "Client name is required";
+      if (form.client_phone && !/^[\d\s()+-]{7,20}$/.test(form.client_phone)) e.client_phone = "Invalid phone format";
+      if (form.client_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.client_email)) e.client_email = "Invalid email format";
+    }
+    if (step === 2) {
+      if (form.adjuster_phone && !/^[\d\s()+-]{7,20}$/.test(form.adjuster_phone)) e.adjuster_phone = "Invalid phone format";
+      if (form.adjuster_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.adjuster_email)) e.adjuster_email = "Invalid email format";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -406,7 +449,12 @@ export default function CaseIntakeForm({ onClose, onCreated, teamMembers: teamPr
           )}
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 24 }}>
             <button
-              onClick={() => onClose?.()}
+              onClick={() => {
+                if (onNavigateToCase && successData.caseId) {
+                  onNavigateToCase(successData.caseId);
+                }
+                onClose?.();
+              }}
               style={{
                 padding: "10px 24px",
                 backgroundColor: NAVY,
@@ -647,6 +695,26 @@ export default function CaseIntakeForm({ onClose, onCreated, teamMembers: teamPr
             <h3 style={{ color: GOLD, margin: "0 0 16px", fontSize: 16, fontWeight: 700 }}>
               ✓ Review & Submit
             </h3>
+
+            {/* Conflict Warning */}
+            {conflicts.length > 0 && !conflictDismissed && (
+              <div style={{
+                padding: 14, marginBottom: 16, borderRadius: 8,
+                background: `${DANGER}12`, border: `1px solid ${DANGER}40`,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: DANGER }}>⚠️ Potential Conflicts Found</div>
+                  <button onClick={() => setConflictDismissed(true)} style={{ background: "transparent", border: "none", color: TEXT_D, cursor: "pointer", fontSize: 12 }}>Dismiss</button>
+                </div>
+                {conflicts.map((c, i) => (
+                  <div key={i} style={{ fontSize: 12, color: TEXT, padding: "4px 0", borderBottom: i < conflicts.length - 1 ? `1px solid ${BORDER}` : "none" }}>
+                    <strong style={{ color: GOLD }}>{c.ref}</strong> — {c.client_name} ({c.status}) — matched by {c.match_type === "client_name" ? "client name" : c.match_type === "property_address" ? "property address" : "insurer/claim #"}
+                  </div>
+                ))}
+                <div style={{ fontSize: 11, color: TEXT_D, marginTop: 8 }}>Review these cases before creating a duplicate. You can still proceed if this is a new matter.</div>
+              </div>
+            )}
+
             <p style={{ fontSize: 12, color: TEXT_M, marginBottom: 16 }}>
               Please review the information below before submitting. A case reference number will be automatically assigned.
             </p>
