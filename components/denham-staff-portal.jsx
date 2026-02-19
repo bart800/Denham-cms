@@ -704,7 +704,7 @@ function CommandBar({ open, onClose, onOpenCase, cases }) {
 // ═══════════════════════════════════════════════════════════
 // AI CASE SUMMARY PANEL
 // ═══════════════════════════════════════════════════════════
-function AiSummaryPanel({ caseId }) {
+function AiSummaryPanel({ caseId, c }) {
   const [summary, setSummary] = useState(null);
   const [summaryText, setSummaryText] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -4097,7 +4097,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
           </div>
 
           {/* AI Summary inline */}
-          <AiSummaryPanel caseId={c.id} />
+          <AiSummaryPanel caseId={c.id} c={c} />
         </div>
 
         {/* Right column - Activity feed (top) + Quick actions */}
