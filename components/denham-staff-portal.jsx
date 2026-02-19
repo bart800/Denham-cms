@@ -4599,12 +4599,42 @@ function CalendarView({ cases, onOpen }) {
 // MAIN PORTAL
 // ═══════════════════════════════════════════════════════════
 export default function DenhamStaffPortal() {
-  const [user, setUser] = useState(() => {
-    if (typeof window !== "undefined") {
-      try { const saved = localStorage.getItem("denham_user"); return saved ? JSON.parse(saved) : null; } catch { return null; }
-    }
-    return null;
-  });
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Restore session on mount — check localStorage first, then Supabase auth
+  useEffect(() => {
+    (async () => {
+      // Try localStorage first (instant)
+      try {
+        const saved = localStorage.getItem("denham_user");
+        if (saved) { setUser(JSON.parse(saved)); setAuthChecked(true); return; }
+      } catch {}
+      // Try Supabase session
+      try {
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const email = session.user.email;
+            // We'll match to team member after team loads
+            const savedTeam = localStorage.getItem("denham_team");
+            if (savedTeam) {
+              const members = JSON.parse(savedTeam);
+              const member = members.find(m => m.email?.toLowerCase() === email?.toLowerCase());
+              if (member) { setUser(member); localStorage.setItem("denham_user", JSON.stringify(member)); setAuthChecked(true); return; }
+            }
+            // Fallback user from session
+            const u = { id: session.user.id, name: session.user.user_metadata?.name || email?.split("@")[0] || "User", role: "Staff", title: "Staff", ini: (email || "U").substring(0, 2).toUpperCase(), clr: "#888", email };
+            setUser(u);
+            localStorage.setItem("denham_user", JSON.stringify(u));
+            setAuthChecked(true);
+            return;
+          }
+        }
+      } catch {}
+      setAuthChecked(true);
+    })();
+  }, []);
   const [page, setPage] = useState("dashboard");
   const [selCase, setSelCase] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
@@ -4788,6 +4818,17 @@ export default function DenhamStaffPortal() {
       </div>
     );
   }
+
+  // Save team to localStorage for session recovery
+  useEffect(() => {
+    if (team.length > 0) try { localStorage.setItem("denham_team", JSON.stringify(team)); } catch {}
+  }, [team]);
+
+  if (!authChecked) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: B.bg }}>
+      <div style={{ color: B.txtM, fontSize: 14 }}>Loading...</div>
+    </div>
+  );
 
   if (!user) return <Login onLogin={(u) => { setUser(u); try { localStorage.setItem("denham_user", JSON.stringify(u)); } catch {} }} team={team} />;
 
