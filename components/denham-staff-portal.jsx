@@ -31,6 +31,7 @@ const CaseCalendarTab = dynamic(() => import("./case-calendar-tab"), { ssr: fals
 const CaseEstimatesTab = dynamic(() => import("./case-estimates-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading estimates...</div> });
 const WorkflowEngine = dynamic(() => import("./workflow-engine"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading workflow...</div> });
 const CasePleadingsTab = dynamic(() => import("./case-pleadings-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading pleadings...</div> });
+const CaseStrategy = dynamic(() => import("./case-strategy"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Analyzing strategy...</div> });
 const CaseMessagesNew = dynamic(() => import("./case-messages"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading messages...</div> });
 // ComprehensiveActivityFeed is defined inline below (not imported)
 
@@ -3862,6 +3863,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "messages", l: "💬 Messages" },
     { id: "compliance", l: "⚠️ Compliance" },
     { id: "workflow", l: "⚙️ Workflow" },
+    { id: "strategy", l: "🧠 Strategy" },
   ];
   const sc = stClr(c.status);
   const sd = c.sol ? dU(c.sol) : null;
@@ -4062,6 +4064,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "messages" && <CaseMessagesNew caseId={c.id} />}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
       {tab === "workflow" && <WorkflowEngine caseId={c.id} caseStatus={c.status} />}
+      {tab === "strategy" && <CaseStrategy caseData={c} />}
     </div>
   );
 }
