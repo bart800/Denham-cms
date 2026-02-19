@@ -86,17 +86,8 @@ export async function GET(request, { params }) {
       meta: { pleadType: p.type, status: p.status, filedBy: p.filed_by },
     }));
 
-    // Documents
-    const { data: docs } = await db
-      .from("documents")
-      .select("*")
-      .eq("case_id", id);
-    (docs || []).forEach(d => feed.push({
-      id: `doc-${d.id}`, date: d.uploaded_at || d.created_at, type: "document",
-      icon: "📄", title: `Document: ${d.filename || d.original_path || "Untitled"}`,
-      desc: d.category || "", actor: null, actorIni: "D", actorClr: "#20b2aa",
-      meta: { category: d.category, fileName: d.filename },
-    }));
+    // Documents excluded from activity feed per user request
+    // Documents are shown in the Documents tab instead
 
     // Tasks
     const { data: tasks } = await db

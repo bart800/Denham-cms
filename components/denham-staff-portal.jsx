@@ -1999,7 +1999,7 @@ const TYPE_COLORS = {
   estimate: "#7b68ee", status_change: "#17a2b8", deadline: "#dc3545",
 };
 
-function ComprehensiveActivityFeed({ caseId }) {
+function ComprehensiveActivityFeed({ caseId, limit }) {
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -2015,9 +2015,10 @@ function ComprehensiveActivityFeed({ caseId }) {
     return () => { cancelled = true; };
   }, [caseId]);
 
-  const filtered = feed
+  const allFiltered = feed
     .filter(a => filter === "all" || a.type === filter)
     .sort((a, b) => sortDir === "desc" ? new Date(b.date || 0) - new Date(a.date || 0) : new Date(a.date || 0) - new Date(b.date || 0));
+  const filtered = limit ? allFiltered.slice(0, limit) : allFiltered;
 
   const typeCounts = {};
   feed.forEach(a => { typeCounts[a.type] = (typeCounts[a.type] || 0) + 1; });
@@ -2114,6 +2115,68 @@ function ComprehensiveActivityFeed({ caseId }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// SIDEBAR ACTIVITY FEED (API-based, compact)
+// ═══════════════════════════════════════════════════════════
+function SidebarActivityFeed({ caseId, onViewAll }) {
+  const [feed, setFeed] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/cases/${caseId}/activity`)
+      .then(r => r.json())
+      .then(data => { if (!cancelled) setFeed((Array.isArray(data) ? data : []).slice(0, 10)); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [caseId]);
+
+  const fmtDate = (d) => {
+    if (!d) return "—";
+    const dt = new Date(d);
+    const now = new Date();
+    const diff = now - dt;
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+    return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  return (
+    <div style={{ ...S.card, padding: 0, maxHeight: 420, overflowY: "auto" }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${B.bdr}`, fontSize: 11, color: B.txtD, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, position: "sticky", top: 0, background: B.card, zIndex: 1 }}>
+        Recent Activity ({feed.length})
+      </div>
+      {loading ? (
+        <div style={{ padding: 24, textAlign: "center", color: B.txtD, fontSize: 12 }}>Loading...</div>
+      ) : feed.length === 0 ? (
+        <div style={{ padding: 24, textAlign: "center", color: B.txtD, fontSize: 12 }}>No activity yet</div>
+      ) : feed.map((a, i) => {
+        const clr = TYPE_COLORS[a.type] || "#888";
+        return (
+          <div key={a.id || i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: i < feed.length - 1 ? `1px solid ${B.bdr}06` : "none" }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", background: clr, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", flexShrink: 0 }}>{a.icon || aIcon(a.type)}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, display: "flex", gap: 4, alignItems: "center" }}>
+                <span style={{ fontWeight: 600, color: clr }}>{a.type?.replace(/_/g, " ")}</span>
+                <span style={{ color: B.txtM, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</span>
+              </div>
+              {a.desc && <div style={{ fontSize: 10, color: B.txtD, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.desc}</div>}
+            </div>
+            <span style={{ ...S.mono, fontSize: 9, color: B.txtD, flexShrink: 0 }}>{fmtDate(a.date)}</span>
+          </div>
+        );
+      })}
+      {feed.length > 0 && (
+        <div onClick={onViewAll} style={{ padding: "8px 16px", textAlign: "center", fontSize: 11, color: B.gold, cursor: "pointer", borderTop: `1px solid ${B.bdr}` }}>
+          View all activity →
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // CLAIM DETAILS
 // ═══════════════════════════════════════════════════════════
 function ClaimDetails({ c }) {
@@ -2137,7 +2200,7 @@ function ClaimDetails({ c }) {
       </div>
       <div style={S.card}><h3 style={{ ...S.secT, marginBottom: 20 }}>Claim Information</h3>
         <F l="Date of Loss" v={fmtD(d.dateOfLoss)} m /><F l="Date Reported" v={fmtD(d.dateReported)} m />
-        <F l="Date Denied" v={d.dateDenied ? fmtD(d.dateDenied) : "Not denied"} m clr={d.dateDenied ? B.danger : B.green} />
+        <F l="Date Denied" v={d.dateDenied ? fmtD(d.dateDenied) : "—"} m clr={d.dateDenied ? B.danger : B.txtD} />
         <F l="Cause of Loss" v={d.causeOfLoss} />{d.propAddr && <F l="Property Address" v={d.propAddr} />}
       </div>
       <div style={{ ...S.card, gridColumn: "1/-1" }}><h3 style={{ ...S.secT, marginBottom: 20 }}>Adjuster Contact</h3>
@@ -3883,34 +3946,18 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
             </div>
           </div>
 
-          {/* Recent Activity */}
-          <div style={{ ...S.card, padding: 0, maxHeight: 420, overflowY: "auto" }}>
-            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${B.bdr}`, fontSize: 11, color: B.txtD, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, position: "sticky", top: 0, background: B.card, zIndex: 1 }}>
-              Recent Activity ({(c.acts || []).length})
-            </div>
-            {recentActs.length === 0 ? (
-              <div style={{ padding: 24, textAlign: "center", color: B.txtD, fontSize: 12 }}>No activity</div>
-            ) : recentActs.map((a, i) => (
-              <div key={a.id || i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: i < recentActs.length - 1 ? `1px solid ${B.bdr}06` : "none" }}>
-                <div style={{ width: 26, height: 26, borderRadius: "50%", background: a.aClr || "#888", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{a.aIni || "?"}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, display: "flex", gap: 4, alignItems: "center" }}>
-                    <span style={{ fontWeight: 600 }}>{a.actor?.split(" ")[0]}</span>
-                    <span>{aIcon(a.type)}</span>
-                    <span style={{ color: B.txtM, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</span>
-                  </div>
-                  {a.desc && <div style={{ fontSize: 10, color: B.txtD, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.desc}</div>}
-                </div>
-                <span style={{ ...S.mono, fontSize: 9, color: B.txtD, flexShrink: 0 }}>{fmtD(a.date)}</span>
-              </div>
-            ))}
-            {(c.acts || []).length > 8 && (
-              <div onClick={() => setTab("activity")} style={{ padding: "8px 16px", textAlign: "center", fontSize: 11, color: B.gold, cursor: "pointer", borderTop: `1px solid ${B.bdr}` }}>
-                View all activity →
-              </div>
-            )}
-          </div>
+          {/* Recent Activity - API-based sidebar feed */}
+          <SidebarActivityFeed caseId={c.id} onViewAll={() => setTab("activity")} />
         </div>
+      </div>
+
+      {/* ═══ ACTIVITY FEED — always visible, prominent ═══ */}
+      <div style={{ marginBottom: 20, background: B.card, borderRadius: 12, border: `1px solid ${B.gold}30`, padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: B.gold }}>📋 Activity Feed</h3>
+          <button onClick={() => setTab("activity")} style={{ ...S.btnO, fontSize: 11, padding: "5px 12px" }}>View Full Feed →</button>
+        </div>
+        <ComprehensiveActivityFeed caseId={c.id} limit={10} />
       </div>
 
       {/* Tabs */}
@@ -3936,9 +3983,6 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "activity" && <ComprehensiveActivityFeed caseId={c.id} />}
       {tab === "overview" && <>
         <CaseDetailCardsNew caseData={c} />
-        <div style={{ marginTop: 20, background: B.card, borderRadius: 10, border: `1px solid ${B.bdr}`, padding: 20 }}>
-          <ComprehensiveActivityFeed caseId={c.id} limit={20} />
-        </div>
         <div style={{ marginTop: 16 }}><CaseOverview c={c} /></div>
       </>}
       {tab === "notes" && <CaseNotesTab c={c} caseId={c.id} user={user} onRefresh={() => setRefreshKey(k => k + 1)} key={refreshKey} />}
