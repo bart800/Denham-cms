@@ -26,10 +26,15 @@ export async function POST(request) {
     return NextResponse.json({ error: "Failed to create Maton connection", detail: text }, { status: res.status });
   }
 
-  const data = await res.json();
-  const connection = data.connection || data;
-  const connectionId = connection.connection_id;
-  const oauthUrl = connection.url;
+  const createData = await res.json();
+  const connectionId = createData.connection_id || createData.connection?.connection_id;
+
+  // Fetch the connection to get the OAuth URL
+  const getRes = await fetch(`${MATON_BASE}/connections/${connectionId}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  const getData = await getRes.json();
+  const oauthUrl = getData.connection?.url || getData.url;
 
   // Store connection_id on team member (pending until OAuth completes)
   await supabaseAdmin.from("team_members").update({

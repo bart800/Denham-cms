@@ -1,6 +1,14 @@
-const{Client}=require('pg');
-const c=new Client('postgresql://postgres:f5fIQC4B8KaqcDH4@db.amyttoowrroajffqubpd.supabase.co:5432/postgres');
-c.connect()
-  .then(()=>c.query("SELECT * FROM team_members WHERE email='kami@denham.law'"))
-  .then(r=>{console.log('Member:',JSON.stringify(r.rows,null,2));return c.query("SELECT * FROM team_invites WHERE email='kami@denham.law' ORDER BY created_at DESC LIMIT 1")})
-  .then(r=>{console.log('Invite:',JSON.stringify(r.rows,null,2));c.end()})
+const fs = require('fs');
+const env = fs.readFileSync('.env.local', 'utf8');
+const apiKey = env.match(/MATON_API_KEY=(.+)/)[1].trim();
+
+async function run() {
+  // Get the connection to find the OAuth URL
+  const res = await fetch("https://ctrl.maton.ai/connections/2f98118b-97fa-4009-9e47-f22fc375418b", {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  console.log("Status:", res.status);
+  const text = await res.text();
+  console.log("Response:", text);
+}
+run().catch(console.error);
