@@ -112,19 +112,6 @@ export default function AttorneyDashboard({ onNavigateCase }) {
                 </div>
               )}
 
-              {/* Upcoming Deadlines */}
-              {a.upcomingDeadlines.length > 0 && (
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, color: B.txtD, marginBottom: 6, fontWeight: 600 }}>⏰ Upcoming Deadlines</div>
-                  {a.upcomingDeadlines.slice(0, 3).map(d => (
-                    <div key={d.id} style={{ fontSize: 12, color: B.txtM, padding: "3px 0", display: "flex", justifyContent: "space-between" }}>
-                      <span>{d.title}</span>
-                      <span style={{ color: B.gold }}>{new Date(d.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {/* Cases Table */}
               <div style={{ fontSize: 11, color: B.txtD, marginBottom: 6, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Cases</div>
               <div style={{ maxHeight: 300, overflowY: "auto" }}>
@@ -142,7 +129,7 @@ export default function AttorneyDashboard({ onNavigateCase }) {
                     {a.cases.map(c => (
                       <tr key={c.id} style={{ cursor: "pointer" }} onClick={() => onNavigateCase && onNavigateCase(c.id)}>
                         <td style={{ padding: "6px 8px", borderBottom: `1px solid ${B.bdr}06`, color: B.txt }}>{c.client_name}</td>
-                        <td style={{ padding: "6px 8px", borderBottom: `1px solid ${B.bdr}06`, color: B.gold, fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{c.case_ref}</td>
+                        <td style={{ padding: "6px 8px", borderBottom: `1px solid ${B.bdr}06`, color: B.gold, fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{c.ref || c.case_ref}</td>
                         <td style={{ padding: "6px 8px", borderBottom: `1px solid ${B.bdr}06` }}>
                           <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 10, background: `${PHASE_COLORS[c.status] || B.txtD}20`, color: PHASE_COLORS[c.status] || B.txtM }}>{c.status}</span>
                         </td>
