@@ -318,7 +318,7 @@ export default function ClientPortal() {
               </button>
             </div>
 
-            {activeTab === "case" ? (<>
+            {activeTab === "case" && (<>
             {/* Case Header */}
             <div style={{ background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
