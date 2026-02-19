@@ -4627,6 +4627,7 @@ export default function DenhamStaffPortal() {
         {!loading && page === "compliance" && <ComplianceDash cases={cases} onOpen={openC} />}
         {!loading && page === "reports" && <ReportsPage />}
         {!loading && page === "contacts" && <ContactsPage />}
+        {!loading && page === "emailFiling" && <EmailAutoFile />}
         {!loading && page === "counsel" && <OpposingCounsel />}
         {!loading && page === "compare" && <CaseCompare onSelectCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "intake" && <CaseIntakeForm onClose={() => navTo("cases")} onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
