@@ -544,6 +544,13 @@ export default function CaseIntakeForm({ onClose, onCreated, onNavigateToCase, t
               <div>{renderField("Date Reported", "date_reported", { type: "date" })}</div>
               <div>{renderField("Date Denied", "date_denied", { type: "date" })}</div>
             </div>
+            {renderField("Attorney Fee %", "fee_percentage", { type: "select", options: [
+              { value: "25", label: "25%" },
+              { value: "30", label: "30%" },
+              { value: "33.33", label: "33.33% (Standard Pre-Lit)" },
+              { value: "35", label: "35%" },
+              { value: "40", label: "40% (Litigation)" },
+            ]})}
             <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 14, marginTop: 6 }}>
               <div style={{ fontSize: 12, color: TEXT_D, marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
                 Adjuster Information

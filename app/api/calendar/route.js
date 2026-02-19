@@ -1,19 +1,51 @@
 import { NextResponse } from "next/server";
-import { supabase } from "../../../lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+
+const supabase = supabaseAdmin;
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    const start = searchParams.get("start") || startOfWeek.toISOString();
-    const end = searchParams.get("end") || endOfWeek.toISOString();
+    const start = searchParams.get("start") || startOfMonth.toISOString();
+    const end = searchParams.get("end") || endOfMonth.toISOString();
+    const forceRefresh = searchParams.get("refresh") === "true";
 
+    // Try cached events first (from calendar_events table if it exists)
+    if (supabase && !forceRefresh) {
+      try {
+        const { data: cached, error } = await supabase
+          .from("calendar_events")
+          .select("*")
+          .gte("start_time", start)
+          .lte("start_time", end)
+          .order("start_time", { ascending: true });
+
+        if (!error && cached && cached.length > 0) {
+          // Return cached events mapped to expected format
+          const events = cached.map(e => ({
+            id: e.outlook_id || e.id,
+            subject: e.subject,
+            start: e.start_json ? JSON.parse(e.start_json) : { dateTime: e.start_time },
+            end: e.end_json ? JSON.parse(e.end_json) : { dateTime: e.end_time },
+            location: e.location || null,
+            bodyPreview: e.body_preview || null,
+            isAllDay: e.is_all_day || false,
+            caseId: e.case_id || null,
+            caseName: e.case_name || null,
+          }));
+          return NextResponse.json(events);
+        }
+      } catch (cacheErr) {
+        // Table might not exist, fall through to live fetch
+        console.log("Cache miss or table doesn't exist, fetching live");
+      }
+    }
+
+    // Live fetch from Outlook
     const apiKey = process.env.MATON_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "MATON_API_KEY not configured" }, { status: 500 });
@@ -40,19 +72,28 @@ export async function GET(request) {
       isAllDay: e.isAllDay || false,
     }));
 
-    // Try to match events to cases
+    // Match events to cases (batch lookup instead of N*M loop)
     if (supabase) {
       const { data: cases } = await supabase.from("cases").select("id, client_name");
       if (cases && cases.length > 0) {
+        // Build a map of name parts -> case for faster matching
+        const nameMap = new Map();
+        for (const c of cases) {
+          if (!c.client_name) continue;
+          const parts = c.client_name.toLowerCase().split(/[\s,]+/).filter(p => p.length > 2);
+          for (const part of parts) {
+            if (!nameMap.has(part)) nameMap.set(part, []);
+            nameMap.get(part).push(c);
+          }
+        }
+
         for (const event of events) {
-          const subjectLower = (event.subject || "").toLowerCase();
-          for (const c of cases) {
-            if (!c.client_name) continue;
-            const nameParts = c.client_name.toLowerCase().split(/\s+/);
-            const match = nameParts.some((part) => part.length > 2 && subjectLower.includes(part));
-            if (match) {
-              event.caseId = c.id;
-              event.caseName = c.client_name;
+          const words = (event.subject || "").toLowerCase().split(/[\s,\-:]+/).filter(w => w.length > 2);
+          for (const word of words) {
+            const matches = nameMap.get(word);
+            if (matches && matches.length === 1) {
+              event.caseId = matches[0].id;
+              event.caseName = matches[0].client_name;
               break;
             }
           }
