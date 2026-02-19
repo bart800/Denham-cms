@@ -1187,7 +1187,6 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
     { id: "settings", label: "Settings", icon: "⚙️" },
     { id: "counsel", label: "Counsel Intel", icon: "⚖️" },
     { id: "emailFiling", label: "Email Filing", icon: "📧" },
-    { id: "attorneys", label: "Attorneys", icon: "👨‍⚖️" },
     { id: "compliance", label: "Compliance", icon: "🛡️", dot: counts?.criticalCases > 0 },
   ];
 
