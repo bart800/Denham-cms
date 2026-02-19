@@ -4805,6 +4805,11 @@ export default function DenhamStaffPortal() {
   const criticalCases = useMemo(() => cases.filter(c => calcRiskScore(c, {}) > 60), [cases]);
   const sidebarCounts = { cases: cases.length, tasks: taskCount, solAlerts: solCases.length, criticalCases: criticalCases.length };
 
+  // Save team to localStorage for session recovery
+  useEffect(() => {
+    if (team.length > 0) try { localStorage.setItem("denham_team", JSON.stringify(team)); } catch {}
+  }, [team]);
+
   // Error state
   if (error && !user) {
     return (
@@ -4818,11 +4823,6 @@ export default function DenhamStaffPortal() {
       </div>
     );
   }
-
-  // Save team to localStorage for session recovery
-  useEffect(() => {
-    if (team.length > 0) try { localStorage.setItem("denham_team", JSON.stringify(team)); } catch {}
-  }, [team]);
 
   if (!authChecked) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: B.bg }}>
