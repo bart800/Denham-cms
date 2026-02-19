@@ -180,8 +180,8 @@ function Grid({ data, onNavigate }) {
       {/* Cases by Phase */}
       <Card title="Cases by Phase">
         {(() => {
-          const phaseOrder = ["Intake", "Investigation", "Presuit Demand", "Appraisal", "Litigation - Filed", "Settlement", "Referred"];
-          const phaseColors = { "Intake": "#ebb003", "Investigation": "#42a5f5", "Presuit Demand": "#ff9800", "Appraisal": "#ab47bc", "Litigation - Filed": "#e53935", "Settlement": GREEN, "Referred": "#666" };
+          const phaseOrder = ["Intake", "Investigation", "Presuit Demand", "Appraisal", "Litigation - Filed", "Settled", "Referred"];
+          const phaseColors = { "Intake": "#ebb003", "Investigation": "#42a5f5", "Presuit Demand": "#ff9800", "Appraisal": "#ab47bc", "Litigation - Filed": "#e53935", "Settled": GREEN, "Referred": "#666" };
           const entries = phaseOrder.map(p => [p, (cases_by_status || {})[p] || 0]).filter(([,v]) => v > 0);
           const phaseMax = Math.max(...entries.map(([,v]) => v), 1);
           return entries.map(([p, v]) => <Bar key={p} label={p} value={v} max={phaseMax} color={phaseColors[p] || GOLD} onClick={() => nav({ status: p })} />);
@@ -191,9 +191,15 @@ function Grid({ data, onNavigate }) {
       {/* Cases by State */}
       <Card title="Cases by State">
         {(() => {
-          const entries = Object.entries(cases_by_jurisdiction || {}).sort((a, b) => b[1] - a[1]);
+          const raw = Object.entries(cases_by_jurisdiction || {}).sort((a, b) => b[1] - a[1]);
+          let otherCount = 0;
+          const main = [];
+          for (const [s, v] of raw) {
+            if (v < 5) { otherCount += v; } else { main.push([s, v]); }
+          }
+          const entries = otherCount > 0 ? [...main, ["Other", otherCount]] : main;
           const stateMax = Math.max(...entries.map(([,v]) => v), 1);
-          return entries.map(([s, v]) => <Bar key={s} label={s} value={v} max={stateMax} color="#42a5f5" onClick={() => nav({ jurisdiction: s })} />);
+          return entries.map(([s, v]) => <Bar key={s} label={s} value={v} max={stateMax} color="#42a5f5" onClick={s !== "Other" ? () => nav({ jurisdiction: s }) : undefined} />);
         })()}
       </Card>
 

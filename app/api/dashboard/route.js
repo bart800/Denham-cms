@@ -18,7 +18,7 @@ export async function GET(request) {
     // Fetch all cases (select only needed columns)
     const { data: cases, error: casesErr } = await supabaseAdmin
       .from("cases")
-      .select("id, client_name, status, type, jurisdiction, insurer, statute_of_limitations, date_opened, total_recovery, attorney_fees, attorney_id");
+      .select("id, client_name, status, type, jurisdiction, insurer, statute_of_limitations, date_opened, total_recovery, attorney_fees, attorney_id, updated_at, settlement_amount");
 
     if (casesErr) throw casesErr;
 
@@ -88,9 +88,11 @@ export async function GET(request) {
         attorneyCount[name] = (attorneyCount[name] || 0) + 1;
       }
 
-      // Financials
-      total_recovery_sum += Number(c.total_recovery) || 0;
-      total_fees_sum += Number(c.attorney_fees) || 0;
+      // Financials — only settled cases with payments after Jan 1 2026
+      if (c.status === "Settled" && c.updated_at && c.updated_at >= "2026-01-01") {
+        total_recovery_sum += Number(c.total_recovery) || 0;
+        total_fees_sum += Number(c.attorney_fees) || 0;
+      }
 
       // Date opened
       if (c.date_opened) {
