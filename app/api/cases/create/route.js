@@ -60,6 +60,26 @@ export async function POST(request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Create claim_details record with intake data
+    const claimFields = {};
+    const claimMap = {
+      insurer: "insurer", claim_number: "claim_number", policy_number: "policy_number",
+      date_of_loss: "date_of_loss", cause_of_loss: "cause_of_loss",
+      property_address: "property_address", adjuster_name: "adjuster_name",
+      adjuster_phone: "adjuster_phone", adjuster_email: "adjuster_email",
+      date_reported: "date_reported", date_denied: "date_denied",
+    };
+    for (const [bodyKey, dbKey] of Object.entries(claimMap)) {
+      if (body[bodyKey] !== undefined && body[bodyKey] !== null && body[bodyKey] !== "") {
+        claimFields[dbKey] = body[bodyKey];
+      }
+    }
+    if (Object.keys(claimFields).length > 0) {
+      await supabaseAdmin
+        .from("claim_details")
+        .insert({ case_id: data.id, ...claimFields });
+    }
+
     return NextResponse.json(data, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });

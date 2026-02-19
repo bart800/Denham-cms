@@ -1,17 +1,20 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 const NAVY = "#000066";
 const GOLD = "#ebb003";
 const GREEN = "#386f4a";
-const DARK_BG = "#0a0a1a";
-const CARD_BG = "#111133";
-const INPUT_BG = "#1a1a3a";
-const BORDER = "#333366";
-const TEXT = "#e0e0e0";
-const TEXT_DIM = "#999";
+const DARK_BG = "#08080f";
+const CARD_BG = "#111119";
+const INPUT_BG = "#0a0a14";
+const BORDER = "#1e1e2e";
+const BORDER_L = "#2a2a3a";
+const TEXT = "#e8e8f0";
+const TEXT_M = "#8888a0";
+const TEXT_D = "#55556a";
+const DANGER = "#e04050";
 
-const STEPS = ["Client Info", "Property & Loss", "Insurance", "Legal", "Review & Submit"];
+const STEPS = ["Client Info", "Property & Loss", "Insurance", "Documents", "Review & Submit"];
 
 const CASE_TYPES = [
   "First Party Property",
@@ -23,6 +26,10 @@ const CASE_TYPES = [
 ];
 
 const JURISDICTIONS = [
+  "Kentucky - State",
+  "Kentucky - Federal",
+  "Tennessee - State",
+  "Tennessee - Federal",
   "Florida - State",
   "Florida - Federal (S.D. Fla.)",
   "Florida - Federal (M.D. Fla.)",
@@ -31,6 +38,8 @@ const JURISDICTIONS = [
   "Georgia - Federal",
   "Texas - State",
   "Texas - Federal",
+  "Montana - State",
+  "Montana - Federal",
   "Other",
 ];
 
@@ -49,6 +58,15 @@ const CAUSES_OF_LOSS = [
   "Other",
 ];
 
+const DOC_CATEGORIES = [
+  "Photos",
+  "Denial Letters",
+  "Estimates",
+  "Policy Documents",
+  "Correspondence",
+  "Other",
+];
+
 const inputStyle = {
   width: "100%",
   padding: "10px 12px",
@@ -56,40 +74,49 @@ const inputStyle = {
   border: `1px solid ${BORDER}`,
   borderRadius: 6,
   color: TEXT,
-  fontSize: 14,
+  fontSize: 13,
   outline: "none",
   boxSizing: "border-box",
+  fontFamily: "'DM Sans', sans-serif",
 };
 
 const labelStyle = {
   display: "block",
   marginBottom: 4,
-  fontSize: 13,
+  fontSize: 12,
   color: GOLD,
   fontWeight: 600,
 };
 
-const fieldWrap = { marginBottom: 16 };
+const fieldWrap = { marginBottom: 14 };
 
-const errStyle = { color: "#ff6b6b", fontSize: 12, marginTop: 2 };
+const errStyle = { color: DANGER, fontSize: 11, marginTop: 2 };
 
-export default function CaseIntakeForm({ onClose, onCreated }) {
+export default function CaseIntakeForm({ onClose, onCreated, teamMembers: teamProp }) {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [errors, setErrors] = useState({});
   const [insurers, setInsurers] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamMembers, setTeamMembers] = useState(teamProp || []);
   const [insurerQuery, setInsurerQuery] = useState("");
   const [showInsurerDropdown, setShowInsurerDropdown] = useState(false);
+  const [successData, setSuccessData] = useState(null);
+
+  // Document upload state
+  const [files, setFiles] = useState([]); // { file, category, preview? }
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
     client_name: "",
     client_phone: "",
     client_email: "",
+    client_address: "",
     property_address: "",
     date_of_loss: "",
     cause_of_loss: "",
+    damage_description: "",
     type: "",
     insurer: "",
     claim_number: "",
@@ -97,8 +124,9 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
     adjuster_name: "",
     adjuster_phone: "",
     adjuster_email: "",
+    date_reported: "",
+    date_denied: "",
     jurisdiction: "",
-    statute_of_limitations: "",
     attorney_id: "",
     support_id: "",
   });
@@ -114,14 +142,16 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
       })
       .catch(() => {});
 
-    fetch("/api/portal")
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d)) setTeamMembers(d);
-        else if (d?.team_members) setTeamMembers(d.team_members);
-      })
-      .catch(() => {});
-  }, []);
+    if (!teamProp || teamProp.length === 0) {
+      fetch("/api/portal")
+        .then((r) => r.json())
+        .then((d) => {
+          if (Array.isArray(d)) setTeamMembers(d);
+          else if (d?.team_members) setTeamMembers(d.team_members);
+        })
+        .catch(() => {});
+    }
+  }, [teamProp]);
 
   const set = (field, val) => {
     setForm((p) => ({ ...p, [field]: val }));
@@ -130,7 +160,9 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
 
   const validate = () => {
     const e = {};
-    if (step === 0 && !form.client_name.trim()) e.client_name = "Required";
+    if (step === 0) {
+      if (!form.client_name.trim()) e.client_name = "Client name is required";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -141,14 +173,47 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
   };
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
+  // File handling
+  const addFiles = useCallback((newFiles) => {
+    const additions = Array.from(newFiles).map((file) => {
+      const isImage = file.type.startsWith("image/");
+      return {
+        file,
+        category: guessCategory(file.name),
+        preview: isImage ? URL.createObjectURL(file) : null,
+      };
+    });
+    setFiles((prev) => [...prev, ...additions]);
+  }, []);
+
+  const removeFile = (idx) => {
+    setFiles((prev) => {
+      const removed = prev[idx];
+      if (removed.preview) URL.revokeObjectURL(removed.preview);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const updateFileCategory = (idx, category) => {
+    setFiles((prev) => prev.map((f, i) => (i === idx ? { ...f, category } : f)));
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+  };
+
   const submit = async () => {
     setSubmitting(true);
     setSubmitError(null);
     try {
+      // Build payload
       const payload = {};
       for (const [k, v] of Object.entries(form)) {
         if (v !== "" && v !== null) payload[k] = v;
       }
+
       const res = await fetch("/api/cases/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -156,8 +221,29 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create case");
+
+      const caseId = data.id;
+      const caseRef = data.ref;
+
+      // Upload documents if any
+      let uploadedCount = 0;
+      if (files.length > 0 && caseId) {
+        for (const f of files) {
+          try {
+            const formData = new FormData();
+            formData.append("file", f.file);
+            formData.append("case_id", caseId);
+            formData.append("category", f.category || "Intake");
+            const uploadRes = await fetch("/api/docs", { method: "POST", body: formData });
+            if (uploadRes.ok) uploadedCount++;
+          } catch (uploadErr) {
+            console.error("Failed to upload:", f.file.name, uploadErr);
+          }
+        }
+      }
+
+      setSuccessData({ caseRef, caseId, uploadedCount, totalFiles: files.length });
       onCreated?.(data);
-      onClose?.();
     } catch (err) {
       setSubmitError(err.message);
     } finally {
@@ -180,14 +266,10 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
     <div style={fieldWrap}>
       <label style={labelStyle}>
         {label}
-        {opts.required && <span style={{ color: "#ff6b6b" }}> *</span>}
+        {opts.required && <span style={{ color: DANGER }}> *</span>}
       </label>
       {opts.type === "select" ? (
-        <select
-          style={inputStyle}
-          value={form[field]}
-          onChange={(e) => set(field, e.target.value)}
-        >
+        <select style={inputStyle} value={form[field]} onChange={(e) => set(field, e.target.value)}>
           <option value="">Select...</option>
           {(opts.options || []).map((o) => (
             <option key={typeof o === "string" ? o : o.value} value={typeof o === "string" ? o : o.value}>
@@ -269,88 +351,383 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
     </div>
   );
 
+  // Success screen
+  if (successData) {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0,0,0,0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: CARD_BG,
+            borderRadius: 12,
+            width: "100%",
+            maxWidth: 480,
+            border: `1px solid ${BORDER}`,
+            padding: 40,
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: GREEN, marginBottom: 8 }}>
+            Case Created Successfully
+          </h2>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 24,
+              fontWeight: 800,
+              color: GOLD,
+              marginBottom: 16,
+              padding: "12px 24px",
+              background: `${GOLD}10`,
+              borderRadius: 8,
+              display: "inline-block",
+              border: `1px solid ${GOLD}30`,
+            }}
+          >
+            {successData.caseRef}
+          </div>
+          <div style={{ fontSize: 13, color: TEXT_M, marginBottom: 8 }}>
+            Case reference number assigned
+          </div>
+          {successData.totalFiles > 0 && (
+            <div style={{ fontSize: 13, color: TEXT_M, marginBottom: 20 }}>
+              📄 {successData.uploadedCount}/{successData.totalFiles} document{successData.totalFiles !== 1 ? "s" : ""} uploaded
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 24 }}>
+            <button
+              onClick={() => onClose?.()}
+              style={{
+                padding: "10px 24px",
+                backgroundColor: NAVY,
+                border: `1px solid ${GOLD}`,
+                borderRadius: 6,
+                color: GOLD,
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              View Case
+            </button>
+            <button
+              onClick={() => {
+                setSuccessData(null);
+                setStep(0);
+                setForm({
+                  client_name: "", client_phone: "", client_email: "", client_address: "",
+                  property_address: "", date_of_loss: "", cause_of_loss: "", damage_description: "",
+                  type: "", insurer: "", claim_number: "", policy_number: "",
+                  adjuster_name: "", adjuster_phone: "", adjuster_email: "",
+                  date_reported: "", date_denied: "", jurisdiction: "",
+                  attorney_id: "", support_id: "",
+                });
+                setFiles([]);
+              }}
+              style={{
+                padding: "10px 24px",
+                backgroundColor: "transparent",
+                border: `1px solid ${BORDER}`,
+                borderRadius: 6,
+                color: TEXT_M,
+                cursor: "pointer",
+                fontSize: 14,
+              }}
+            >
+              Create Another
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const renderStep = () => {
     switch (step) {
       case 0:
         return (
           <>
-            <h3 style={{ color: GOLD, margin: "0 0 16px" }}>Client Information</h3>
+            <h3 style={{ color: GOLD, margin: "0 0 16px", fontSize: 16, fontWeight: 700 }}>
+              👤 Client Information
+            </h3>
             {renderField("Client Name", "client_name", { required: true, placeholder: "Full name" })}
             {renderField("Phone", "client_phone", { type: "tel", placeholder: "(555) 555-5555" })}
             {renderField("Email", "client_email", { type: "email", placeholder: "client@email.com" })}
+            {renderField("Client Address", "client_address", { placeholder: "123 Main St, City, State ZIP" })}
           </>
         );
       case 1:
         return (
           <>
-            <h3 style={{ color: GOLD, margin: "0 0 16px" }}>Property & Loss Details</h3>
-            {renderField("Property Address", "property_address", { placeholder: "123 Main St, City, FL 33101" })}
+            <h3 style={{ color: GOLD, margin: "0 0 16px", fontSize: 16, fontWeight: 700 }}>
+              🏠 Property & Loss Details
+            </h3>
+            {renderField("Property Address", "property_address", { placeholder: "123 Main St, City, State ZIP" })}
             {renderField("Date of Loss", "date_of_loss", { type: "date" })}
             {renderField("Cause of Loss", "cause_of_loss", { type: "select", options: CAUSES_OF_LOSS })}
             {renderField("Case Type", "type", { type: "select", options: CASE_TYPES })}
+            {renderField("Description of Damage", "damage_description", {
+              type: "textarea",
+              placeholder: "Describe the damage to the property in detail...",
+            })}
+            {renderField("Jurisdiction", "jurisdiction", { type: "select", options: JURISDICTIONS })}
           </>
         );
       case 2:
         return (
           <>
-            <h3 style={{ color: GOLD, margin: "0 0 16px" }}>Insurance Information</h3>
+            <h3 style={{ color: GOLD, margin: "0 0 16px", fontSize: 16, fontWeight: 700 }}>
+              🛡️ Insurance Information
+            </h3>
             {renderInsurer()}
-            {renderField("Claim Number", "claim_number", { placeholder: "CLM-000000" })}
             {renderField("Policy Number", "policy_number", { placeholder: "POL-000000" })}
-            {renderField("Adjuster Name", "adjuster_name", { placeholder: "Adjuster full name" })}
-            {renderField("Adjuster Phone", "adjuster_phone", { type: "tel", placeholder: "(555) 555-5555" })}
-            {renderField("Adjuster Email", "adjuster_email", { type: "email", placeholder: "adjuster@insurer.com" })}
+            {renderField("Claim Number", "claim_number", { placeholder: "CLM-000000" })}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>{renderField("Date Reported", "date_reported", { type: "date" })}</div>
+              <div>{renderField("Date Denied", "date_denied", { type: "date" })}</div>
+            </div>
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 14, marginTop: 6 }}>
+              <div style={{ fontSize: 12, color: TEXT_D, marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Adjuster Information
+              </div>
+              {renderField("Adjuster Name", "adjuster_name", { placeholder: "Adjuster full name" })}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>{renderField("Adjuster Phone", "adjuster_phone", { type: "tel", placeholder: "(555) 555-5555" })}</div>
+                <div>{renderField("Adjuster Email", "adjuster_email", { type: "email", placeholder: "adjuster@insurer.com" })}</div>
+              </div>
+            </div>
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 14, marginTop: 6 }}>
+              <div style={{ fontSize: 12, color: TEXT_D, marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Assignment (Optional)
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  {renderField("Attorney", "attorney_id", {
+                    type: "select",
+                    options: attorneys.map((m) => ({ value: m.id, label: m.name })),
+                  })}
+                </div>
+                <div>
+                  {renderField("Support Staff", "support_id", {
+                    type: "select",
+                    options: support.length > 0
+                      ? support.map((m) => ({ value: m.id, label: m.name }))
+                      : teamMembers.map((m) => ({ value: m.id, label: `${m.name} (${m.role || m.title || ""})` })),
+                  })}
+                </div>
+              </div>
+            </div>
           </>
         );
       case 3:
         return (
           <>
-            <h3 style={{ color: GOLD, margin: "0 0 16px" }}>Legal Details</h3>
-            {renderField("Jurisdiction", "jurisdiction", { type: "select", options: JURISDICTIONS })}
-            {renderField("Statute of Limitations", "statute_of_limitations", { type: "date" })}
-            {renderField("Assigned Attorney", "attorney_id", {
-              type: "select",
-              options: attorneys.map((m) => ({ value: m.id, label: m.name })),
-            })}
-            {renderField("Support Staff", "support_id", {
-              type: "select",
-              options: support.length > 0
-                ? support.map((m) => ({ value: m.id, label: m.name }))
-                : teamMembers.map((m) => ({ value: m.id, label: `${m.name} (${m.role || m.title || ""})` })),
-            })}
+            <h3 style={{ color: GOLD, margin: "0 0 16px", fontSize: 16, fontWeight: 700 }}>
+              📄 Document Upload
+            </h3>
+            <p style={{ fontSize: 12, color: TEXT_M, marginBottom: 16 }}>
+              Upload photos of damage, denial letters, estimates, policy documents, and any other relevant files.
+              You can also skip this step and upload documents later.
+            </p>
+            {/* Drop zone */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                border: `2px dashed ${dragOver ? GOLD : BORDER_L}`,
+                borderRadius: 10,
+                padding: "32px 20px",
+                textAlign: "center",
+                cursor: "pointer",
+                background: dragOver ? `${GOLD}08` : `${INPUT_BG}80`,
+                transition: "all 0.2s ease",
+                marginBottom: 16,
+              }}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                style={{ display: "none" }}
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.msg,.eml,.txt"
+                onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
+              />
+              <div style={{ fontSize: 36, marginBottom: 8 }}>📤</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: dragOver ? GOLD : TEXT, marginBottom: 4 }}>
+                {dragOver ? "Drop files here" : "Drag & drop files or click to browse"}
+              </div>
+              <div style={{ fontSize: 11, color: TEXT_D }}>
+                PDF, Word, Excel, images, emails — up to 50MB each
+              </div>
+            </div>
+
+            {/* File list */}
+            {files.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, color: TEXT_M, marginBottom: 8, fontWeight: 600 }}>
+                  {files.length} file{files.length !== 1 ? "s" : ""} selected
+                </div>
+                {files.map((f, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "8px 12px",
+                      background: INPUT_BG,
+                      border: `1px solid ${BORDER}`,
+                      borderRadius: 6,
+                      marginBottom: 6,
+                    }}
+                  >
+                    {f.preview ? (
+                      <img
+                        src={f.preview}
+                        alt=""
+                        style={{ width: 32, height: 32, borderRadius: 4, objectFit: "cover" }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: 20, width: 32, textAlign: "center" }}>
+                        {fileIcon(f.file.name)}
+                      </span>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {f.file.name}
+                      </div>
+                      <div style={{ fontSize: 10, color: TEXT_D }}>
+                        {formatSize(f.file.size)}
+                      </div>
+                    </div>
+                    <select
+                      value={f.category}
+                      onChange={(e) => updateFileCategory(i, e.target.value)}
+                      style={{ ...inputStyle, width: 140, padding: "4px 8px", fontSize: 11 }}
+                    >
+                      {DOC_CATEGORIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: DANGER,
+                        cursor: "pointer",
+                        fontSize: 14,
+                        padding: "4px 8px",
+                      }}
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         );
       case 4:
         return (
           <>
-            <h3 style={{ color: GOLD, margin: "0 0 16px" }}>Review & Submit</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              {[
-                ["Client", form.client_name],
-                ["Phone", form.client_phone],
-                ["Email", form.client_email],
-                ["Address", form.property_address],
-                ["Date of Loss", form.date_of_loss],
-                ["Cause", form.cause_of_loss],
-                ["Type", form.type],
-                ["Insurer", form.insurer],
-                ["Claim #", form.claim_number],
-                ["Policy #", form.policy_number],
-                ["Adjuster", form.adjuster_name],
-                ["Jurisdiction", form.jurisdiction],
-                ["SOL", form.statute_of_limitations],
-                ["Attorney", attorneys.find((a) => a.id == form.attorney_id)?.name || "—"],
-                ["Support", teamMembers.find((m) => m.id == form.support_id)?.name || "—"],
-              ].map(([label, val]) => (
-                <div key={label} style={{ padding: "8px 12px", backgroundColor: INPUT_BG, borderRadius: 6 }}>
-                  <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontSize: 14, color: TEXT }}>{val || "—"}</div>
+            <h3 style={{ color: GOLD, margin: "0 0 16px", fontSize: 16, fontWeight: 700 }}>
+              ✓ Review & Submit
+            </h3>
+            <p style={{ fontSize: 12, color: TEXT_M, marginBottom: 16 }}>
+              Please review the information below before submitting. A case reference number will be automatically assigned.
+            </p>
+
+            {/* Client Info */}
+            <ReviewSection title="👤 Client Info">
+              <ReviewRow label="Client Name" value={form.client_name} />
+              <ReviewRow label="Phone" value={form.client_phone} />
+              <ReviewRow label="Email" value={form.client_email} />
+              <ReviewRow label="Client Address" value={form.client_address} />
+            </ReviewSection>
+
+            {/* Property & Loss */}
+            <ReviewSection title="🏠 Property & Loss">
+              <ReviewRow label="Property Address" value={form.property_address} />
+              <ReviewRow label="Date of Loss" value={form.date_of_loss} />
+              <ReviewRow label="Cause of Loss" value={form.cause_of_loss} />
+              <ReviewRow label="Case Type" value={form.type} />
+              <ReviewRow label="Jurisdiction" value={form.jurisdiction} />
+              {form.damage_description && (
+                <div style={{ padding: "8px 12px", background: INPUT_BG, borderRadius: 6, marginBottom: 6 }}>
+                  <div style={{ fontSize: 10, color: TEXT_D, marginBottom: 2 }}>Description of Damage</div>
+                  <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{form.damage_description}</div>
                 </div>
-              ))}
-            </div>
+              )}
+            </ReviewSection>
+
+            {/* Insurance */}
+            <ReviewSection title="🛡️ Insurance">
+              <ReviewRow label="Insurer" value={form.insurer} />
+              <ReviewRow label="Policy #" value={form.policy_number} />
+              <ReviewRow label="Claim #" value={form.claim_number} />
+              <ReviewRow label="Date Reported" value={form.date_reported} />
+              <ReviewRow label="Date Denied" value={form.date_denied} />
+              <ReviewRow label="Adjuster" value={form.adjuster_name} />
+              <ReviewRow label="Adjuster Phone" value={form.adjuster_phone} />
+              <ReviewRow label="Adjuster Email" value={form.adjuster_email} />
+              <ReviewRow label="Attorney" value={attorneys.find((a) => a.id == form.attorney_id)?.name} />
+              <ReviewRow label="Support" value={teamMembers.find((m) => m.id == form.support_id)?.name} />
+            </ReviewSection>
+
+            {/* Documents */}
+            {files.length > 0 && (
+              <ReviewSection title="📄 Documents">
+                {files.map((f, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      padding: "6px 12px",
+                      background: INPUT_BG,
+                      borderRadius: 6,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <span style={{ fontSize: 14 }}>{fileIcon(f.file.name)}</span>
+                    <span style={{ fontSize: 12, color: TEXT, flex: 1 }}>{f.file.name}</span>
+                    <span style={{
+                      fontSize: 10,
+                      padding: "2px 8px",
+                      borderRadius: 10,
+                      background: `${GOLD}15`,
+                      color: GOLD,
+                    }}>{f.category}</span>
+                  </div>
+                ))}
+              </ReviewSection>
+            )}
+
             {submitError && (
-              <div style={{ ...errStyle, marginTop: 16, padding: 10, backgroundColor: "#3a1111", borderRadius: 6 }}>
-                {submitError}
+              <div style={{
+                ...errStyle,
+                marginTop: 16,
+                padding: 12,
+                backgroundColor: `${DANGER}12`,
+                borderRadius: 6,
+                border: `1px solid ${DANGER}30`,
+              }}>
+                ❌ {submitError}
               </div>
             )}
           </>
@@ -380,33 +757,72 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
           backgroundColor: CARD_BG,
           borderRadius: 12,
           width: "100%",
-          maxWidth: 600,
+          maxWidth: 640,
           maxHeight: "90vh",
           overflow: "auto",
           border: `1px solid ${BORDER}`,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
         }}
       >
-        {/* Progress Bar */}
+        {/* Header */}
         <div style={{ padding: "20px 24px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: TEXT }}>
+              📥 New Case Intake
+            </h2>
+            <button
+              onClick={onClose}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: TEXT_D,
+                fontSize: 18,
+                cursor: "pointer",
+                padding: "4px 8px",
+              }}
+            >
+              ✕
+            </button>
+          </div>
+          {/* Step indicators */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
             {STEPS.map((s, i) => (
               <div
                 key={s}
+                onClick={() => { if (i < step) setStep(i); }}
                 style={{
                   fontSize: 11,
-                  color: i === step ? GOLD : i < step ? GREEN : TEXT_DIM,
+                  color: i === step ? GOLD : i < step ? GREEN : TEXT_D,
                   fontWeight: i === step ? 700 : 400,
                   textAlign: "center",
                   flex: 1,
+                  cursor: i < step ? "pointer" : "default",
                 }}
               >
-                {s}
+                <div style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  marginBottom: 4,
+                  background: i < step ? GREEN : i === step ? GOLD : "transparent",
+                  color: i <= step ? "#000" : TEXT_D,
+                  border: `1px solid ${i < step ? GREEN : i === step ? GOLD : BORDER_L}`,
+                }}>
+                  {i < step ? "✓" : i + 1}
+                </div>
+                <div>{s}</div>
               </div>
             ))}
           </div>
+          {/* Progress bar */}
           <div
             style={{
-              height: 4,
+              height: 3,
               backgroundColor: BORDER,
               borderRadius: 2,
               overflow: "hidden",
@@ -425,9 +841,9 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
         </div>
 
         {/* Content */}
-        <div style={{ padding: 24 }}>{renderStep()}</div>
+        <div style={{ padding: "20px 24px" }}>{renderStep()}</div>
 
-        {/* Buttons */}
+        {/* Footer buttons */}
         <div
           style={{
             padding: "0 24px 20px",
@@ -443,9 +859,9 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
               backgroundColor: "transparent",
               border: `1px solid ${BORDER}`,
               borderRadius: 6,
-              color: TEXT,
+              color: TEXT_M,
               cursor: "pointer",
-              fontSize: 14,
+              fontSize: 13,
             }}
           >
             {step === 0 ? "Cancel" : "← Back"}
@@ -461,7 +877,7 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
                 borderRadius: 6,
                 color: GOLD,
                 cursor: "pointer",
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: 600,
               }}
             >
@@ -483,11 +899,57 @@ export default function CaseIntakeForm({ onClose, onCreated }) {
                 opacity: submitting ? 0.7 : 1,
               }}
             >
-              {submitting ? "Creating..." : "✓ Create Case"}
+              {submitting ? "Creating Case..." : "✓ Create Case"}
             </button>
           )}
         </div>
       </div>
     </div>
   );
+}
+
+// Helper components
+function ReviewSection({ title, children }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#ebb003", marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ReviewRow({ label, value }) {
+  return (
+    <div style={{ padding: "6px 12px", background: "#0a0a14", borderRadius: 6 }}>
+      <div style={{ fontSize: 10, color: "#55556a", marginBottom: 1 }}>{label}</div>
+      <div style={{ fontSize: 13, color: "#e8e8f0" }}>{value || "—"}</div>
+    </div>
+  );
+}
+
+function guessCategory(filename) {
+  const lower = filename.toLowerCase();
+  if (/\.(jpg|jpeg|png|gif|webp|heic|tiff)$/i.test(lower)) return "Photos";
+  if (/denial|deny|denied/i.test(lower)) return "Denial Letters";
+  if (/estimate|scope|xactimate/i.test(lower)) return "Estimates";
+  if (/policy|dec\s?page|declaration/i.test(lower)) return "Policy Documents";
+  return "Other";
+}
+
+function fileIcon(name) {
+  const ext = name.split(".").pop()?.toLowerCase();
+  if (["pdf"].includes(ext)) return "📕";
+  if (["doc", "docx"].includes(ext)) return "📘";
+  if (["xls", "xlsx"].includes(ext)) return "📗";
+  if (["jpg", "jpeg", "png", "gif", "webp", "heic", "tiff"].includes(ext)) return "🖼️";
+  if (["msg", "eml"].includes(ext)) return "📧";
+  return "📄";
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / 1048576).toFixed(1) + " MB";
 }

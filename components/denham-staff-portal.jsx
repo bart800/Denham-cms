@@ -20,6 +20,7 @@ const CaseIntakeForm = dynamic(() => import("./case-intake-form"), { ssr: false,
 const CaseCompare = dynamic(() => import("./case-compare"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading compare...</div> });
 const SettingsPage = dynamic(() => import("./settings-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading settings...</div> });
 const AuditLog = dynamic(() => import("./audit-log"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading audit log...</div> });
+const OpposingCounsel = dynamic(() => import("./opposing-counsel"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading counsel intel...</div> });
 const DocTemplates = dynamic(() => import("./doc-templates"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading templates...</div> });
 const CaseCallsNew = dynamic(() => import("./case-calls"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calls...</div> });
 const ContactsPage = dynamic(() => import("./contacts-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading contacts...</div> });
@@ -1101,6 +1102,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
     { id: "contacts", label: "Contacts", icon: "👤" },
     { id: "activity", label: "Activity", icon: "📋" },
     { id: "settings", label: "Settings", icon: "⚙️" },
+    { id: "counsel", label: "Counsel Intel", icon: "⚖️" },
     { id: "compliance", label: "Compliance", icon: "🛡️", dot: counts?.criticalCases > 0 },
   ];
 
@@ -4609,6 +4611,7 @@ export default function DenhamStaffPortal() {
         {!loading && page === "compliance" && <ComplianceDash cases={cases} onOpen={openC} />}
         {!loading && page === "reports" && <ReportsPage />}
         {!loading && page === "contacts" && <ContactsPage />}
+        {!loading && page === "counsel" && <OpposingCounsel />}
         {!loading && page === "compare" && <CaseCompare onSelectCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "intake" && <CaseIntakeForm onClose={() => navTo("cases")} onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
         {!loading && page === "docs" && (
