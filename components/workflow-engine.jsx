@@ -39,6 +39,10 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
   const [activePhase, setActivePhase] = useState(caseStatus || "Presuit");
   const [showAllPhases, setShowAllPhases] = useState(false);
   const [expandedTask, setExpandedTask] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [assigningTask, setAssigningTask] = useState(null);
+  const [myTasksOnly, setMyTasksOnly] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   // Determine if PI case
   const isPI = useMemo(() => {
@@ -97,12 +101,24 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
     } catch {}
   }, []);
 
+  // Fetch team members for assignment
+  const fetchTeamMembers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/team/members");
+      if (res.ok) {
+        const json = await res.json();
+        setTeamMembers(json.members || []);
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     fetchWorkflow();
     fetchTemplates();
     fetchDeadlineRules();
     fetchDocTemplates();
-  }, [fetchWorkflow, fetchTemplates, fetchDeadlineRules, fetchDocTemplates]);
+    fetchTeamMembers();
+  }, [fetchWorkflow, fetchTemplates, fetchDeadlineRules, fetchDocTemplates, fetchTeamMembers]);
 
   // Generate/instantiate tasks from templates
   const generateTasks = async () => {
@@ -143,6 +159,34 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  // Assign task to member
+  const assignTask = async (task, memberId) => {
+    try {
+      const res = await fetch(`/api/cases/${caseId}/tasks/${task.id}/assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ member_id: memberId || null }),
+      });
+      if (res.ok) {
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, assigned_to: memberId || null } : t));
+        setAssigningTask(null);
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const getMemberName = (id) => {
+    const m = teamMembers.find(tm => tm.id === id);
+    return m ? m.name : null;
+  };
+
+  const getMemberInitials = (id) => {
+    const name = getMemberName(id);
+    if (!name) return "?";
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   };
 
   // Group tasks by phase
@@ -188,7 +232,8 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
 
   const currentPhaseIdx = ALL_PHASES.indexOf(caseStatus);
   const activePhaseIdx = ALL_PHASES.indexOf(activePhase);
-  const activeTasks = tasksByPhase[activePhase] || [];
+  const allActiveTasks = tasksByPhase[activePhase] || [];
+  const activeTasks = myTasksOnly && currentUserId ? allActiveTasks.filter(t => t.assigned_to === currentUserId) : allActiveTasks;
   const activeCompleted = activeTasks.filter(t => t.status === "completed").length;
   const activeTotal = activeTasks.length;
   const today = new Date().toISOString().split("T")[0];
@@ -314,7 +359,13 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
             <span style={{ fontSize: 10, background: `${B.navy}40`, color: "#7788ff", padding: "2px 8px", borderRadius: 8, fontWeight: 600 }}>PI</span>
           )}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {teamMembers.length > 0 && (
+            <button onClick={() => setMyTasksOnly(!myTasksOnly)}
+              style={{ padding: "5px 10px", fontSize: 11, fontWeight: 600, borderRadius: 6, border: `1px solid ${myTasksOnly ? B.gold : B.bdr}`, background: myTasksOnly ? `${B.gold}15` : "transparent", color: myTasksOnly ? B.gold : B.txtM, cursor: "pointer" }}>
+              {myTasksOnly ? "👤 My Tasks" : "👥 All Tasks"}
+            </button>
+          )}
           {activeTotal === 0 && (
             <button
               onClick={generateTasks}
@@ -393,6 +444,11 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
 
                   {/* Badges */}
                   <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                    {task.assigned_to && (
+                      <div title={getMemberName(task.assigned_to)} style={{ width: 22, height: 22, borderRadius: "50%", background: B.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#7788ff", flexShrink: 0 }}>
+                        {getMemberInitials(task.assigned_to)}
+                      </div>
+                    )}
                     {overdue && (
                       <span style={{ fontSize: 9, fontWeight: 700, color: B.danger, background: `${B.danger}18`, padding: "2px 6px", borderRadius: 8 }}>OVERDUE</span>
                     )}
@@ -439,6 +495,20 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
                         ))}
                       </div>
                     )}
+                    {/* Assignment */}
+                    <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 10, color: B.txtD, fontWeight: 600 }}>ASSIGN TO:</span>
+                      <select
+                        value={task.assigned_to || ""}
+                        onChange={e => assignTask(task, e.target.value || null)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ padding: "4px 8px", fontSize: 11, background: B.bg, color: B.txt, border: `1px solid ${B.bdr}`, borderRadius: 6 }}
+                      >
+                        <option value="">Unassigned</option>
+                        {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}{m.role ? ` (${m.role})` : ""}</option>)}
+                      </select>
+                      {task.assigned_to && <span style={{ fontSize: 10, color: B.txtM }}>{getMemberName(task.assigned_to)}</span>}
+                    </div>
                     {done && task.completed_at && (
                       <div style={{ fontSize: 10, color: B.green, marginTop: 8 }}>
                         ✅ Completed {new Date(task.completed_at).toLocaleDateString()}

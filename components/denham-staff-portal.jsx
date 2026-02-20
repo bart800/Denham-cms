@@ -28,6 +28,7 @@ const CaseContactsNew = dynamic(() => import("./case-contacts"), { ssr: false, l
 const CaseDocumentsTab = dynamic(() => import("./case-documents-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading documents...</div> });
 const CalendarPage = dynamic(() => import("./calendar-page"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calendar...</div> });
 const CaseCalendarTab = dynamic(() => import("./case-calendar-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading calendar...</div> });
+const KpiDashboard = dynamic(() => import("./kpi-dashboard"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading KPIs...</div> });
 const CaseEstimatesTab = dynamic(() => import("./case-estimates-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading estimates...</div> });
 const WorkflowEngine = dynamic(() => import("./workflow-engine"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading workflow...</div> });
 const CasePleadingsTab = dynamic(() => import("./case-pleadings-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading pleadings...</div> });
@@ -1172,6 +1173,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
   const nav = [
     { id: "dashboard", label: "Dashboard", icon: "⬡", count: null, dot: counts?.solAlerts > 0 },
     { id: "cases", label: "Cases", icon: "◈", count: counts?.cases },
+    { id: "kpis", label: "KPIs", icon: "📊" },
     { id: "tasks", label: "Tasks", icon: "☐", count: counts?.tasks },
     { id: "calendar", label: "Calendar", icon: "📅" },
     { id: "docs", label: "Documents", icon: "◇" },
@@ -4916,6 +4918,7 @@ export default function DenhamStaffPortal() {
         {!loading && page === "contacts" && <ContactsPage />}
         {!loading && page === "emailFiling" && <EmailAutoFile />}
         {!loading && page === "counsel" && <OpposingCounsel />}
+        {!loading && page === "kpis" && <KpiDashboard />}
         {!loading && page === "compare" && <CaseCompare onSelectCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "attorneys" && <AttorneyDashboard onNavigateCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "Presuit" && <CaseIntakeForm onClose={() => navTo("cases")} onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
