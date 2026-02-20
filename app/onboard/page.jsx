@@ -113,27 +113,15 @@ function OnboardForm() {
     </div>
   );
 
+  useEffect(() => {
+    if (success) {
+      window.location.href = `/onboard/tour?memberId=${success}`;
+    }
+  }, [success]);
+
   if (success) return (
     <div style={{ minHeight: "100vh", background: "#08080f", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#111119", border: "1px solid #1e1e2e", borderRadius: 16, padding: "48px 40px", maxWidth: 480, textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-        <h2 style={{ color: "#e8e8f0", margin: "0 0 12px" }}>Welcome to Denham Law!</h2>
-        <p style={{ color: "#a0a0b0", marginBottom: 32 }}>Your account has been created. Connect your Microsoft 365 account to sync emails and calendar.</p>
-        <a
-          href={`/api/auth/m365/authorize?memberId=${success}&redirect=/connect-m365?memberId=${success}`}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 10,
-            padding: "14px 28px", background: "#ebb003", color: "#08080f",
-            borderRadius: 10, fontWeight: 700, fontSize: 16, textDecoration: "none",
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11.5 3v8.5H3V3h8.5zm1 0H21v8.5h-8.5V3zM3 12.5h8.5V21H3v-8.5zm9.5 0H21V21h-8.5v-8.5z" fill="currentColor"/></svg>
-          Connect Microsoft 365
-        </a>
-        <div style={{ marginTop: 24 }}>
-          <a href="/" style={{ color: "#ebb003", fontSize: 14 }}>Skip for now → Go to CMS</a>
-        </div>
-      </div>
+      <div style={{ color: "#e8e8f0", fontSize: 18 }}>Setting up your experience...</div>
     </div>
   );
 
