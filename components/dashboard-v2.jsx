@@ -166,7 +166,7 @@ function Grid({ data, onNavigate }) {
       </Card>
 
       {/* Financial Summary */}
-      <Card title="Financial Summary (2026 YTD)" span={2}>
+      <Card title="Financial Summary (2026 YTD)">
         {(() => {
           const YEAR_GOAL = 30000000;
           const now = new Date();
