@@ -1,6 +1,8 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import TeamInvitePanel from "./team-invite-panel";
+import dynamic from "next/dynamic";
+const WorkflowAdmin = dynamic(() => import("./workflow-admin"), { ssr: false, loading: () => <div style={{ color: "#999", padding: 40, textAlign: "center" }}>Loading workflow admin...</div> });
 
 const NAVY = "#000066";
 const GOLD = "#ebb003";
@@ -140,7 +142,7 @@ export default function SettingsPage() {
     }
   };
 
-  const tabs = ["Team", "Statuses", "Firm Info", "Data Stats", "Import/Export"];
+  const tabs = ["Team", "Workflows", "Statuses", "Firm Info", "Data Stats", "Import/Export"];
 
   if (loading) {
     return (
@@ -152,7 +154,7 @@ export default function SettingsPage() {
 
   return (
     <div style={{ background: BG, minHeight: "100vh", color: TEXT, padding: 24 }}>
-      <h1 style={{ color: GOLD, marginBottom: 4 }}>⚙️ Settings</h1>
+      <h1 style={{ color: GOLD, marginBottom: 4 }}>âš™ï¸ Settings</h1>
       <p style={{ color: MUTED, marginTop: 0, marginBottom: 24 }}>Administration &amp; configuration</p>
 
       <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${BORDER}`, marginBottom: 24 }}>
@@ -213,8 +215,13 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Case Statuses */}
+      {/* Workflows Admin */}
       {tab === 1 && (
+        <WorkflowAdmin />
+      )}
+
+      {/* Case Statuses */}
+      {tab === 2 && (
         <div style={cardStyle}>
           <h3 style={{ color: GOLD, marginTop: 0 }}>Case Statuses</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
@@ -232,25 +239,25 @@ export default function SettingsPage() {
       )}
 
       {/* Firm Info */}
-      {tab === 2 && (
+      {tab === 3 && (
         <div style={cardStyle}>
-          <h3 style={{ color: GOLD, marginTop: 0 }}>🏛️ Firm Information</h3>
+          <h3 style={{ color: GOLD, marginTop: 0 }}>ðŸ›ï¸ Firm Information</h3>
           <div style={{ lineHeight: 2 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: GOLD, marginBottom: 8 }}>Denham Property and Injury Law Firm</div>
-            <div>📍 250 W. Main St. Suite 120, Lexington, KY 40507</div>
-            <div>📞 859-900-2278</div>
-            <div>🌐 <a href="https://www.denim.law" style={{ color: GOLD }} target="_blank" rel="noreferrer">www.denim.law</a></div>
+            <div>ðŸ“ 250 W. Main St. Suite 120, Lexington, KY 40507</div>
+            <div>ðŸ“ž 859-900-2278</div>
+            <div>ðŸŒ <a href="https://www.denim.law" style={{ color: GOLD }} target="_blank" rel="noreferrer">www.denim.law</a></div>
           </div>
         </div>
       )}
 
       {/* Data Stats */}
-      {tab === 3 && (
+      {tab === 4 && (
         <div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
             {[
-              { label: "Total Cases", value: data?.case_count ?? "—", color: GOLD },
-              { label: "Total Documents", value: data?.document_count ?? "—", color: GREEN },
+              { label: "Total Cases", value: data?.case_count ?? "â€”", color: GOLD },
+              { label: "Total Documents", value: data?.document_count ?? "â€”", color: GREEN },
               { label: "Storage", value: formatBytes(data?.storage_bytes), color: "#4a90d9" },
             ].map((s) => (
               <div key={s.label} style={{ ...cardStyle, textAlign: "center" }}>
@@ -269,19 +276,19 @@ export default function SettingsPage() {
             ))}
           </div>
           <div style={{ ...cardStyle, color: MUTED, fontSize: 13 }}>
-            Last fetched: {data?.fetched_at ? new Date(data.fetched_at).toLocaleString() : "—"}
+            Last fetched: {data?.fetched_at ? new Date(data.fetched_at).toLocaleString() : "â€”"}
           </div>
         </div>
       )}
 
       {/* Import/Export */}
-      {tab === 4 && (
+      {tab === 5 && (
         <div style={cardStyle}>
-          <h3 style={{ color: GOLD, marginTop: 0 }}>📦 Export Data</h3>
+          <h3 style={{ color: GOLD, marginTop: 0 }}>ðŸ“¦ Export Data</h3>
           <p style={{ color: MUTED }}>Download all case data in your preferred format.</p>
           <div style={{ display: "flex", gap: 12 }}>
-            <button style={btnStyle} onClick={() => exportData("csv")}>⬇ Export CSV</button>
-            <button style={{ ...btnStyle, background: GREEN, color: "#fff" }} onClick={() => exportData("json")}>⬇ Export JSON</button>
+            <button style={btnStyle} onClick={() => exportData("csv")}>â¬‡ Export CSV</button>
+            <button style={{ ...btnStyle, background: GREEN, color: "#fff" }} onClick={() => exportData("json")}>â¬‡ Export JSON</button>
           </div>
         </div>
       )}
