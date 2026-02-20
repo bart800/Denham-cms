@@ -108,12 +108,12 @@ export default function DashboardV2({ onNavigate }) {
           </select>
         </div>
       </div>
-      {loading || !data ? <Skeleton /> : <Grid data={data} onNavigate={onNavigate} />}
+      {loading || !data ? <Skeleton /> : <Grid data={data} onNavigate={onNavigate} isAttorneyView={!!selectedAttorney} />}
     </div>
   );
 }
 
-function Grid({ data, onNavigate }) {
+function Grid({ data, onNavigate, isAttorneyView }) {
   const nav = (filter) => onNavigate && onNavigate("cases", filter);
   const {
     total_cases, cases_by_status, cases_by_type, cases_by_jurisdiction, top_insurers, sol_urgent,
@@ -202,7 +202,7 @@ function Grid({ data, onNavigate }) {
                   </div>
                 </div>
               </div>
-              <div style={{ marginBottom: 8 }}>
+              {!isAttorneyView && <div style={{ marginBottom: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
                   <span style={{ color: TEXT_DIM }}>2026 Goal: {fmt$(YEAR_GOAL)}</span>
                   <span style={{ color: onTrack ? GREEN : RED, fontWeight: 600 }}>{pctGoal.toFixed(1)}%</span>
@@ -215,7 +215,7 @@ function Grid({ data, onNavigate }) {
                   <span>Goal/wk: {fmt$(weeklyGoal)} · Goal/mo: {fmt$(monthlyGoal)}</span>
                   <span>{onTrack ? "✅ On track" : "⚠️ Behind pace"}</span>
                 </div>
-              </div>
+              </div>}
             </div>
           );
         })()}
