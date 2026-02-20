@@ -166,15 +166,59 @@ function Grid({ data, onNavigate }) {
       </Card>
 
       {/* Financial Summary */}
-      <Card title="Financial Summary">
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: TEXT_DIM }}>Total Recovery</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: GREEN }}>{fmt$(total_recovery_sum)}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, color: TEXT_DIM }}>Total Fees</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: GOLD }}>{fmt$(total_fees_sum)}</div>
-        </div>
+      <Card title="Financial Summary (2026 YTD)" span={2}>
+        {(() => {
+          const YEAR_GOAL = 30000000;
+          const now = new Date();
+          const yearStart = new Date(now.getFullYear(), 0, 1);
+          const dayOfYear = Math.floor((now - yearStart) / 86400000) + 1;
+          const weeksElapsed = Math.max(dayOfYear / 7, 1);
+          const monthsElapsed = now.getMonth() + (now.getDate() / 30);
+          const weeklyGoal = YEAR_GOAL / 52;
+          const monthlyGoal = YEAR_GOAL / 12;
+          const weeklyRecovery = total_recovery_sum / weeksElapsed;
+          const monthlyRecovery = total_recovery_sum / monthsElapsed;
+          const weeklyFees = total_fees_sum / weeksElapsed;
+          const monthlyFees = total_fees_sum / monthsElapsed;
+          const pctGoal = Math.min((total_recovery_sum / YEAR_GOAL) * 100, 100);
+          const expectedPct = (dayOfYear / 365) * 100;
+          const onTrack = pctGoal >= expectedPct * 0.8;
+
+          return (
+            <div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: TEXT_DIM, textTransform: "uppercase", letterSpacing: 0.5 }}>Recovery (Settled Cases)</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: GREEN }}>{fmt$(total_recovery_sum)}</div>
+                  <div style={{ fontSize: 12, color: TEXT_DIM, marginTop: 4 }}>
+                    {fmt$(weeklyRecovery)}/wk · {fmt$(monthlyRecovery)}/mo
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: TEXT_DIM, textTransform: "uppercase", letterSpacing: 0.5 }}>Attorney Fees</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>{fmt$(total_fees_sum)}</div>
+                  <div style={{ fontSize: 12, color: TEXT_DIM, marginTop: 4 }}>
+                    {fmt$(weeklyFees)}/wk · {fmt$(monthlyFees)}/mo
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                  <span style={{ color: TEXT_DIM }}>2026 Goal: {fmt$(YEAR_GOAL)}</span>
+                  <span style={{ color: onTrack ? GREEN : RED, fontWeight: 600 }}>{pctGoal.toFixed(1)}%</span>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 6, height: 18, position: "relative" }}>
+                  <div style={{ position: "absolute", left: `${expectedPct}%`, top: 0, bottom: 0, width: 2, background: "rgba(255,255,255,0.2)", zIndex: 1 }} title="Expected pace" />
+                  <div style={{ width: `${pctGoal}%`, background: onTrack ? GREEN : RED, borderRadius: 6, height: "100%", transition: "width 0.6s ease" }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginTop: 4, color: TEXT_DIM }}>
+                  <span>Goal/wk: {fmt$(weeklyGoal)} · Goal/mo: {fmt$(monthlyGoal)}</span>
+                  <span>{onTrack ? "✅ On track" : "⚠️ Behind pace"}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </Card>
 
       {/* Cases by Phase */}
@@ -205,9 +249,20 @@ function Grid({ data, onNavigate }) {
 
       {/* Cases by Type */}
       <Card title="Cases by Type">
-        {Object.entries(cases_by_type || {}).sort((a, b) => b[1] - a[1]).map(([t, c]) => (
-          <Bar key={t} label={`${typeEmoji[t.toLowerCase()] || "❓"} ${t}`} value={c} max={typeMax} color={GOLD} onClick={() => nav({ type: t })} />
-        ))}
+        {(() => {
+          const raw = { ...(cases_by_type || {}) };
+          // Merge "Property Casualty" and "Property" into "Other" since they're unclassified property cases
+          if (raw["Property Casualty"]) { raw["Other"] = (raw["Other"] || 0) + raw["Property Casualty"]; delete raw["Property Casualty"]; }
+          if (raw["Property"]) { raw["Other"] = (raw["Other"] || 0) + raw["Property"]; delete raw["Property"]; }
+          // Remove "Investigation" if it shows as a type
+          delete raw["Investigation"];
+          const entries = Object.entries(raw).sort((a, b) => b[1] - a[1]);
+          const mx = Math.max(...entries.map(([,v]) => v), 1);
+          const emoji = { fire: "🔥", water: "💧", wind: "🌬️", hail: "🧊", "personal injury": "⚖️", other: "📋" };
+          return entries.map(([t, v]) => (
+            <Bar key={t} label={`${emoji[t.toLowerCase()] || "❓"} ${t}`} value={v} max={mx} color={GOLD} onClick={() => nav({ type: t })} />
+          ));
+        })()}
       </Card>
 
       {/* Top 10 Insurers */}
