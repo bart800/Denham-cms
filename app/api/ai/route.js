@@ -58,7 +58,7 @@ async function summarizeCase(caseId) {
   if (daysSinceActivity !== null && daysSinceActivity > 60) {
     risks.push({ type: "stale", severity: daysSinceActivity > 120 ? "critical" : "warning", message: `No activity in ${daysSinceActivity} days — case may be stale` });
   }
-  if (c.status === "Intake" && daysSinceActivity > 14) {
+  if (c.status === "Presuit" && daysSinceActivity > 14) {
     risks.push({ type: "intake_delay", severity: "warning", message: "Case has been in Intake for over 2 weeks" });
   }
 
@@ -67,8 +67,8 @@ async function summarizeCase(caseId) {
   const lastDemand = negs.filter(n => n.type === "plaintiff_offer" || n.type === "presuit_demand").sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
   const nextSteps = [];
-  if (c.status === "Intake") nextSteps.push("Complete intake documentation and initial case evaluation");
-  if (c.status === "Investigation") nextSteps.push("Complete investigation and prepare demand package");
+  if (c.status === "Presuit") nextSteps.push("Complete intake documentation and initial case evaluation");
+  if (c.status === "Presuit") nextSteps.push("Complete investigation and prepare demand package");
   if (c.status === "Presuit Demand") nextSteps.push("Follow up on demand — check for response deadline");
   if (c.status === "Presuit Demand" && !lastOffer) nextSteps.push("Await or follow up on insurer's response to demand");
   if (c.status === "Presuit Demand" && lastOffer) nextSteps.push("Evaluate latest offer and prepare counter or file suit");
@@ -204,8 +204,8 @@ async function handleNaturalLanguageQuery(query) {
     supabaseQuery = supabaseQuery.eq("status", "Closed");
     matchedStatus = "Closed";
   } else if (/\bintake\b/.test(q)) {
-    supabaseQuery = supabaseQuery.eq("status", "Intake");
-    matchedStatus = "Intake";
+    supabaseQuery = supabaseQuery.eq("status", "Presuit");
+    matchedStatus = "Presuit";
   } else if (/\bnegotiat/.test(q)) {
     supabaseQuery = supabaseQuery.eq("status", "Presuit Demand");
     matchedStatus = "Presuit Demand";
@@ -309,3 +309,4 @@ async function handleNaturalLanguageQuery(query) {
     count: data.length,
   });
 }
+

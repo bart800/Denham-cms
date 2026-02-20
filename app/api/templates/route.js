@@ -22,7 +22,7 @@ const TEMPLATES = [
     name: "Representation Letter",
     description: "Letter to insurer establishing attorney-client relationship",
     icon: "📋",
-    category: "Intake",
+    category: "Presuit",
   },
   {
     id: "status-update-client",
@@ -510,3 +510,4 @@ export async function POST(request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+

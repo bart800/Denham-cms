@@ -19,7 +19,7 @@ const STATUSES = [
   { label: "Litigation", color: "#d94a4a" },
   { label: "Settlement", color: "#9b59b6" },
   { label: "Pre-Litigation", color: "#e67e22" },
-  { label: "Intake", color: "#1abc9c" },
+  { label: "Presuit", color: "#1abc9c" },
 ];
 
 const tabStyle = (active) => ({
@@ -288,3 +288,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

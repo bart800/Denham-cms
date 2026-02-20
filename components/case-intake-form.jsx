@@ -276,7 +276,7 @@ export default function CaseIntakeForm({ onClose, onCreated, onNavigateToCase, t
             const formData = new FormData();
             formData.append("file", f.file);
             formData.append("case_id", caseId);
-            formData.append("category", f.category || "Intake");
+            formData.append("category", f.category || "Presuit");
             const uploadRes = await fetch("/api/docs", { method: "POST", body: formData });
             if (uploadRes.ok) uploadedCount++;
           } catch (uploadErr) {
@@ -1028,3 +1028,4 @@ function formatSize(bytes) {
   if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
   return (bytes / 1048576).toFixed(1) + " MB";
 }
+

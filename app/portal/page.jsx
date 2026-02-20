@@ -31,8 +31,8 @@ const aIcon = t => ({ call: "📞", email: "✉️", task: "✅", document: "�
 
 function stClr(st) {
   if (!st) return { bg: "rgba(85,85,106,0.15)", t: B.txtD };
-  if (st.includes("Intake")) return { bg: "rgba(235,176,3,0.12)", t: B.gold };
-  if (st.includes("Investigation")) return { bg: "rgba(91,141,239,0.12)", t: "#5b8def" };
+  if (st.includes("Presuit")) return { bg: "rgba(235,176,3,0.12)", t: B.gold };
+  if (st.includes("Presuit")) return { bg: "rgba(91,141,239,0.12)", t: "#5b8def" };
   if (st.includes("Presuit")) return { bg: "rgba(235,176,3,0.12)", t: "#e0a050" };
   if (st.includes("Litigation")) return { bg: "rgba(0,0,102,0.2)", t: "#6b6bff" };
   if (st.includes("Settled")) return { bg: "rgba(56,111,74,0.12)", t: B.green };
@@ -505,8 +505,8 @@ export default function ClientPortal() {
 
 // ─── Status Timeline Stepper ────────────────────────────
 const PORTAL_STAGES = [
-  { key: "Intake", label: "Intake", icon: "📥", desc: "Case opened and initial review" },
-  { key: "Investigation", label: "Investigation", icon: "🔍", desc: "Gathering evidence and documents" },
+  { key: "Presuit", label: "Presuit", icon: "📥", desc: "Case opened and initial review" },
+  { key: "Presuit", label: "Presuit", icon: "🔍", desc: "Gathering evidence and documents" },
   { key: "Presuit", label: "Pre-Suit", icon: "📋", desc: "Preparing demand to insurance" },
   { key: "Demand", label: "Demand Sent", icon: "📤", desc: "Demand sent to insurance company" },
   { key: "Litigation", label: "Litigation", icon: "⚖️", desc: "Filed lawsuit, active litigation" },
@@ -737,3 +737,4 @@ function PortalAppointments({ caseId, token }) {
     </div>
   );
 }
+

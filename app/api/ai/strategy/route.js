@@ -103,8 +103,8 @@ function buildStrategy(c, similar) {
     risks.push({ severity: daysSinceActivity > 120 ? "critical" : "warning", category: "Stale", message: `No activity in ${daysSinceActivity} days`, action: "Review case status and contact client" });
   }
 
-  if (c.status === "Intake" && daysSinceActivity > 14) {
-    risks.push({ severity: "warning", category: "Intake", message: "Case stuck in intake for 2+ weeks", action: "Complete intake and move to investigation" });
+  if (c.status === "Presuit" && daysSinceActivity > 14) {
+    risks.push({ severity: "warning", category: "Presuit", message: "Case stuck in intake for 2+ weeks", action: "Complete intake and move to investigation" });
   }
 
   if (gap && Number(gap) > 80) {
@@ -115,11 +115,11 @@ function buildStrategy(c, similar) {
   const recommendations = [];
 
   // Phase-based recommendations
-  if (c.status === "Intake") {
+  if (c.status === "Presuit") {
     recommendations.push({ priority: "high", category: "Process", title: "Complete Intake", detail: "Gather all policy documents, loss documentation, and client statements. Verify coverage and confirm statute of limitations." });
   }
 
-  if (c.status === "Investigation") {
+  if (c.status === "Presuit") {
     recommendations.push({ priority: "high", category: "Process", title: "Complete Investigation", detail: "Obtain independent estimates, document all damages, review policy language for coverage arguments." });
     if (ests.length === 0) {
       recommendations.push({ priority: "high", category: "Evidence", title: "Obtain Damage Estimates", detail: "No estimates on file. Get at least one independent contractor estimate and consider a public adjuster inspection." });
@@ -251,3 +251,4 @@ function getLastActivityDate(c) {
   if (dates.length === 0) return null;
   return dates.sort().pop();
 }
+

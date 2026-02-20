@@ -224,8 +224,8 @@ function Grid({ data, onNavigate, isAttorneyView }) {
       {/* Cases by Phase */}
       <Card title="Cases by Phase">
         {(() => {
-          const phaseOrder = ["Intake", "Investigation", "Presuit Demand", "Appraisal", "Litigation - Filed", "Settled", "Referred"];
-          const phaseColors = { "Intake": "#ebb003", "Investigation": "#42a5f5", "Presuit Demand": "#ff9800", "Appraisal": "#ab47bc", "Litigation - Filed": "#e53935", "Settled": GREEN, "Referred": "#666" };
+          const phaseOrder = ["Presuit", "Presuit Demand", "Appraisal", "Litigation - Filed", "Litigation - Discovery", "Litigation - Mediation", "Litigation - Trial Prep", "Settled", "Referred"];
+          const phaseColors = { "Presuit": "#42a5f5", "Presuit Demand": "#ff9800", "Appraisal": "#ab47bc", "Litigation - Filed": "#e53935", "Litigation - Discovery": "#ef5350", "Litigation - Mediation": "#ec407a", "Litigation - Trial Prep": "#d32f2f", "Settled": GREEN, "Referred": "#666" };
           const entries = phaseOrder.map(p => [p, (cases_by_status || {})[p] || 0]).filter(([,v]) => v > 0);
           const phaseMax = Math.max(...entries.map(([,v]) => v), 1);
           return entries.map(([p, v]) => <Bar key={p} label={p} value={v} max={phaseMax} color={phaseColors[p] || GOLD} onClick={() => nav({ status: p })} />);
@@ -254,8 +254,8 @@ function Grid({ data, onNavigate, isAttorneyView }) {
           // Merge "Property Casualty" and "Property" into "Other" since they're unclassified property cases
           if (raw["Property Casualty"]) { raw["Other"] = (raw["Other"] || 0) + raw["Property Casualty"]; delete raw["Property Casualty"]; }
           if (raw["Property"]) { raw["Other"] = (raw["Other"] || 0) + raw["Property"]; delete raw["Property"]; }
-          // Remove "Investigation" if it shows as a type
-          delete raw["Investigation"];
+          // Remove "Presuit" if it shows as a type
+          delete raw["Presuit"];
           const entries = Object.entries(raw).sort((a, b) => b[1] - a[1]);
           const mx = Math.max(...entries.map(([,v]) => v), 1);
           const emoji = { fire: "🔥", water: "💧", wind: "🌬️", hail: "🧊", "personal injury": "⚖️", other: "📋" };
@@ -348,3 +348,4 @@ function Grid({ data, onNavigate, isAttorneyView }) {
     </div>
   );
 }
+

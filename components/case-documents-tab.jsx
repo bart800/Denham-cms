@@ -11,7 +11,7 @@ const BORDER = "#1a1a5e";
 
 const ALL_CATEGORIES = [
   "Photos","Discovery","Correspondence","E-Pleadings","Pleadings",
-  "PA Files","Estimates","Intake","Client Docs","Policy",
+  "PA Files","Estimates","Presuit","Client Docs","Policy",
   "Scoping","Receipts","Exhibits","Uncategorized"
 ];
 
@@ -217,3 +217,4 @@ export default function CaseDocumentsTab({ caseId }) {
     </div>
   );
 }
+

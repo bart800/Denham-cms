@@ -60,13 +60,12 @@ const B = {
 
 // ─── Constants ──────────────────────────────────────────────
 const JURIS = ["KY", "TN", "MT", "NC", "TX", "CA", "WA", "CO", "NY"];
-const CSTATS = ["Intake", "Investigation", "Presuit Demand",
+const CSTATS = ["Presuit", "Presuit Demand",
   "Litigation - Filed", "Litigation - Discovery", "Litigation - Mediation",
   "Litigation - Trial Prep", "Appraisal", "Settled", "Closed"];
 const WORKFLOW_STAGES = [
-  { key: "Intake", label: "New", icon: "📥" },
-  { key: "Investigation", label: "Review", icon: "🔍" },
-  { key: "Presuit Demand", label: "Presuit", icon: "📋" },
+  { key: "Presuit", label: "Presuit", icon: "📋" },
+  { key: "Presuit Demand", label: "Demand", icon: "📨" },
   { key: "Litigation - Filed", label: "Litigation", icon: "⚖️" },
   { key: "Litigation - Discovery", label: "Discovery", icon: "🔎" },
   { key: "Appraisal", label: "Appraisal", icon: "📊" },
@@ -75,7 +74,7 @@ const WORKFLOW_STAGES = [
 ];
 const ATYPES = ["note", "call", "email", "task", "document", "negotiation",
   "pleading", "estimate", "status_change", "deadline"];
-const DOC_CATEGORIES = ["Intake", "Correspondence", "Discovery", "Estimates",
+const DOC_CATEGORIES = ["Presuit", "Correspondence", "Discovery", "Estimates",
   "E-Pleadings", "Photos", "Policy", "PA Files", "Pleadings"];
 const LOSS_TYPES = ["Fire", "Water", "Wind", "Hail", "Other"];
 const LOSS_ICON = { Fire: "🔥", Water: "💧", Wind: "🌬️", Hail: "🧊", Other: "❓" };
@@ -315,8 +314,7 @@ const fmtSize = bytes => {
 
 function stClr(st) {
   if (!st) return { bg: "rgba(85,85,106,0.15)", t: B.txtD };
-  if (st.includes("Intake")) return { bg: B.goldBg, t: B.gold };
-  if (st.includes("Investigation")) return { bg: "rgba(91,141,239,0.12)", t: "#5b8def" };
+  if (st === "Presuit") return { bg: B.goldBg, t: B.gold };
   if (st.includes("Presuit")) return { bg: "rgba(235,176,3,0.12)", t: "#e0a050" };
   if (st.includes("Litigation")) return { bg: "rgba(0,0,102,0.2)", t: "#6b6bff" };
   if (st.includes("Appraisal")) return { bg: "rgba(124,92,191,0.12)", t: B.purple };
@@ -376,7 +374,7 @@ function calcRiskScore(c, litDetails) {
   if (c.dop) {
     const daysOpen = Math.ceil((now - new Date(c.dop + "T00:00:00")) / 86400000);
     if (daysOpen > 180 && !(c.totalRec > 0)) score += 10;
-    if ((c.status === "Intake" || c.status === "New") && daysOpen > 30) score += 10;
+    if ((c.status === "Presuit") && daysOpen > 30) score += 10;
   }
   return Math.min(score, 100);
 }
@@ -1180,7 +1178,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
     { id: "docs", label: "Documents", icon: "◇" },
     { id: "reports", label: "Reports", icon: "📊" },
     { id: "compare", label: "Compare", icon: "⚖️" },
-    { id: "intake", label: "New Case", icon: "➕" },
+    { id: "Presuit", label: "New Case", icon: "➕" },
     { id: "templates", label: "Templates", icon: "📝" },
     { id: "contacts", label: "Contacts", icon: "👤" },
     { id: "activity", label: "Activity", icon: "📋" },
@@ -2695,7 +2693,7 @@ function NewCaseModal({ open, onClose, cases, team, onCreated }) {
     setSaving(true);
     try {
       const ref = generateRef();
-      const caseData = { ref, client_name: form.client_name.trim(), type: form.type, jurisdiction: form.jurisdiction, status: "Intake", date_opened: new Date().toISOString().split("T")[0] };
+      const caseData = { ref, client_name: form.client_name.trim(), type: form.type, jurisdiction: form.jurisdiction, status: "Presuit", date_opened: new Date().toISOString().split("T")[0] };
       if (form.insurer) caseData.insurer = form.insurer;
       if (form.date_of_loss) caseData.date_of_loss = form.date_of_loss;
       if (form.attorney_id) caseData.attorney_id = form.attorney_id;
@@ -2860,7 +2858,7 @@ function ComplianceDash({ cases, onOpen }) {
   const high = caseData.filter(c => c._risk > 40 && c._risk <= 60);
   const solIssues = caseData.filter(c => c._solDays !== null && !solIsMet(c.status) && c._solDays <= 90);
   const commIssues = caseData.filter(c =>
-    ((c.status === "Intake" || c.status === "New") && c._daysOpen > 30) ||
+    ((c.status === "Presuit") && c._daysOpen > 30) ||
     (c.status === "Presuit Demand" && c._daysOpen > 90)
   );
   const litMissing = caseData.filter(c => c._isLit);
@@ -2993,7 +2991,7 @@ function ComplianceDash({ cases, onOpen }) {
             </tr></thead>
             <tbody>
               {commIssues.sort((a, b) => b._daysOpen - a._daysOpen).map(c => {
-                const concern = (c.status === "Intake" || c.status === "New") ? "Intake stalled >30 days" : "Presuit Demand >90 days";
+                const concern = (c.status === "Presuit") ? "Presuit stalled >30 days" : "Presuit Demand >90 days";
                 return (
                   <tr key={c.id} onClick={() => onOpen(c)} style={{ cursor: "pointer" }}
                     onMouseEnter={e => e.currentTarget.style.background = B.cardH}
@@ -3230,7 +3228,7 @@ function ComplianceTab({ c, onCaseUpdate }) {
     if (!c.ld?.trialDate) breakdown.push({ label: "No trial date set", pts: 15, color: "#eb8c03" });
   }
   if (daysOpen > 180 && !(c.totalRec > 0)) breakdown.push({ label: `Case open ${daysOpen} days, no recovery`, pts: 10, color: B.gold });
-  if ((c.status === "Intake" || c.status === "New") && daysOpen > 30) breakdown.push({ label: `Intake stalled ${daysOpen} days`, pts: 10, color: B.gold });
+  if ((c.status === "Presuit") && daysOpen > 30) breakdown.push({ label: `Intake stalled ${daysOpen} days`, pts: 10, color: B.gold });
 
   return (
     <div>
@@ -4921,7 +4919,7 @@ export default function DenhamStaffPortal() {
         {!loading && page === "counsel" && <OpposingCounsel />}
         {!loading && page === "compare" && <CaseCompare onSelectCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "attorneys" && <AttorneyDashboard onNavigateCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
-        {!loading && page === "intake" && <CaseIntakeForm onClose={() => navTo("cases")} onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
+        {!loading && page === "Presuit" && <CaseIntakeForm onClose={() => navTo("cases")} onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}
         {!loading && page === "docs" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Documents</h2>
             <DocumentBrowser />
@@ -4931,3 +4929,4 @@ export default function DenhamStaffPortal() {
     </div>
   );
 }
+

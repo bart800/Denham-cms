@@ -212,17 +212,16 @@ function computeRisks(ctx) {
   if (!ctx.attorney) {
     risks.push({ severity: "warning", message: "No attorney assigned" });
   }
-  if (ctx.status === "Intake" && ctx.dateOpened) {
-    const daysInIntake = Math.ceil((Date.now() - new Date(ctx.dateOpened).getTime()) / 86400000);
-    if (daysInIntake > 14) risks.push({ severity: "warning", message: `Case has been in Intake for ${daysInIntake} days` });
+  if (ctx.status === "Presuit" && ctx.dateOpened) {
+    const daysInPresuit = Math.ceil((Date.now() - new Date(ctx.dateOpened).getTime()) / 86400000);
+    if (daysInPresuit > 14) risks.push({ severity: "warning", message: `Case has been in Presuit for ${daysInPresuit} days` });
   }
   return risks;
 }
 
 function computeNextSteps(ctx) {
   const steps = [];
-  if (ctx.status === "Intake") steps.push("Complete intake documentation and initial evaluation");
-  if (ctx.status === "Investigation") steps.push("Complete investigation and prepare demand package");
+  if (ctx.status === "Presuit") steps.push("Complete intake documentation, investigation, and prepare demand package");
   if (ctx.status === "Presuit Demand") steps.push("Follow up on demand — check for response deadline");
   if (ctx.status === "Presuit Demand" && !ctx.lastOffer) steps.push("Await insurer response to demand");
   if (ctx.status === "Presuit Demand" && ctx.lastOffer) steps.push("Evaluate latest offer — prepare counter or file suit");

@@ -2,14 +2,12 @@ import { supabaseAdmin, supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
 const WORKFLOW_TEMPLATES = {
-  "Intake": [
+  "Presuit": [
     { title: "Review signed retainer", priority: "high" },
     { title: "Verify insurance policy info", priority: "high" },
     { title: "File claim if not filed", priority: "medium" },
     { title: "Request claim file from insurer", priority: "medium" },
     { title: "Order property inspection", priority: "medium" },
-  ],
-  "Investigation": [
     { title: "Obtain independent estimate", priority: "high" },
     { title: "Review denial letter", priority: "high" },
     { title: "Document property damage (photos)", priority: "medium" },
