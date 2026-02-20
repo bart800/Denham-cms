@@ -126,14 +126,14 @@ function buildStrategy(c, similar) {
     }
   }
 
-  if (c.status === "Presuit Demand") {
+  if (c.status === "Presuit") {
     recommendations.push({ priority: "medium", category: "Negotiation", title: "Track Demand Response", detail: `Demand sent. Monitor for insurer response within statutory timeframe.${demandAmount ? ` Demand amount: $${demandAmount.toLocaleString()}` : ""}` });
     if (solDays && solDays < 180) {
       recommendations.push({ priority: "high", category: "Litigation", title: "Prepare Complaint", detail: "SOL approaching — prepare complaint for filing in case presuit resolution fails." });
     }
   }
 
-  if (c.status === "Presuit Demand") {
+  if (c.status === "Presuit") {
     if (lastOffer && lastDemand) {
       const ratio = offerAmount / demandAmount;
       if (ratio < 0.3) {

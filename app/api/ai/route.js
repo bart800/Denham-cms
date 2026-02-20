@@ -69,9 +69,9 @@ async function summarizeCase(caseId) {
   const nextSteps = [];
   if (c.status === "Presuit") nextSteps.push("Complete intake documentation and initial case evaluation");
   if (c.status === "Presuit") nextSteps.push("Complete investigation and prepare demand package");
-  if (c.status === "Presuit Demand") nextSteps.push("Follow up on demand — check for response deadline");
-  if (c.status === "Presuit Demand" && !lastOffer) nextSteps.push("Await or follow up on insurer's response to demand");
-  if (c.status === "Presuit Demand" && lastOffer) nextSteps.push("Evaluate latest offer and prepare counter or file suit");
+  if (c.status === "Presuit") nextSteps.push("Follow up on demand — check for response deadline");
+  if (c.status === "Presuit" && !lastOffer) nextSteps.push("Await or follow up on insurer's response to demand");
+  if (c.status === "Presuit" && lastOffer) nextSteps.push("Evaluate latest offer and prepare counter or file suit");
   if (c.status?.startsWith("Litigation")) nextSteps.push("Review litigation deadlines and upcoming discovery due dates");
   if (solDays !== null && solDays < 90 && !c.status?.startsWith("Litigation")) nextSteps.push("URGENT: File suit before SOL expires");
   if (daysSinceActivity > 30) nextSteps.push("Update case file — no recent activity logged");
@@ -192,8 +192,8 @@ async function handleNaturalLanguageQuery(query) {
   // ─── Status filter ────────────────────────────────────
   let matchedStatus = null;
   if (/\bdemand(s)?\s*(sent|cases?)?\b/.test(q) || /\bpresuit demand\b/.test(q) || /\bcases? with demands?\b/.test(q)) {
-    supabaseQuery = supabaseQuery.eq("status", "Presuit Demand");
-    matchedStatus = "Presuit Demand";
+    supabaseQuery = supabaseQuery.eq("status", "Presuit");
+    matchedStatus = "Presuit";
   } else if (/\blitigation\b/.test(q) || /\bin lit\b/.test(q)) {
     supabaseQuery = supabaseQuery.ilike("status", "Litigation%");
     matchedStatus = "Litigation";
@@ -207,8 +207,8 @@ async function handleNaturalLanguageQuery(query) {
     supabaseQuery = supabaseQuery.eq("status", "Presuit");
     matchedStatus = "Presuit";
   } else if (/\bnegotiat/.test(q)) {
-    supabaseQuery = supabaseQuery.eq("status", "Presuit Demand");
-    matchedStatus = "Presuit Demand";
+    supabaseQuery = supabaseQuery.eq("status", "Presuit");
+    matchedStatus = "Presuit";
   } else if (/\bpresuit\b/.test(q)) {
     supabaseQuery = supabaseQuery.ilike("status", "Presuit%");
     matchedStatus = "Presuit";

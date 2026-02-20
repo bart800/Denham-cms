@@ -60,12 +60,11 @@ const B = {
 
 // ─── Constants ──────────────────────────────────────────────
 const JURIS = ["KY", "TN", "MT", "NC", "TX", "CA", "WA", "CO", "NY"];
-const CSTATS = ["Presuit", "Presuit Demand",
+const CSTATS = ["Presuit",
   "Litigation - Filed", "Litigation - Discovery", "Litigation - Mediation",
   "Litigation - Trial Prep", "Appraisal", "Settled", "Closed"];
 const WORKFLOW_STAGES = [
   { key: "Presuit", label: "Presuit", icon: "📋" },
-  { key: "Presuit Demand", label: "Demand", icon: "📨" },
   { key: "Litigation - Filed", label: "Litigation", icon: "⚖️" },
   { key: "Litigation - Discovery", label: "Discovery", icon: "🔎" },
   { key: "Appraisal", label: "Appraisal", icon: "📊" },
@@ -2394,7 +2393,7 @@ function Negotiations({ c }) {
           { l: "Bottom Line", v: bl ? fmt(bl.amount) : "-", c: B.gold },
           { l: "Last Plaintiff Offer", v: lp ? fmt(lp.amount) : "-", c: B.green },
           { l: "Last Defendant Offer", v: ld ? fmt(ld.amount) : "-", c: "#5b8def" },
-          { l: "Presuit Demand", v: psd ? fmt(psd.amount) : "-", c: "#e0a050" },
+          { l: "Presuit", v: psd ? fmt(psd.amount) : "-", c: "#e0a050" },
         ].map((x, i) => (
           <div key={i} style={{ ...S.card, padding: "12px 16px" }}>
             <div style={{ fontSize: 10, color: B.txtD, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, marginBottom: 4 }}>{x.l}</div>
@@ -2859,7 +2858,7 @@ function ComplianceDash({ cases, onOpen }) {
   const solIssues = caseData.filter(c => c._solDays !== null && !solIsMet(c.status) && c._solDays <= 90);
   const commIssues = caseData.filter(c =>
     ((c.status === "Presuit") && c._daysOpen > 30) ||
-    (c.status === "Presuit Demand" && c._daysOpen > 90)
+    (c.status === "Presuit" && c._daysOpen > 90)
   );
   const litMissing = caseData.filter(c => c._isLit);
   const litNoComplaint = caseData.filter(c => c._isLit && !hasFiledComplaint(c));

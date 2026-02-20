@@ -13,15 +13,11 @@ const WORKFLOW_TEMPLATES = {
     { title: "Document property damage (photos)", priority: "medium" },
     { title: "Review policy coverage", priority: "high" },
     { title: "Check statute of limitations", priority: "urgent" },
-  ],
-  "Presuit Demand": [
     { title: "Draft demand letter", priority: "high" },
     { title: "Compile supporting documents", priority: "medium" },
     { title: "Calculate damages", priority: "high" },
     { title: "Send demand to insurer", priority: "high" },
     { title: "Calendar 30-day follow-up", priority: "medium" },
-  ],
-  "Presuit Demand": [
     { title: "Review insurer response", priority: "high" },
     { title: "Prepare counter-offer if needed", priority: "medium" },
     { title: "Document all offers/counters", priority: "medium" },

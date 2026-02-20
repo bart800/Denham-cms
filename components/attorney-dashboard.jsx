@@ -17,8 +17,8 @@ const S = {
 const fmt = (n) => Number(n || 0).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 });
 
 const PHASE_COLORS = {
-  "Presuit": "#4a90d9", "Presuit": "#7c5cbf", "Presuit Demand": B.gold,
-  "Presuit Demand": "#e08040", "Litigation - Filed": B.danger,
+  "Presuit": "#4a90d9", "Presuit": "#7c5cbf", "Presuit": B.gold,
+  "Presuit": "#e08040", "Litigation - Filed": B.danger,
   "Litigation - Discovery": "#d94a7a", "Litigation - Mediation": "#9b59b6",
   "Litigation - Trial Prep": "#c0392b", "Appraisal": "#2ecc71", "Settled": B.green,
 };

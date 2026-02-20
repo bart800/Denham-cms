@@ -9,13 +9,13 @@ const B = {
 };
 
 const ALL_PHASES = [
-  "Presuit", "Presuit Demand",
+  "Presuit",
   "Litigation - Filed", "Litigation - Discovery", "Litigation - Mediation",
   "Litigation - Trial Prep", "Appraisal", "Settled", "Closed",
 ];
 
 const PHASE_ICONS = {
-  "Presuit": "📋", "Presuit Demand": "📨",
+  "Presuit": "📋",
   "Litigation - Filed": "⚖️",
   "Litigation - Discovery": "🔎", "Litigation - Mediation": "🤝",
   "Litigation - Trial Prep": "📑", "Appraisal": "📊",
