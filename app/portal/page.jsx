@@ -62,6 +62,14 @@ export default function ClientPortal() {
   const [newMsg, setNewMsg] = useState("");
   const [msgLoading, setMsgLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const getToken = () => localStorage.getItem("portal_token");
 
@@ -218,13 +226,13 @@ export default function ClientPortal() {
   return (
     <div style={{ minHeight: "100vh", background: B.bg, color: B.txt, fontFamily: "'DM Sans',sans-serif" }}>
       {/* Header */}
-      <div style={{ borderBottom: `1px solid ${B.bdr}`, padding: "16px 32px", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg,${B.navy},${B.gold})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff" }}>D</div>
+      <div style={{ borderBottom: `1px solid ${B.bdr}`, padding: isMobile ? "12px 16px" : "16px 32px", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg,${B.navy},${B.gold})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff", flexShrink: 0 }}>D</div>
         <div>
           <div style={{ fontSize: 15, fontWeight: 700 }}>DENHAM LAW</div>
           <div style={{ fontSize: 11, color: B.txtD }}>Client Portal</div>
         </div>
-        <div style={{ marginLeft: "auto", fontSize: 12, color: B.txtM }}>859-900-BART · denham.law</div>
+        {!isMobile && <div style={{ marginLeft: "auto", fontSize: 12, color: B.txtM }}>859-900-BART · denham.law</div>}
       </div>
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
@@ -373,6 +381,9 @@ export default function ClientPortal() {
               </div>
             )}
 
+            {/* Upcoming Tasks */}
+            <PortalUpcomingTasks caseId={caseData.id} token={getToken()} />
+
             {/* Litigation Info */}
             {caseData.inLitigation && (
               <div style={{ background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
@@ -504,52 +515,116 @@ export default function ClientPortal() {
 }
 
 // ─── Status Timeline Stepper ────────────────────────────
-const PORTAL_STAGES = [
-  { key: "Presuit", label: "Presuit", icon: "📥", desc: "Case opened and initial review" },
-  { key: "Presuit", label: "Presuit", icon: "🔍", desc: "Gathering evidence and documents" },
-  { key: "Presuit", label: "Pre-Suit", icon: "📋", desc: "Preparing demand to insurance" },
-  { key: "Demand", label: "Demand Sent", icon: "📤", desc: "Demand sent to insurance company" },
-  { key: "Litigation", label: "Litigation", icon: "⚖️", desc: "Filed lawsuit, active litigation" },
-  { key: "Settlement", label: "Settlement", icon: "💰", desc: "Case settled or resolved" },
+const PORTAL_PHASES = [
+  { key: "Presuit", label: "Pre-Suit", icon: "📋", desc: "Your case is being reviewed and evidence gathered" },
+  { key: "Litigation - Filed", label: "Filed", icon: "⚖️", desc: "Lawsuit has been filed on your behalf" },
+  { key: "Litigation - Discovery", label: "Discovery", icon: "🔎", desc: "Both sides are exchanging evidence and information" },
+  { key: "Litigation - Mediation", label: "Mediation", icon: "🤝", desc: "Attempting to reach a resolution through mediation" },
+  { key: "Litigation - Trial Prep", label: "Trial Prep", icon: "📑", desc: "Preparing your case for trial" },
+  { key: "Appraisal", label: "Appraisal", icon: "📊", desc: "Independent appraisal of your claim is underway" },
+  { key: "Settled", label: "Settled", icon: "💰", desc: "Your case has been resolved" },
+  { key: "Closed", label: "Closed", icon: "✅", desc: "Case is complete" },
 ];
 
 function PortalStatusTimeline({ status, progress }) {
-  const stageIndex = PORTAL_STAGES.findIndex(s => {
+  // Find the active phase — skip phases that don't apply (e.g. jump from Presuit to Appraisal)
+  const activeIdx = Math.max(0, PORTAL_PHASES.findIndex(s => {
     if (!status) return false;
     const st = status.toLowerCase();
-    return st.includes(s.key.toLowerCase()) || (s.key === "Presuit" && st.includes("presuit")) || (s.key === "Demand" && (st.includes("demand") || st.includes("presuit demand"))) || (s.key === "Litigation" && st.includes("litigat")) || (s.key === "Settlement" && (st.includes("settled") || st.includes("closed")));
-  });
-  const activeIdx = stageIndex >= 0 ? stageIndex : 0;
+    const k = s.key.toLowerCase();
+    return st === k || st.startsWith(k) || (k === "settled" && st.includes("settled")) || (k === "closed" && st.includes("closed")) || (k === "presuit" && st.includes("presuit"));
+  }));
 
+  // On mobile, show condensed version
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 8 }}>
-        {PORTAL_STAGES.map((stage, i) => {
+      {/* Desktop stepper */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 0, marginBottom: 8, overflowX: "auto", paddingBottom: 4 }}>
+        {PORTAL_PHASES.map((stage, i) => {
           const done = i < activeIdx;
           const active = i === activeIdx;
           const clr = done ? "#386f4a" : active ? "#ebb003" : "#55556a";
           return (
-            <div key={stage.key} style={{ flex: 1, display: "flex", alignItems: "center" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "#386f4a" : active ? "#ebb003" : "#1e1e2e", border: `2px solid ${clr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
+            <div key={i} style={{ flex: 1, display: "flex", alignItems: "center", minWidth: 60 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1, width: "100%" }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: done ? "#386f4a" : active ? "#ebb003" : "#1e1e2e",
+                  border: `2px solid ${clr}`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                  boxShadow: active ? "0 0 12px rgba(235,176,3,0.3)" : "none",
+                  transition: "all 0.3s",
+                }}>
                   {done ? "✓" : stage.icon}
                 </div>
                 <div style={{ fontSize: 9, color: clr, fontWeight: active ? 700 : 500, marginTop: 4, textAlign: "center", whiteSpace: "nowrap" }}>{stage.label}</div>
               </div>
-              {i < PORTAL_STAGES.length - 1 && (
-                <div style={{ flex: 1, height: 2, background: done ? "#386f4a" : "#1e1e2e", margin: "0 -4px", marginBottom: 16 }} />
+              {i < PORTAL_PHASES.length - 1 && (
+                <div style={{ flex: 1, height: 2, background: done ? "#386f4a" : "#1e1e2e", margin: "0 -4px", marginBottom: 16, transition: "background 0.3s" }} />
               )}
             </div>
           );
         })}
       </div>
-      {PORTAL_STAGES[activeIdx] && (
-        <div style={{ fontSize: 12, color: "#8888a0", textAlign: "center", marginTop: 4 }}>
-          Current: <span style={{ color: "#ebb003", fontWeight: 600 }}>{PORTAL_STAGES[activeIdx].label}</span> — {PORTAL_STAGES[activeIdx].desc}
+      {PORTAL_PHASES[activeIdx] && (
+        <div style={{ fontSize: 12, color: "#8888a0", textAlign: "center", marginTop: 4, padding: "8px 12px", background: "rgba(235,176,3,0.05)", borderRadius: 8 }}>
+          Current Phase: <span style={{ color: "#ebb003", fontWeight: 600 }}>{PORTAL_PHASES[activeIdx].label}</span> — {PORTAL_PHASES[activeIdx].desc}
         </div>
       )}
       <div style={{ height: 4, background: "#1e1e2e", borderRadius: 2, overflow: "hidden", marginTop: 8 }}>
-        <div style={{ height: "100%", width: `${progress || 0}%`, background: "linear-gradient(90deg,#000066,#ebb003)", borderRadius: 2, transition: "width 0.5s" }} />
+        <div style={{ height: "100%", width: `${progress || Math.round(((activeIdx + 1) / PORTAL_PHASES.length) * 100)}%`, background: "linear-gradient(90deg,#000066,#ebb003)", borderRadius: 2, transition: "width 0.5s" }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Upcoming Tasks (client-safe) ───────────────────────
+function PortalUpcomingTasks({ caseId, token }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`/api/portal/tasks?caseId=${caseId}`, { headers: { "x-portal-token": token } });
+        const d = await r.json();
+        setTasks(Array.isArray(d) ? d : d.tasks || []);
+      } catch {}
+      setLoading(false);
+    })();
+  }, [caseId]);
+
+  if (loading) return <div style={{ padding: 20, textAlign: "center", color: "#8888a0", fontSize: 13 }}>Loading...</div>;
+  if (tasks.length === 0) return null;
+
+  return (
+    <div style={{ background: "#111119", border: "1px solid rgba(56,111,74,0.3)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#386f4a", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+        <span>📋</span> What's Coming Up
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {tasks.map((task, i) => (
+          <div key={task.id || i} style={{
+            display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+            background: "rgba(56,111,74,0.06)", borderRadius: 8, border: "1px solid rgba(56,111,74,0.12)",
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%", background: "rgba(56,111,74,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0,
+            }}>
+              {task.type === "deadline" ? "⏰" : task.type === "appointment" ? "📅" : task.type === "document" ? "📄" : "→"}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8f0" }}>{task.title}</div>
+              {task.description && <div style={{ fontSize: 11, color: "#8888a0", marginTop: 2 }}>{task.description}</div>}
+            </div>
+            {task.due_date && (
+              <div style={{ fontSize: 11, color: "#8888a0", fontFamily: "'JetBrains Mono',monospace", flexShrink: 0 }}>
+                {new Date(task.due_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

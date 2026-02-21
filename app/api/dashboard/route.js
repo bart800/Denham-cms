@@ -143,6 +143,38 @@ export async function GET(request) {
     const missing_sol = activeCases.filter(c => !c.statute_of_limitations).length;
     const missing_insurer = activeCases.filter(c => !c.insurer).length;
 
+    // Workflow stats: tasks due today, overdue, phase bottlenecks
+    let tasks_due_today = 0, tasks_overdue = 0, phase_bottlenecks = [];
+    try {
+      const activeIds = activeCases.map(c => c.id);
+      if (activeIds.length > 0) {
+        const [dueTodayRes, overdueRes, allTasksRes] = await Promise.all([
+          supabaseAdmin.from('case_tasks').select('id', { count: 'exact', head: true })
+            .in('case_id', activeIds).eq('due_date', today).neq('status', 'completed'),
+          supabaseAdmin.from('case_tasks').select('id', { count: 'exact', head: true })
+            .in('case_id', activeIds).lt('due_date', today).neq('status', 'completed'),
+          supabaseAdmin.from('case_tasks').select('case_id, phase, status, created_at')
+            .in('case_id', activeIds).neq('status', 'completed'),
+        ]);
+        tasks_due_today = dueTodayRes.count || 0;
+        tasks_overdue = overdueRes.count || 0;
+
+        // Phase bottleneck: group pending tasks by phase, count cases & avg age
+        const phaseMap = {};
+        for (const t of (allTasksRes.data || [])) {
+          const p = t.phase || 'Unknown';
+          if (!phaseMap[p]) phaseMap[p] = { phase: p, case_ids: new Set(), total_age_days: 0, task_count: 0 };
+          phaseMap[p].case_ids.add(t.case_id);
+          phaseMap[p].task_count++;
+          const age = Math.floor((now - new Date(t.created_at)) / 86400000);
+          phaseMap[p].total_age_days += age;
+        }
+        phase_bottlenecks = Object.values(phaseMap)
+          .map(p => ({ phase: p.phase, cases: p.case_ids.size, pending_tasks: p.task_count, avg_age_days: Math.round(p.total_age_days / p.task_count) }))
+          .sort((a, b) => b.cases - a.cases);
+      }
+    } catch { /* workflow stats optional */ }
+
     // Communication stats (counts only, fast)
     let email_count = 0, call_count = 0, linked_calls = 0, doc_count = 0, linked_docs = 0;
     try {
@@ -178,6 +210,7 @@ export async function GET(request) {
       cases_by_attorney,
       recent_activity,
       data_quality: { missing_sol, missing_insurer },
+      workflow: { tasks_due_today, tasks_overdue, phase_bottlenecks },
       comms: { email_count, call_count, linked_calls, doc_count, linked_docs },
     });
   } catch (err) {

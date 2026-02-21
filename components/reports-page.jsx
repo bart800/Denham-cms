@@ -18,6 +18,10 @@ const TABS = [
   { id: 'sol', label: 'SOL Tracker' },
   { id: 'aging', label: 'Aging' },
   { id: 'volume', label: 'Volume' },
+  { id: 'monthly_performance', label: 'Monthly Perf' },
+  { id: 'insurer_response', label: 'Insurer Response' },
+  { id: 'attorney_productivity', label: 'Atty Productivity' },
+  { id: 'case_aging_detail', label: 'Case Aging Detail' },
 ];
 
 function fmt$(n) {

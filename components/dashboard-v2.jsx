@@ -118,7 +118,7 @@ function Grid({ data, onNavigate, isAttorneyView }) {
   const {
     total_cases, cases_by_status, cases_by_type, cases_by_jurisdiction, top_insurers, sol_urgent,
     cases_opened_this_month, cases_opened_this_year, total_recovery_sum,
-    total_fees_sum, cases_by_attorney, recent_activity, data_quality, comms, sol_expired,
+    total_fees_sum, cases_by_attorney, recent_activity, data_quality, comms, sol_expired, workflow,
   } = data;
 
   const typeMax = Math.max(...Object.values(cases_by_type || {}), 1);
@@ -163,6 +163,33 @@ function Grid({ data, onNavigate, isAttorneyView }) {
             </a>
           ))}
         </div>
+      </Card>
+
+      {/* Workflow Overview */}
+      <Card title="Workflow Overview">
+        <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 12, color: TEXT_DIM }}>Due Today</div>
+            <div style={{ fontSize: 36, fontWeight: 700, color: GOLD, lineHeight: 1 }}>{workflow?.tasks_due_today || 0}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: TEXT_DIM }}>Overdue</div>
+            <div style={{ fontSize: 36, fontWeight: 700, color: (workflow?.tasks_overdue || 0) > 0 ? RED : GREEN, lineHeight: 1 }}>{workflow?.tasks_overdue || 0}</div>
+          </div>
+        </div>
+        {(workflow?.phase_bottlenecks || []).length > 0 && (
+          <div>
+            <div style={{ fontSize: 11, color: TEXT_DIM, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>Phase Bottlenecks</div>
+            {(workflow?.phase_bottlenecks || []).slice(0, 5).map((b) => (
+              <div key={b.phase} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13 }}>
+                <span style={{ color: TEXT }}>{b.phase}</span>
+                <span style={{ color: TEXT_DIM }}>
+                  <span style={{ color: GOLD, fontWeight: 600 }}>{b.cases}</span> cases · <span style={{ color: b.avg_age_days > 30 ? RED : TEXT_DIM }}>{b.avg_age_days}d avg</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Financial Summary */}
