@@ -276,7 +276,7 @@ export default function SettingsPage() {
             ))}
           </div>
           <div style={{ ...cardStyle, color: MUTED, fontSize: 13 }}>
-            Last fetched: {data?.fetched_at ? new Date(data.fetched_at).toLocaleString() : "â€""}
+            Last fetched: {data?.fetched_at ? new Date(data.fetched_at).toLocaleString() : "—"}
           </div>
         </div>
       )}
