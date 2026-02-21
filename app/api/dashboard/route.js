@@ -197,6 +197,73 @@ export async function GET(request) {
       linked_docs = linkedDocRes.count || 0;
     } catch { /* counts optional */ }
 
+    // Role-specific dashboard data
+    let role_data = null;
+    const effectiveRole = role;
+    const effectiveMemberId = memberId || filterAttorneyId;
+
+    if (effectiveRole === "paralegal" && effectiveMemberId) {
+      try {
+        const [myTasksRes, overdueTasksRes, dueTodayTasksRes] = await Promise.all([
+          supabaseAdmin.from("case_tasks").select("*, case:case_id(id, client_name, status)")
+            .eq("assigned_to", effectiveMemberId).neq("status", "completed").order("due_date").limit(50),
+          supabaseAdmin.from("case_tasks").select("*, case:case_id(id, client_name, status)")
+            .eq("assigned_to", effectiveMemberId).neq("status", "completed").lt("due_date", today).limit(20),
+          supabaseAdmin.from("case_tasks").select("*, case:case_id(id, client_name, status)")
+            .eq("assigned_to", effectiveMemberId).neq("status", "completed").eq("due_date", today).limit(20),
+        ]);
+        const caseIdsWorking = [...new Set((myTasksRes.data || []).map(t => t.case_id))];
+        role_data = {
+          role: "paralegal",
+          my_tasks: myTasksRes.data || [],
+          overdue_tasks: overdueTasksRes.data || [],
+          due_today: dueTodayTasksRes.data || [],
+          cases_working_on: caseIdsWorking.length,
+          total_pending: (myTasksRes.data || []).length,
+        };
+      } catch { role_data = { role: "paralegal", error: "Failed to load paralegal data" }; }
+    }
+
+    if (effectiveRole === "frontdesk") {
+      try {
+        const [callsToday, recentIntakes] = await Promise.all([
+          supabaseAdmin.from("case_calls").select("*").gte("call_date", today).order("call_date", { ascending: false }).limit(30),
+          supabaseAdmin.from("cases").select("id, client_name, status, date_opened, client_phone, client_email")
+            .gte("date_opened", today.slice(0, 8) + "01").order("date_opened", { ascending: false }).limit(20),
+        ]);
+        role_data = {
+          role: "frontdesk",
+          calls_today: callsToday.data || [],
+          calls_today_count: (callsToday.data || []).length,
+          recent_intakes: recentIntakes.data || [],
+          new_intakes_count: (recentIntakes.data || []).filter(c => c.date_opened === today).length,
+        };
+      } catch { role_data = { role: "frontdesk", error: "Failed to load front desk data" }; }
+    }
+
+    if (effectiveRole === "attorney" && effectiveMemberId) {
+      try {
+        const myCases = cases.filter(c => c.attorney_id === effectiveMemberId);
+        const myActiveIds = myCases.filter(c => c.status !== "Closed" && c.status !== "Referred").map(c => c.id);
+        const [upcomingDeadlines, mySettlements] = await Promise.all([
+          myActiveIds.length ? supabaseAdmin.from("court_deadlines").select("*").in("case_id", myActiveIds)
+            .gte("due_date", today).order("due_date").limit(15) : { data: [] },
+          Promise.resolve(myCases.filter(c => c.status === "Settled" && c.updated_at >= yearStart)),
+        ]);
+        const myRecovery = mySettlements.reduce((s, c) => s + (Number(c.total_recovery) || 0), 0);
+        const myFees = mySettlements.reduce((s, c) => s + (Number(c.attorney_fees) || 0), 0);
+        role_data = {
+          role: "attorney",
+          caseload: myCases.filter(c => c.status !== "Closed" && c.status !== "Referred").length,
+          total_cases: myCases.length,
+          upcoming_deadlines: upcomingDeadlines.data || [],
+          settlements_ytd: mySettlements.length,
+          recovery_ytd: myRecovery,
+          fees_ytd: myFees,
+        };
+      } catch { role_data = { role: "attorney", error: "Failed to load attorney data" }; }
+    }
+
     const response = {
       total_cases,
       attorneys,
@@ -215,6 +282,7 @@ export async function GET(request) {
       data_quality: { missing_sol, missing_insurer },
       workflow: { tasks_due_today, tasks_overdue, phase_bottlenecks },
       comms: { email_count, call_count, linked_calls, doc_count, linked_docs },
+      role_data,
     };
 
     // Only include financial data for roles with permission

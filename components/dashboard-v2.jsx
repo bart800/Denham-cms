@@ -58,17 +58,38 @@ function Skeleton() {
   );
 }
 
-export default function DashboardV2({ onNavigate }) {
+export default function DashboardV2({ onNavigate, currentUser }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [selectedAttorney, setSelectedAttorney] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
   const [attorneys, setAttorneys] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchDashboard = (attorneyId) => {
+  // Auto-detect role from currentUser
+  useEffect(() => {
+    if (currentUser?.role && !selectedRole) {
+      const r = currentUser.role.toLowerCase();
+      if (r.includes("paralegal")) setSelectedRole("paralegal");
+      else if (r.includes("front desk") || r.includes("frontdesk") || r.includes("receptionist")) setSelectedRole("frontdesk");
+      else if (r.includes("attorney") || r.includes("lawyer")) {
+        setSelectedRole("attorney");
+        if (currentUser.id) setSelectedAttorney(currentUser.id);
+      }
+      // admin/owner = no role filter (firm overview)
+    }
+  }, [currentUser]);
+
+  const fetchDashboard = (attorneyId, role) => {
     setLoading(true);
     setError(null);
-    const url = attorneyId ? `/api/dashboard?attorney_id=${attorneyId}` : "/api/dashboard";
+    let url = "/api/dashboard";
+    const params = new URLSearchParams();
+    if (attorneyId) params.set("attorney_id", attorneyId);
+    if (role) params.set("role", role);
+    if (role && currentUser?.id) params.set("member_id", currentUser.id);
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
     fetch(url)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => {
@@ -79,7 +100,7 @@ export default function DashboardV2({ onNavigate }) {
       .catch((e) => { setError(e.message); setLoading(false); });
   };
 
-  useEffect(() => { fetchDashboard(selectedAttorney); }, [selectedAttorney]);
+  useEffect(() => { fetchDashboard(selectedAttorney, selectedRole); }, [selectedAttorney, selectedRole]);
 
   if (error) return <div style={{ color: RED, padding: 40, textAlign: "center" }}>Dashboard error: {error}</div>;
 
@@ -89,26 +110,174 @@ export default function DashboardV2({ onNavigate }) {
     <div style={{ minHeight: "100vh", background: NAVY, color: TEXT, padding: "24px 32px", fontFamily: "-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <h1 style={{ margin: 0, fontSize: 28, color: GOLD }}>
-          {selectedAttorney ? `${selectedName}'s Dashboard` : "Firm Dashboard"}
+          {selectedRole === "paralegal" ? "📋 Paralegal Dashboard" :
+           selectedRole === "frontdesk" ? "📞 Front Desk Dashboard" :
+           selectedRole === "attorney" && selectedName ? `⚖️ ${selectedName}'s Dashboard` :
+           selectedAttorney ? `${selectedName}'s Dashboard` : "Firm Dashboard"}
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <label style={{ fontSize: 13, color: TEXT_DIM }}>View:</label>
           <select
-            value={selectedAttorney}
-            onChange={(e) => setSelectedAttorney(e.target.value)}
+            value={selectedRole}
+            onChange={(e) => { setSelectedRole(e.target.value); if (e.target.value !== "attorney") setSelectedAttorney(""); }}
             style={{
               background: CARD_BG, color: TEXT, border: CARD_BORDER, borderRadius: 8,
-              padding: "8px 12px", fontSize: 14, cursor: "pointer", minWidth: 180,
+              padding: "8px 12px", fontSize: 14, cursor: "pointer", minWidth: 160,
             }}
           >
-            <option value="">🏢 Firm Wide</option>
-            {attorneys.map(a => (
-              <option key={a.id} value={a.id}>👤 {a.name}</option>
-            ))}
+            <option value="">🏢 Firm Overview</option>
+            <option value="attorney">⚖️ Attorney</option>
+            <option value="paralegal">📋 Paralegal</option>
+            <option value="frontdesk">📞 Front Desk</option>
           </select>
+          {(selectedRole === "attorney" || !selectedRole) && (
+            <select
+              value={selectedAttorney}
+              onChange={(e) => { setSelectedAttorney(e.target.value); if (e.target.value && !selectedRole) setSelectedRole("attorney"); }}
+              style={{
+                background: CARD_BG, color: TEXT, border: CARD_BORDER, borderRadius: 8,
+                padding: "8px 12px", fontSize: 14, cursor: "pointer", minWidth: 180,
+              }}
+            >
+              <option value="">All Attorneys</option>
+              {attorneys.map(a => (
+                <option key={a.id} value={a.id}>👤 {a.name}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
-      {loading || !data ? <Skeleton /> : <Grid data={data} onNavigate={onNavigate} isAttorneyView={!!selectedAttorney} />}
+      {loading || !data ? <Skeleton /> : (
+        <>
+          {data.role_data?.role === "paralegal" && <ParalegalDashboard roleData={data.role_data} onNavigate={onNavigate} />}
+          {data.role_data?.role === "frontdesk" && <FrontDeskDashboard roleData={data.role_data} onNavigate={onNavigate} />}
+          {data.role_data?.role === "attorney" && <AttorneyDashboard roleData={data.role_data} data={data} onNavigate={onNavigate} />}
+          <Grid data={data} onNavigate={onNavigate} isAttorneyView={!!selectedAttorney} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function ParalegalDashboard({ roleData, onNavigate }) {
+  if (!roleData) return null;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 24 }}>
+      <Card title="📋 My Tasks Today">
+        <div style={{ fontSize: 48, fontWeight: 700, color: GOLD, lineHeight: 1 }}>{roleData.due_today?.length || 0}</div>
+        <div style={{ fontSize: 12, color: TEXT_DIM, marginTop: 4 }}>{roleData.total_pending} total pending</div>
+        <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 12 }}>
+          {(roleData.due_today || []).map(t => (
+            <div key={t.id} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13 }}>
+              <div style={{ color: TEXT, fontWeight: 500 }}>{t.title}</div>
+              <div style={{ fontSize: 11, color: TEXT_DIM }}>{t.case?.client_name} · {t.case?.status}</div>
+            </div>
+          ))}
+          {roleData.due_today?.length === 0 && <div style={{ color: GREEN, fontSize: 13 }}>✅ Nothing due today!</div>}
+        </div>
+      </Card>
+      <Card title="🔴 Overdue Tasks">
+        <div style={{ fontSize: 48, fontWeight: 700, color: roleData.overdue_tasks?.length > 0 ? RED : GREEN, lineHeight: 1 }}>
+          {roleData.overdue_tasks?.length || 0}
+        </div>
+        <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 12 }}>
+          {(roleData.overdue_tasks || []).slice(0, 8).map(t => (
+            <div key={t.id} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13 }}>
+              <div style={{ color: RED, fontWeight: 500 }}>{t.title}</div>
+              <div style={{ fontSize: 11, color: TEXT_DIM }}>{t.case?.client_name} · Due: {t.due_date}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card title="📂 Cases I'm Working On">
+        <div style={{ fontSize: 48, fontWeight: 700, color: GOLD, lineHeight: 1 }}>{roleData.cases_working_on || 0}</div>
+        <div style={{ fontSize: 12, color: TEXT_DIM, marginTop: 8 }}>cases with tasks assigned to you</div>
+      </Card>
+    </div>
+  );
+}
+
+function AttorneyDashboard({ roleData, data, onNavigate }) {
+  if (!roleData) return null;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 24 }}>
+      <Card title="⚖️ My Caseload">
+        <div style={{ fontSize: 48, fontWeight: 700, color: GOLD, lineHeight: 1 }}>{roleData.caseload || 0}</div>
+        <div style={{ fontSize: 12, color: TEXT_DIM, marginTop: 4 }}>active cases · {roleData.total_cases || 0} total</div>
+      </Card>
+      <Card title="💰 My KPIs (YTD)">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 4 }}>
+          <div>
+            <div style={{ fontSize: 11, color: TEXT_DIM, textTransform: "uppercase" }}>Recovery</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: GREEN }}>{fmt$(roleData.recovery_ytd)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: TEXT_DIM, textTransform: "uppercase" }}>Fees</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: GOLD }}>{fmt$(roleData.fees_ytd)}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 12, color: TEXT_DIM, marginTop: 8 }}>{roleData.settlements_ytd || 0} settlements this year</div>
+      </Card>
+      <Card title="📅 Upcoming Deadlines">
+        <div style={{ maxHeight: 200, overflowY: "auto" }}>
+          {(roleData.upcoming_deadlines || []).slice(0, 8).map((d, i) => {
+            const daysLeft = Math.ceil((new Date(d.due_date) - new Date()) / 86400000);
+            return (
+              <div key={d.id || i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: TEXT }}>{d.title}</span>
+                <span style={{ color: daysLeft <= 7 ? RED : daysLeft <= 14 ? GOLD : TEXT_DIM, fontWeight: 600 }}>{daysLeft}d</span>
+              </div>
+            );
+          })}
+          {(!roleData.upcoming_deadlines || roleData.upcoming_deadlines.length === 0) && (
+            <div style={{ color: GREEN, fontSize: 13 }}>✅ No upcoming deadlines</div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function FrontDeskDashboard({ roleData, onNavigate }) {
+  if (!roleData) return null;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 24 }}>
+      <Card title="📞 Today's Calls">
+        <div style={{ fontSize: 48, fontWeight: 700, color: GOLD, lineHeight: 1 }}>{roleData.calls_today_count || 0}</div>
+        <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 12 }}>
+          {(roleData.calls_today || []).slice(0, 8).map((c, i) => (
+            <div key={c.id || i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13 }}>
+              <div style={{ color: TEXT }}>{c.caller_name || c.from_number || "Unknown"}</div>
+              <div style={{ fontSize: 11, color: TEXT_DIM }}>{c.direction === "inbound" ? "📥" : "📤"} {c.call_date ? new Date(c.call_date).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}) : ""}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card title="🆕 New Intakes Today">
+        <div style={{ fontSize: 48, fontWeight: 700, color: GREEN, lineHeight: 1 }}>{roleData.new_intakes_count || 0}</div>
+        <div style={{ fontSize: 12, color: TEXT_DIM, marginTop: 4 }}>{roleData.recent_intakes?.length || 0} this month</div>
+        <div style={{ maxHeight: 180, overflowY: "auto", marginTop: 12 }}>
+          {(roleData.recent_intakes || []).slice(0, 6).map(c => (
+            <a key={c.id} href={`/cases/${c.id}`} style={{ display: "block", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: TEXT, textDecoration: "none" }}>
+              {c.client_name} <span style={{ color: TEXT_DIM, fontSize: 11 }}>({c.date_opened})</span>
+            </a>
+          ))}
+        </div>
+      </Card>
+      <Card title="📋 Quick Actions">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {[
+            { label: "➕ New Intake", action: () => onNavigate && onNavigate("cases", { newCase: true }) },
+            { label: "📞 Log a Call", action: () => {} },
+            { label: "📧 Messages to Return", action: () => {} },
+          ].map((item, i) => (
+            <button key={i} onClick={item.action} style={{
+              padding: "10px 16px", background: "rgba(235,176,3,0.08)", border: "1px solid rgba(235,176,3,0.2)",
+              borderRadius: 8, color: GOLD, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left",
+            }}>{item.label}</button>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }

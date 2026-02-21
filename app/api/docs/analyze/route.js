@@ -1,4 +1,5 @@
 import { supabaseAdmin, supabase } from "../../../../lib/supabase";
+import { aiAnalyzeDocument } from "../../../../lib/ai-analyze-document";
 import { NextResponse } from "next/server";
 
 const db = supabaseAdmin || supabase;
@@ -503,13 +504,36 @@ export async function POST(request) {
 
     const { docType, summary, metadata, extractedText } = analyzeText(content);
 
+    // Run AI analysis in parallel (non-blocking, enhances results)
+    let aiResult = null;
+    try {
+      aiResult = await aiAnalyzeDocument(content, docRecord?.filename || "");
+      if (aiResult && !aiResult.error) {
+        // Merge AI results — AI category overrides pattern if confident
+        if (aiResult.category && aiResult.confidence > 0.7) {
+          metadata.ai_category = aiResult.category;
+          metadata.ai_confidence = aiResult.confidence;
+        }
+        if (aiResult.summary) metadata.ai_summary = aiResult.summary;
+        if (aiResult.key_findings) metadata.ai_key_findings = aiResult.key_findings;
+        if (aiResult.key_dates?.length) metadata.ai_dates = aiResult.key_dates;
+        if (aiResult.amounts?.length) metadata.ai_amounts = aiResult.amounts;
+        metadata.ai_powered = true;
+      }
+    } catch (aiErr) {
+      console.log("AI analysis skipped:", aiErr.message);
+    }
+
     // Store analysis back to document record
     if (document_id) {
       const updatePayload = {
         ai_status: "completed",
         ai_extracted_text: extractedText.slice(0, 50000), // Cap at 50k chars
-        ai_summary: summary,
+        ai_summary: aiResult?.summary || summary,
         ai_metadata: metadata,
+        ai_category: aiResult?.category || null,
+        extracted_text: extractedText.slice(0, 50000),
+        analyzed_at: new Date().toISOString(),
         analysis: metadata, // Keep backward compat
         doc_type: docType,
         updated_at: new Date().toISOString(),

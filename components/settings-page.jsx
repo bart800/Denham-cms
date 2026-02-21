@@ -256,8 +256,8 @@ export default function SettingsPage() {
         <div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
             {[
-              { label: "Total Cases", value: data?.case_count ?? "â€"", color: GOLD },
-              { label: "Total Documents", value: data?.document_count ?? "â€"", color: GREEN },
+              { label: "Total Cases", value: data?.case_count ?? "—", color: GOLD },
+              { label: "Total Documents", value: data?.document_count ?? "—", color: GREEN },
               { label: "Storage", value: formatBytes(data?.storage_bytes), color: "#4a90d9" },
             ].map((s) => (
               <div key={s.label} style={{ ...cardStyle, textAlign: "center" }}>

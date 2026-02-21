@@ -39,6 +39,8 @@ export default function CaseDocumentsTab({ caseId }) {
   const [selected, setSelected] = useState(new Set());
   const [bulkCategory, setBulkCategory] = useState("");
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [analyzingAll, setAnalyzingAll] = useState(false);
+  const [analyzeAllResult, setAnalyzeAllResult] = useState(null);
 
   const toggleSelect = (id) => {
     setSelected(prev => {
@@ -90,10 +92,27 @@ export default function CaseDocumentsTab({ caseId }) {
       await fetch("/api/docs/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentId: doc.id, storagePath: doc.storage_path }),
+        body: JSON.stringify({ document_id: doc.id }),
       });
+      fetchDocs();
     } catch (e) { console.error(e); }
     setAnalyzing(null);
+  };
+
+  const handleAnalyzeAll = async () => {
+    setAnalyzingAll(true);
+    setAnalyzeAllResult(null);
+    try {
+      const res = await fetch("/api/docs/analyze-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ case_id: caseId }),
+      });
+      const data = await res.json();
+      setAnalyzeAllResult(data);
+      fetchDocs();
+    } catch (e) { console.error(e); }
+    setAnalyzingAll(false);
   };
 
   // Group docs by category
@@ -121,6 +140,11 @@ export default function CaseDocumentsTab({ caseId }) {
             fontWeight: !activeCategory ? 700 : 400, fontSize: 13,
           }}
         >All ({total})</button>
+        <button onClick={handleAnalyzeAll} disabled={analyzingAll} style={{
+          padding: "6px 14px", borderRadius: 6, border: "1px solid " + GREEN, cursor: "pointer",
+          background: analyzingAll ? "#444" : GREEN, color: "#fff",
+          fontWeight: 600, fontSize: 13, marginLeft: "auto",
+        }}>{analyzingAll ? "⏳ Analyzing..." : "🤖 Analyze All"}</button>
         {ALL_CATEGORIES.map((cat) => (
           <button key={cat} onClick={() => setActiveCategory(cat)} style={{
             padding: "6px 14px", borderRadius: 6, border: "1px solid " + BORDER, cursor: "pointer",
@@ -155,6 +179,24 @@ export default function CaseDocumentsTab({ caseId }) {
         </div>
       )}
 
+      {/* Analyze All Result */}
+      {analyzeAllResult && (
+        <div style={{
+          padding: "10px 14px", marginBottom: 12, borderRadius: 8,
+          background: analyzeAllResult.failed > 0 ? "rgba(204,51,51,0.1)" : "rgba(56,111,74,0.15)",
+          border: `1px solid ${analyzeAllResult.failed > 0 ? "#cc3333" : GREEN}`,
+          fontSize: 13, color: TEXT,
+        }}>
+          🤖 Batch analysis complete: <strong>{analyzeAllResult.analyzed}</strong> analyzed, 
+          <strong>{analyzeAllResult.failed}</strong> failed, 
+          <strong>{analyzeAllResult.skipped}</strong> skipped (unsupported type)
+          <button onClick={() => setAnalyzeAllResult(null)} style={{
+            marginLeft: 12, background: "transparent", border: "none", color: "#888",
+            cursor: "pointer", fontSize: 12,
+          }}>✕</button>
+        </div>
+      )}
+
       {loading ? (
         <div style={{ textAlign: "center", padding: 40, color: GOLD }}>Loading documents...</div>
       ) : docs.length === 0 ? (
@@ -183,6 +225,18 @@ export default function CaseDocumentsTab({ caseId }) {
                     padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
                     background: GREEN, color: "#fff",
                   }}>{doc.category}</span>
+                  {doc.ai_category && (
+                    <span style={{
+                      padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 600,
+                      background: "#4488cc", color: "#fff",
+                    }} title="AI-detected category">🤖 {doc.ai_category}</span>
+                  )}
+                  {doc.ai_status === "completed" && !doc.ai_category && (
+                    <span style={{
+                      padding: "2px 6px", borderRadius: 4, fontSize: 10,
+                      background: "#333", color: "#888",
+                    }}>✓ Analyzed</span>
+                  )}
                   {doc.signedUrl && (
                     <a href={doc.signedUrl} target="_blank" rel="noopener noreferrer" style={{
                       padding: "4px 10px", borderRadius: 4, background: NAVY, color: GOLD,
