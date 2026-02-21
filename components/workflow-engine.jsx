@@ -142,17 +142,25 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
     }
   };
 
-  // Toggle task completion
+  // Toggle task completion (with dependency check via API)
   const toggleTask = async (task) => {
     const newStatus = task.status === "completed" ? "pending" : "completed";
     try {
-      const { supabase } = await import("../lib/supabase");
-      await supabase.from("case_tasks").update({
-        status: newStatus,
-        completed_at: newStatus === "completed" ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      }).eq("id", task.id);
-      // Update local state immediately
+      const res = await fetch(`/api/cases/${caseId}/tasks`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: task.id, status: newStatus }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        if (res.status === 422 && json.blocked_by) {
+          setError(`🔒 ${json.message}`);
+          setTimeout(() => setError(null), 5000);
+          return;
+        }
+        throw new Error(json.error || "Failed to update task");
+      }
+      // Update local state
       setTasks(prev => prev.map(t =>
         t.id === task.id ? { ...t, status: newStatus, completed_at: newStatus === "completed" ? new Date().toISOString() : null } : t
       ));
@@ -255,10 +263,22 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
     return warnings;
   }, [tasksByPhase, caseStatus]);
 
+  // Dependency helpers
+  const getBlockingTasks = useCallback((task) => {
+    if (!task.depends_on_tasks?.length) return [];
+    return task.depends_on_tasks
+      .map(depId => tasks.find(t => t.id === depId))
+      .filter(t => t && t.status !== "completed");
+  }, [tasks]);
+
+  const isBlocked = useCallback((task) => {
+    return getBlockingTasks(task).length > 0;
+  }, [getBlockingTasks]);
+
   // "What's next" — first incomplete non-blocked task
   const whatsNext = useMemo(() => {
-    return activeTasks.find(t => t.status !== "completed");
-  }, [activeTasks]);
+    return activeTasks.find(t => t.status !== "completed" && !isBlocked(t));
+  }, [activeTasks, isBlocked]);
 
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: B.txtM }}>Loading workflow...</div>;
 
@@ -405,13 +425,16 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
             const linkedDocs = getLinkedDocs(task.title);
             const role = task.role || "Paralegal";
             const rc = ROLE_COLORS[role] || ROLE_COLORS["Paralegal"];
+            const blocked = !done && isBlocked(task);
+            const blockers = blocked ? getBlockingTasks(task) : [];
 
             return (
               <div key={task.id} style={{
                 background: B.card,
-                border: `1px solid ${isGate && !done ? B.gold + "40" : overdue ? B.danger + "50" : B.bdr}`,
+                border: `1px solid ${blocked ? "#55556a40" : isGate && !done ? B.gold + "40" : overdue ? B.danger + "50" : B.bdr}`,
                 borderRadius: 8, overflow: "hidden",
-                opacity: done ? 0.55 : 1, transition: "all 0.15s ease",
+                opacity: done ? 0.55 : blocked ? 0.5 : 1, transition: "all 0.15s ease",
+                position: "relative",
               }}>
                 <div style={{
                   padding: "10px 14px", display: "flex", alignItems: "center", gap: 10,
@@ -419,10 +442,11 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
                 }} onClick={() => setExpandedTask(expanded ? null : task.id)}>
                   {/* Checkbox */}
                   <span
-                    onClick={(e) => { e.stopPropagation(); toggleTask(task); }}
-                    style={{ cursor: "pointer", fontSize: 16, flexShrink: 0, userSelect: "none" }}
+                    onClick={(e) => { e.stopPropagation(); if (!blocked) toggleTask(task); }}
+                    title={blocked ? `Blocked by: ${blockers.map(b => b.title).join(", ")}` : ""}
+                    style={{ cursor: blocked ? "not-allowed" : "pointer", fontSize: 16, flexShrink: 0, userSelect: "none" }}
                   >
-                    {done ? "✅" : "⬜"}
+                    {done ? "✅" : blocked ? "🔒" : "⬜"}
                   </span>
 
                   {/* Order number */}
@@ -439,7 +463,13 @@ export default function WorkflowEngine({ caseId, caseStatus, caseType }) {
                     }}>
                       {task.title}
                       {isGate && <span style={{ fontSize: 9, background: `${B.gold}20`, color: B.gold, padding: "1px 6px", borderRadius: 6, fontWeight: 700 }}>GATE</span>}
+                      {blocked && <span title={`Requires: ${blockers.map(b => b.title).join(", ")}`} style={{ fontSize: 9, background: `${B.txtD}20`, color: B.txtD, padding: "1px 6px", borderRadius: 6, fontWeight: 700 }}>BLOCKED</span>}
                     </div>
+                    {blocked && (
+                      <div style={{ fontSize: 10, color: B.txtD, marginTop: 2 }}>
+                        🔒 Requires: {blockers.map(b => b.title).join(" → ")}
+                      </div>
+                    )}
                   </div>
 
                   {/* Badges */}

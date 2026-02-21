@@ -6,21 +6,75 @@ const NAVY = "#000066";
 const GOLD = "#ebb003";
 const GREEN = "#386f4a";
 
-export default function CaseEmails({ caseId }) {
+const EMAIL_TEMPLATES = {
+  status_update: {
+    label: "📋 Status Update",
+    subject: "Case Status Update — {{REF}}",
+    body: `<p>Dear {{CLIENT}},</p>
+<p>I wanted to provide you with an update on the status of your case <strong>{{REF}}</strong>.</p>
+<p>[Update details here]</p>
+<p>Please don't hesitate to reach out if you have any questions.</p>
+<p>Best regards,<br/>{{SENDER}}<br/>Denham Law</p>`,
+  },
+  document_request: {
+    label: "📎 Document Request",
+    subject: "Documents Needed — {{REF}}",
+    body: `<p>Dear {{CLIENT}},</p>
+<p>In order to continue processing your case <strong>{{REF}}</strong>, we need the following documents:</p>
+<ul>
+<li>[Document 1]</li>
+<li>[Document 2]</li>
+<li>[Document 3]</li>
+</ul>
+<p>Please provide these at your earliest convenience. You can reply to this email with the documents attached, or upload them through the client portal.</p>
+<p>Thank you,<br/>{{SENDER}}<br/>Denham Law</p>`,
+  },
+  initial_contact: {
+    label: "👋 Initial Contact",
+    subject: "Welcome — {{REF}}",
+    body: `<p>Dear {{CLIENT}},</p>
+<p>Thank you for choosing Denham Law to represent you. This email confirms that we have opened your case file under reference <strong>{{REF}}</strong>.</p>
+<p>Next steps:</p>
+<ol>
+<li>We will review the details of your case thoroughly</li>
+<li>Our team will gather necessary documentation</li>
+<li>We will schedule a follow-up call to discuss strategy</li>
+</ol>
+<p>If you have any questions in the meantime, please don't hesitate to contact us.</p>
+<p>Welcome aboard,<br/>{{SENDER}}<br/>Denham Law</p>`,
+  },
+  settlement_followup: {
+    label: "💰 Settlement Follow-Up",
+    subject: "Settlement Offer Follow-Up — {{REF}}",
+    body: `<p>Dear {{RECIPIENT}},</p>
+<p>I am writing to follow up regarding the settlement offer on case <strong>{{REF}}</strong>.</p>
+<p>As discussed, [settlement details]. We would appreciate a response by [date].</p>
+<p>Please let us know if you need any additional information to facilitate this process.</p>
+<p>Regards,<br/>{{SENDER}}<br/>Denham Law</p>`,
+  },
+};
+
+export default function CaseEmails({ caseId, caseRef, clientName, clientEmail, adjusterEmail, user }) {
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showCompose, setShowCompose] = useState(false);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
+
+  // Log form (existing functionality)
   const [form, setForm] = useState({
-    subject: "",
-    from_address: "",
-    to_address: "",
-    cc_address: "",
-    body_text: "",
-    direction: "inbound",
+    subject: "", from_address: "", to_address: "", cc_address: "",
+    body_text: "", direction: "inbound",
     received_at: new Date().toISOString().slice(0, 16),
+  });
+
+  // Compose form (new send functionality)
+  const [compose, setCompose] = useState({
+    to: "", cc: "", bcc: "", subject: "", body: "",
   });
 
   const fetchEmails = useCallback(async () => {
@@ -38,6 +92,74 @@ export default function CaseEmails({ caseId }) {
   }, [caseId, page]);
 
   useEffect(() => { fetchEmails(); }, [fetchEmails]);
+
+  const ref = caseRef || "";
+
+  const applyTemplate = (key) => {
+    const tmpl = EMAIL_TEMPLATES[key];
+    if (!tmpl) return;
+    const sub = tmpl.subject.replace(/\{\{REF\}\}/g, ref);
+    const bod = tmpl.body
+      .replace(/\{\{REF\}\}/g, ref)
+      .replace(/\{\{CLIENT\}\}/g, clientName || "[Client]")
+      .replace(/\{\{SENDER\}\}/g, user?.name || "Team")
+      .replace(/\{\{RECIPIENT\}\}/g, "[Recipient]");
+    setCompose(c => ({ ...c, subject: sub, body: bod }));
+  };
+
+  const openCompose = (preset = {}) => {
+    setCompose({
+      to: preset.to || clientEmail || "",
+      cc: preset.cc || "",
+      bcc: preset.bcc || "",
+      subject: preset.subject || (ref ? `Re: ${ref}` : ""),
+      body: preset.body || "",
+    });
+    setShowCompose(true);
+    setSendResult(null);
+  };
+
+  const openReply = (email) => {
+    const subj = email.subject?.startsWith("Re:") ? email.subject : `Re: ${email.subject || ""}`;
+    const quote = `<br/><br/><hr/><p><strong>On ${formatDate(email.received_at)}, ${email.from_address} wrote:</strong></p><blockquote style="border-left:3px solid #666;padding-left:12px;color:#999;">${email.body_html || email.body_text || ""}</blockquote>`;
+    openCompose({
+      to: email.direction === "inbound" ? email.from_address : email.to_address,
+      subject: subj,
+      body: quote,
+    });
+  };
+
+  const handleSend = async () => {
+    if (!compose.to || !compose.subject) {
+      setSendResult({ error: "To and Subject are required" });
+      return;
+    }
+    setSending(true);
+    setSendResult(null);
+    try {
+      const res = await fetch(`/api/cases/${caseId}/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: compose.to,
+          cc: compose.cc,
+          bcc: compose.bcc,
+          subject: compose.subject,
+          body: compose.body,
+          userId: user?.id,
+          userName: user?.name,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send");
+      setSendResult({ success: `Email sent via ${data.sentVia}` });
+      setTimeout(() => { setShowCompose(false); fetchEmails(); }, 1500);
+    } catch (err) {
+      setSendResult({ error: err.message });
+    } finally {
+      setSending(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,12 +180,8 @@ export default function CaseEmails({ caseId }) {
 
   const directionBadge = (dir) => (
     <span style={{
-      display: "inline-block",
-      padding: "2px 8px",
-      borderRadius: "4px",
-      fontSize: "11px",
-      fontWeight: 600,
-      color: "#fff",
+      display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+      fontSize: "11px", fontWeight: 600, color: "#fff",
       backgroundColor: dir === "inbound" ? "#2563eb" : GOLD,
     }}>
       {dir === "inbound" ? "↓ IN" : "↑ OUT"}
@@ -76,36 +194,117 @@ export default function CaseEmails({ caseId }) {
   };
 
   const inputStyle = {
-    width: "100%",
-    padding: "8px 10px",
-    borderRadius: "6px",
-    border: "1px solid #333",
-    backgroundColor: "#1a1a2e",
-    color: "#e0e0e0",
-    fontSize: "13px",
+    width: "100%", padding: "8px 10px", borderRadius: "6px",
+    border: "1px solid #333", backgroundColor: "#1a1a2e",
+    color: "#e0e0e0", fontSize: "13px",
   };
+
+  const btnStyle = (bg) => ({
+    padding: "6px 14px", borderRadius: "6px", border: "none",
+    backgroundColor: bg, color: "#fff", fontSize: "13px",
+    fontWeight: 600, cursor: "pointer",
+  });
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: 8 }}>
         <h3 style={{ margin: 0, color: "#e0e0e0", fontSize: "16px" }}>📧 Emails</h3>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          style={{
-            padding: "6px 14px",
-            borderRadius: "6px",
-            border: "none",
-            backgroundColor: GREEN,
-            color: "#fff",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          {showForm ? "Cancel" : "+ Log Email"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => openCompose()} style={btnStyle(NAVY)}>✉️ New Email</button>
+          <button onClick={() => setShowForm(!showForm)} style={btnStyle(GREEN)}>
+            {showForm ? "Cancel" : "+ Log Email"}
+          </button>
+        </div>
       </div>
 
+      {/* Compose Modal */}
+      {showCompose && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={(e) => e.target === e.currentTarget && setShowCompose(false)}>
+          <div style={{ background: "#111128", borderRadius: 12, padding: 24, width: "90%", maxWidth: 700, maxHeight: "90vh", overflow: "auto", border: `1px solid ${NAVY}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ margin: 0, color: GOLD, fontSize: 16 }}>✉️ Compose Email</h3>
+              <button onClick={() => setShowCompose(false)} style={{ background: "none", border: "none", color: "#888", fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+
+            {/* Template Selector */}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 11, color: "#999", marginBottom: 4, display: "block" }}>Quick Template</label>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {Object.entries(EMAIL_TEMPLATES).map(([key, t]) => (
+                  <button key={key} onClick={() => applyTemplate(key)}
+                    style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #333", background: "#1a1a2e", color: "#ccc", fontSize: 12, cursor: "pointer" }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick recipients */}
+            <div style={{ marginBottom: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {clientEmail && (
+                <button onClick={() => setCompose(c => ({ ...c, to: clientEmail }))}
+                  style={{ padding: "3px 8px", borderRadius: 4, border: "1px solid #333", background: "#0a1a0a", color: GREEN, fontSize: 11, cursor: "pointer" }}>
+                  👤 Client: {clientEmail}
+                </button>
+              )}
+              {adjusterEmail && (
+                <button onClick={() => setCompose(c => ({ ...c, to: adjusterEmail }))}
+                  style={{ padding: "3px 8px", borderRadius: 4, border: "1px solid #333", background: "#1a1a0a", color: GOLD, fontSize: 11, cursor: "pointer" }}>
+                  🏢 Adjuster: {adjusterEmail}
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: "grid", gap: 10, marginBottom: 10 }}>
+              <div>
+                <label style={{ fontSize: 11, color: "#999", display: "block", marginBottom: 2 }}>To *</label>
+                <input style={inputStyle} value={compose.to} onChange={e => setCompose(c => ({ ...c, to: e.target.value }))} placeholder="recipient@example.com" />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: "#999", display: "block", marginBottom: 2 }}>CC</label>
+                  <input style={inputStyle} value={compose.cc} onChange={e => setCompose(c => ({ ...c, cc: e.target.value }))} placeholder="cc@example.com" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: "#999", display: "block", marginBottom: 2 }}>BCC</label>
+                  <input style={inputStyle} value={compose.bcc} onChange={e => setCompose(c => ({ ...c, bcc: e.target.value }))} placeholder="bcc@example.com" />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: "#999", display: "block", marginBottom: 2 }}>Subject *</label>
+                <input style={inputStyle} value={compose.subject} onChange={e => setCompose(c => ({ ...c, subject: e.target.value }))} placeholder="Email subject" />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: "#999", display: "block", marginBottom: 2 }}>Body</label>
+                <textarea style={{ ...inputStyle, minHeight: 200, resize: "vertical", lineHeight: 1.5 }}
+                  value={compose.body} onChange={e => setCompose(c => ({ ...c, body: e.target.value }))}
+                  placeholder="Write your email..." />
+                <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>HTML supported. Templates auto-fill above.</div>
+              </div>
+            </div>
+
+            {sendResult && (
+              <div style={{ padding: "8px 12px", borderRadius: 6, marginBottom: 10,
+                background: sendResult.success ? "#0a2a0a" : "#2a0a0a",
+                color: sendResult.success ? GREEN : "#e74c3c",
+                border: `1px solid ${sendResult.success ? GREEN : "#e74c3c"}40`,
+                fontSize: 13 }}>
+                {sendResult.success || sendResult.error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowCompose(false)} style={btnStyle("#333")}>Cancel</button>
+              <button onClick={handleSend} disabled={sending} style={{ ...btnStyle(NAVY), opacity: sending ? 0.6 : 1 }}>
+                {sending ? "Sending..." : "📤 Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Log form (existing) */}
       {showForm && (
         <form onSubmit={handleSubmit} style={{ backgroundColor: "#111128", borderRadius: "8px", padding: "16px", marginBottom: "16px", border: `1px solid ${NAVY}` }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
@@ -179,6 +378,11 @@ export default function CaseEmails({ caseId }) {
                     ) : (
                       email.body_text || "(no body)"
                     )}
+                  </div>
+                  <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                    <button onClick={() => openReply(email)} style={btnStyle(NAVY)}>↩️ Reply</button>
+                    <button onClick={() => openCompose({ to: "", subject: `Fwd: ${email.subject || ""}`, body: `<br/><br/><hr/><p><strong>Forwarded message from ${email.from_address}:</strong></p>${email.body_html || email.body_text || ""}` })}
+                      style={btnStyle("#333")}>➡️ Forward</button>
                   </div>
                 </div>
               )}

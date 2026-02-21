@@ -9,11 +9,12 @@ export async function GET(request, { params }) {
   const type = searchParams.get("type"); // email, call, note, message, all
 
   try {
-    const [emailsRes, callsRes, notesRes, messagesRes] = await Promise.all([
+    const [emailsRes, callsRes, notesRes, messagesRes, smsRes] = await Promise.all([
       db.from("case_emails").select("id, subject, from_address, to_address, direction, received_at, body_text, body_html").eq("case_id", id).order("received_at", { ascending: false }).limit(200),
       db.from("case_calls").select("id, direction, category, caller_name, external_number, duration_seconds, started_at, ai_summary, transcript").eq("case_id", id).order("started_at", { ascending: false }).limit(200),
       db.from("activity_log").select("*").eq("case_id", id).eq("type", "note").order("date", { ascending: false }).limit(200),
       db.from("portal_messages").select("*").eq("case_id", id).order("created_at", { ascending: false }).limit(200),
+      db.from("case_sms").select("*").eq("case_id", id).order("created_at", { ascending: false }).limit(200),
     ]);
 
     const items = [];
@@ -61,6 +62,17 @@ export async function GET(request, { params }) {
           title: "Portal Message",
           subtitle: m.sender_name || m.sender_type || "Client",
           content: m.content || m.message || "", icon: "💬",
+        });
+      }
+    }
+
+    if (!type || type === "all" || type === "sms") {
+      for (const s of smsRes.data || []) {
+        items.push({
+          id: `sms-${s.id}`, type: "sms", date: s.created_at,
+          title: `${s.direction === "inbound" ? "Incoming" : "Outgoing"} SMS`,
+          subtitle: s.phone_number || "",
+          direction: s.direction, content: s.message || "", icon: "📱",
         });
       }
     }

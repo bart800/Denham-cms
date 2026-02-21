@@ -132,6 +132,8 @@ export default function CaseIntakeForm({ onClose, onCreated, onNavigateToCase, t
     jurisdiction: "",
     attorney_id: "",
     support_id: "",
+    referral_source: "",
+    referral_source_detail: "",
   });
 
   useEffect(() => {
@@ -479,6 +481,7 @@ export default function CaseIntakeForm({ onClose, onCreated, onNavigateToCase, t
                   adjuster_name: "", adjuster_phone: "", adjuster_email: "",
                   date_reported: "", date_denied: "", jurisdiction: "",
                   attorney_id: "", support_id: "",
+                  referral_source: "", referral_source_detail: "",
                 });
                 setFiles([]);
               }}
@@ -581,6 +584,27 @@ export default function CaseIntakeForm({ onClose, onCreated, onNavigateToCase, t
                   })}
                 </div>
               </div>
+            </div>
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 14, marginTop: 6 }}>
+              <div style={{ fontSize: 12, color: TEXT_D, marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Referral Source (Optional)
+              </div>
+              {renderField("How did they find us?", "referral_source", {
+                type: "select",
+                options: [
+                  { value: "Attorney Referral", label: "Attorney Referral" },
+                  { value: "Google", label: "Google" },
+                  { value: "Past Client", label: "Past Client" },
+                  { value: "Social Media", label: "Social Media" },
+                  { value: "Website", label: "Website" },
+                  { value: "Word of Mouth", label: "Word of Mouth" },
+                  { value: "Insurance Agent", label: "Insurance Agent" },
+                  { value: "Community Event", label: "Community Event" },
+                  { value: "Bar Association", label: "Bar Association" },
+                  { value: "Other", label: "Other" },
+                ],
+              })}
+              {renderField("Referral Detail", "referral_source_detail", { placeholder: "Referring attorney name, specific source, etc." })}
             </div>
           </>
         );
@@ -761,6 +785,8 @@ export default function CaseIntakeForm({ onClose, onCreated, onNavigateToCase, t
               <ReviewRow label="Adjuster Email" value={form.adjuster_email} />
               <ReviewRow label="Attorney" value={attorneys.find((a) => a.id == form.attorney_id)?.name} />
               <ReviewRow label="Support" value={teamMembers.find((m) => m.id == form.support_id)?.name} />
+              <ReviewRow label="Referral Source" value={form.referral_source} />
+              <ReviewRow label="Referral Detail" value={form.referral_source_detail} />
             </ReviewSection>
 
             {/* Documents */}

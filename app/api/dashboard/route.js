@@ -10,6 +10,8 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const filterAttorneyId = searchParams.get("attorney_id") || null;
+    const role = searchParams.get("role") || null;
+    const memberId = searchParams.get("member_id") || null;
     const memberRole = searchParams.get("role") || null;
     const canViewFinancials = hasPermission(memberRole, "viewFinancials");
     const now = new Date();

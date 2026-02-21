@@ -1985,30 +1985,83 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
 
       {/* Batch Actions Bar */}
       {selected.size > 0 && (
-        <div style={{ ...S.card, padding: "10px 16px", marginBottom: 12, borderColor: `${B.gold}40`, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: B.gold }}>{selected.size} selected</span>
-          <select value={batchAction || ""} onChange={e => { setBatchAction(e.target.value || null); setBatchVal(""); }} style={{ ...S.input, width: 160 }}>
-            <option value="">Bulk action...</option>
-            <option value="status">Change Status</option>
-            <option value="attorney">Assign Attorney</option>
-          </select>
-          {batchAction === "status" && (
-            <select value={batchVal} onChange={e => setBatchVal(e.target.value)} style={{ ...S.input, width: 200 }}>
-              <option value="">Select status...</option>
-              {CSTATS.map(x => <option key={x} value={x}>{x}</option>)}
+        <div style={{ ...S.card, padding: "10px 16px", marginBottom: 12, borderColor: `${B.gold}40` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: B.gold }}>{selected.size} selected</span>
+            <select value={batchAction || ""} onChange={e => { setBatchAction(e.target.value || null); setBatchVal(""); setBatchResults(null); }} style={{ ...S.input, width: 160 }}>
+              <option value="">Bulk action...</option>
+              <option value="status">Change Phase</option>
+              <option value="attorney">Assign Attorney</option>
+              <option value="email">Send Email</option>
             </select>
+            {batchAction === "status" && (
+              <select value={batchVal} onChange={e => setBatchVal(e.target.value)} style={{ ...S.input, width: 200 }}>
+                <option value="">Select status...</option>
+                {CSTATS.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            )}
+            {batchAction === "attorney" && (
+              <select value={batchVal} onChange={e => setBatchVal(e.target.value)} style={{ ...S.input, width: 200 }}>
+                <option value="">Select attorney...</option>
+                {(team || []).filter(m => m.role === "Attorney" || m.title?.includes("Attorney")).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {(team || []).filter(m => m.role !== "Attorney" && !m.title?.includes("Attorney")).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            )}
+            {batchAction && (batchAction === "email" || batchVal) && (
+              <button onClick={() => setBatchConfirm(true)} disabled={batchRunning || (batchAction === "email" && (!batchEmailSubject || !batchEmailBody))}
+                style={{ ...S.btn, fontSize: 12, padding: "6px 14px", opacity: batchRunning ? 0.5 : 1 }}>
+                {batchRunning ? "Running..." : `Apply to ${selected.size} cases`}
+              </button>
+            )}
+            <button onClick={() => { setSelected(new Set()); setBatchAction(null); setBatchResults(null); }} style={{ ...S.btnO, fontSize: 11, padding: "6px 10px" }}>Cancel</button>
+          </div>
+          {/* Email fields */}
+          {batchAction === "email" && (
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+              <input placeholder="Subject (use {client_name} for personalization)" value={batchEmailSubject} onChange={e => setBatchEmailSubject(e.target.value)} style={{ ...S.input }} />
+              <textarea placeholder="Email body (HTML supported, use {client_name} and {case_id})" value={batchEmailBody} onChange={e => setBatchEmailBody(e.target.value)} rows={4} style={{ ...S.input, resize: "vertical", fontFamily: "inherit" }} />
+            </div>
           )}
-          {batchAction === "attorney" && (
-            <select value={batchVal} onChange={e => setBatchVal(e.target.value)} style={{ ...S.input, width: 200 }}>
-              <option value="">Select attorney...</option>
-              {(team || []).filter(m => m.role === "Attorney" || m.title?.includes("Attorney")).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              {(team || []).filter(m => m.role !== "Attorney" && !m.title?.includes("Attorney")).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+          {/* Batch Results */}
+          {batchResults && (
+            <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: batchResults.error ? `${B.danger}10` : `${B.green}10`, border: `1px solid ${batchResults.error ? B.danger : B.green}30` }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: batchResults.error ? B.danger : B.green, marginBottom: 4 }}>
+                {batchResults.error ? `❌ ${batchResults.error}` : `✅ ${batchResults.message}`}
+              </div>
+              {batchResults.failed?.length > 0 && (
+                <div style={{ fontSize: 11, color: B.danger }}>
+                  Failed: {batchResults.failed.map(f => f.client || f.id).join(", ")}
+                </div>
+              )}
+              {batchResults.skipped?.length > 0 && (
+                <div style={{ fontSize: 11, color: B.txtM }}>
+                  Skipped (no email): {batchResults.skipped.map(s => s.client || s.id).join(", ")}
+                </div>
+              )}
+              <button onClick={() => { setSelected(new Set()); setBatchAction(null); setBatchResults(null); setBatchEmailSubject(""); setBatchEmailBody(""); }}
+                style={{ ...S.btnO, fontSize: 11, padding: "4px 10px", marginTop: 6 }}>Dismiss</button>
+            </div>
           )}
-          {batchAction && batchVal && (
-            <button onClick={executeBatch} style={{ ...S.btn, fontSize: 12, padding: "6px 14px" }}>Apply</button>
-          )}
-          <button onClick={() => { setSelected(new Set()); setBatchAction(null); }} style={{ ...S.btnO, fontSize: 11, padding: "6px 10px" }}>Cancel</button>
+        </div>
+      )}
+      {/* Batch Confirmation Modal */}
+      {batchConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setBatchConfirm(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 24, maxWidth: 420, width: "90%" }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 16, color: B.gold }}>Confirm Batch Operation</h3>
+            <p style={{ fontSize: 13, color: B.txtM, marginBottom: 16 }}>
+              {batchAction === "email"
+                ? `Send email "${batchEmailSubject}" to ${selected.size} case clients?`
+                : `Apply ${batchAction === "status" ? "phase change" : "attorney assignment"} to ${selected.size} cases?`}
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setBatchConfirm(false)} style={{ ...S.btnO, fontSize: 12, padding: "8px 16px" }}>Cancel</button>
+              <button onClick={executeBatch} style={{ ...S.btn, fontSize: 12, padding: "8px 16px" }}>
+                {batchAction === "email" ? "📧 Send Emails" : "✅ Confirm"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -4213,7 +4266,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases, userPermissions
       {tab === "calls" && <CaseCallsNew caseId={c.id} />}
       {tab === "contacts" && <CaseContactsNew caseId={c.id} />}
       {tab === "calendar" && <CaseCalendarTab caseId={c.id} />}
-      {tab === "messages" && <CaseMessagesNew caseId={c.id} />}
+      {tab === "messages" && <><CaseMessagesNew caseId={c.id} /><div style={{ marginTop: 24 }}><CaseSMS caseId={c.id} clientPhone={c.clientPhone} user={user} /></div></>}
       {tab === "compliance" && <ComplianceTab c={c} onCaseUpdate={upd => { if (onUpdate) onUpdate(upd); }} />}
       {tab === "workflow" && <WorkflowEngine caseId={c.id} caseStatus={c.status} />}
       {tab === "strategy" && <CaseStrategy caseData={c} />}

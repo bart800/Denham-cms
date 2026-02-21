@@ -142,7 +142,7 @@ export default function SettingsPage() {
     }
   };
 
-  const tabs = ["Team", "Workflows", "Statuses", "Firm Info", "Data Stats", "Import/Export"];
+  const tabs = ["Team", "Workflows", "Statuses", "Firm Info", "Data Stats", "Import/Export", "System Health"];
 
   if (loading) {
     return (
@@ -244,8 +244,8 @@ export default function SettingsPage() {
           <h3 style={{ color: GOLD, marginTop: 0 }}>ðŸ›ï¸ Firm Information</h3>
           <div style={{ lineHeight: 2 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: GOLD, marginBottom: 8 }}>Denham Property and Injury Law Firm</div>
-            <div>ðŸ“ 250 W. Main St. Suite 120, Lexington, KY 40507</div>
-            <div>ðŸ“ž 859-900-2278</div>
+            <div>ðŸ" 250 W. Main St. Suite 120, Lexington, KY 40507</div>
+            <div>ðŸ"ž 859-900-2278</div>
             <div>ðŸŒ <a href="https://www.denim.law" style={{ color: GOLD }} target="_blank" rel="noreferrer">www.denim.law</a></div>
           </div>
         </div>
@@ -256,8 +256,8 @@ export default function SettingsPage() {
         <div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
             {[
-              { label: "Total Cases", value: data?.case_count ?? "â€”", color: GOLD },
-              { label: "Total Documents", value: data?.document_count ?? "â€”", color: GREEN },
+              { label: "Total Cases", value: data?.case_count ?? "â€"", color: GOLD },
+              { label: "Total Documents", value: data?.document_count ?? "â€"", color: GREEN },
               { label: "Storage", value: formatBytes(data?.storage_bytes), color: "#4a90d9" },
             ].map((s) => (
               <div key={s.label} style={{ ...cardStyle, textAlign: "center" }}>
@@ -276,7 +276,7 @@ export default function SettingsPage() {
             ))}
           </div>
           <div style={{ ...cardStyle, color: MUTED, fontSize: 13 }}>
-            Last fetched: {data?.fetched_at ? new Date(data.fetched_at).toLocaleString() : "â€”"}
+            Last fetched: {data?.fetched_at ? new Date(data.fetched_at).toLocaleString() : "â€""}
           </div>
         </div>
       )}
@@ -284,12 +284,132 @@ export default function SettingsPage() {
       {/* Import/Export */}
       {tab === 5 && (
         <div style={cardStyle}>
-          <h3 style={{ color: GOLD, marginTop: 0 }}>ðŸ“¦ Export Data</h3>
+          <h3 style={{ color: GOLD, marginTop: 0 }}>ðŸ"¦ Export Data</h3>
           <p style={{ color: MUTED }}>Download all case data in your preferred format.</p>
           <div style={{ display: "flex", gap: 12 }}>
             <button style={btnStyle} onClick={() => exportData("csv")}>â¬‡ Export CSV</button>
             <button style={{ ...btnStyle, background: GREEN, color: "#fff" }} onClick={() => exportData("json")}>â¬‡ Export JSON</button>
           </div>
+        </div>
+      )}
+
+      {tab === 6 && <SystemHealthCard />}
+    </div>
+  );
+}
+
+function SystemHealthCard() {
+  const [health, setHealth] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
+
+  const load = async () => {
+    try {
+      const res = await fetch("/api/admin/backup-status");
+      const data = await res.json();
+      setHealth(data);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const runVerify = async () => {
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/admin/backup-verify");
+      const data = await res.json();
+      setHealth(prev => ({ ...prev, last_verification: data }));
+      load();
+    } catch {}
+    setVerifying(false);
+  };
+
+  const CARD = "#111133";
+  const BORDER = "#222255";
+  const GOLD = "#ebb003";
+  const GREEN = "#386f4a";
+  const MUTED = "#999";
+  const TEXT = "#e0e0e0";
+
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: MUTED }}>Checking system health...</div>;
+
+  const statusColor = health?.status === "healthy" || health?.status === "ok" ? GREEN : health?.status === "degraded" || health?.status === "warning" ? GOLD : "#e04050";
+  const statusLabel = health?.status === "healthy" || health?.status === "ok" ? "✅ Healthy" : health?.status === "degraded" ? "⚠️ Degraded" : "❌ Error";
+
+  return (
+    <div>
+      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h3 style={{ color: GOLD, margin: 0 }}>🛡️ System Health</h3>
+          <button onClick={runVerify} disabled={verifying} style={{
+            background: GOLD, color: "#000", border: "none", borderRadius: 6,
+            padding: "8px 16px", fontWeight: 700, cursor: verifying ? "wait" : "pointer", fontSize: 13,
+            opacity: verifying ? 0.7 : 1,
+          }}>
+            {verifying ? "Verifying..." : "Run Verification"}
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <span style={{ fontSize: 28 }}>{health?.db_connected ? "🟢" : "🔴"}</span>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: statusColor }}>{statusLabel}</div>
+            <div style={{ fontSize: 12, color: MUTED }}>
+              {health?.timestamp ? `Last check: ${new Date(health.timestamp).toLocaleString()}` : "Never checked"}
+            </div>
+          </div>
+        </div>
+
+        {/* Table Counts */}
+        {health?.table_counts && (
+          <div>
+            <div style={{ fontSize: 12, color: MUTED, fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Table Row Counts</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+              {Object.entries(health.table_counts).map(([table, count]) => (
+                <div key={table} style={{ background: "#1a1a3a", borderRadius: 6, padding: 12 }}>
+                  <div style={{ fontSize: 11, color: MUTED, textTransform: "uppercase" }}>{table}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: count >= 0 ? TEXT : "#e04050" }}>
+                    {count >= 0 ? count.toLocaleString() : "Error"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Last Verification */}
+      {health?.last_verification && (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20 }}>
+          <h3 style={{ color: GOLD, margin: "0 0 12px" }}>📋 Last Verification</h3>
+          <div style={{ fontSize: 13, color: TEXT, marginBottom: 8 }}>
+            <strong>Status:</strong>{" "}
+            <span style={{ color: health.last_verification.status === "ok" ? GREEN : GOLD }}>
+              {health.last_verification.status?.toUpperCase()}
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}>
+            {health.last_verification.verified_at
+              ? new Date(health.last_verification.verified_at).toLocaleString()
+              : health.last_verification.timestamp
+              ? new Date(health.last_verification.timestamp).toLocaleString()
+              : "—"}
+          </div>
+          {health.last_verification.notes && (
+            <div style={{ fontSize: 12, color: TEXT, background: "#1a1a3a", borderRadius: 6, padding: 10, whiteSpace: "pre-wrap" }}>
+              {health.last_verification.notes}
+            </div>
+          )}
+        </div>
+      )}
+
+      {health?.errors?.length > 0 && (
+        <div style={{ background: "#331111", border: "1px solid #553333", borderRadius: 8, padding: 16, marginTop: 16 }}>
+          <h4 style={{ color: "#e04050", margin: "0 0 8px" }}>Errors</h4>
+          {health.errors.map((e, i) => (
+            <div key={i} style={{ fontSize: 12, color: "#e08080", marginBottom: 4 }}>{e.table}: {e.error}</div>
+          ))}
         </div>
       )}
     </div>

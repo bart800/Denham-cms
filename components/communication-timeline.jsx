@@ -12,9 +12,10 @@ const TYPE_CONFIG = {
   call: { icon: "📞", color: "#386f4a", label: "Call" },
   note: { icon: "📝", color: "#ebb003", label: "Note" },
   message: { icon: "💬", color: "#7c5cbf", label: "Portal Message" },
+  sms: { icon: "📱", color: "#2ecc71", label: "SMS" },
 };
 
-const FILTERS = ["all", "email", "call", "note", "message"];
+const FILTERS = ["all", "email", "call", "note", "message", "sms"];
 
 export default function CommunicationTimeline({ caseId }) {
   const [items, setItems] = useState([]);

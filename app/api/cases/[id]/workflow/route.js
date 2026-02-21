@@ -46,6 +46,40 @@ async function instantiateFromTemplates(caseId, caseType) {
     console.error("Failed to insert tasks:", insertErr);
     return [];
   }
+
+  // Map template dependencies to actual task IDs
+  if (inserted?.length) {
+    const templateToTask = {};
+    for (const task of inserted) {
+      if (task.template_id) templateToTask[task.template_id] = task.id;
+    }
+    const updates = [];
+    for (const task of inserted) {
+      const template = allTemplates.find((t) => t.id === task.template_id);
+      if (template?.depends_on?.length) {
+        const depTaskIds = template.depends_on
+          .map((depTemplateId) => templateToTask[depTemplateId])
+          .filter(Boolean);
+        if (depTaskIds.length) {
+          updates.push(
+            db.from("case_tasks").update({ depends_on_tasks: depTaskIds }).eq("id", task.id)
+          );
+        }
+      }
+    }
+    if (updates.length) {
+      await Promise.all(updates);
+      // Re-fetch to get updated depends_on_tasks
+      const { data: refreshed } = await db
+        .from("case_tasks")
+        .select("*")
+        .eq("case_id", caseId)
+        .order("phase")
+        .order("task_order");
+      return refreshed || inserted;
+    }
+  }
+
   return inserted || [];
 }
 

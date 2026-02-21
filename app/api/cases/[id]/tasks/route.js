@@ -57,9 +57,34 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: 'taskId is required' }, { status: 400 });
     }
 
-    // If completing a task, set completed_at
-    if (updates.status === 'completed' && !updates.completed_at) {
-      updates.completed_at = new Date().toISOString();
+    // If completing a task, check dependencies first
+    if (updates.status === 'completed') {
+      const { data: taskToCheck } = await supabaseAdmin
+        .from('case_tasks')
+        .select('depends_on_tasks')
+        .eq('id', taskId)
+        .eq('case_id', id)
+        .single();
+
+      if (taskToCheck?.depends_on_tasks?.length) {
+        const { data: depTasks } = await supabaseAdmin
+          .from('case_tasks')
+          .select('id, title, status')
+          .in('id', taskToCheck.depends_on_tasks);
+
+        const incomplete = (depTasks || []).filter(t => t.status !== 'completed');
+        if (incomplete.length > 0) {
+          return NextResponse.json({
+            error: 'Dependencies not met',
+            message: `Complete these tasks first: ${incomplete.map(t => t.title).join(', ')}`,
+            blocked_by: incomplete,
+          }, { status: 422 });
+        }
+      }
+
+      if (!updates.completed_at) {
+        updates.completed_at = new Date().toISOString();
+      }
     }
 
     const { data, error } = await supabaseAdmin
