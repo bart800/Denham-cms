@@ -1190,7 +1190,7 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
   ];
 
   return (
-    <div style={{ width: 220, minHeight: "100vh", background: B.card, borderRight: `1px solid ${B.bdr}`, display: "flex", flexDirection: "column" }}>
+    <div style={{ width: 220, height: "100vh", background: B.card, borderRight: `1px solid ${B.bdr}`, display: "flex", flexDirection: "column", position: "sticky", top: 0 }}>
       <div style={{ padding: "20px 16px", borderBottom: `1px solid ${B.bdr}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: `linear-gradient(135deg,${B.navy},${B.gold})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff" }}>D</div>
@@ -4633,6 +4633,30 @@ export default function DenhamStaffPortal() {
       } catch {}
       setAuthChecked(true);
     })();
+
+    // Listen for auth state changes (token refresh, sign-in/out from other tabs)
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+          try { localStorage.removeItem("denham_user"); } catch {}
+        } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          if (session?.user && !user) {
+            const email = session.user.email;
+            const savedTeam = localStorage.getItem("denham_team");
+            if (savedTeam) {
+              const members = JSON.parse(savedTeam);
+              const member = members.find(m => m.email?.toLowerCase() === email?.toLowerCase());
+              if (member) { setUser(member); localStorage.setItem("denham_user", JSON.stringify(member)); return; }
+            }
+            const u = { id: session.user.id, name: session.user.user_metadata?.name || email?.split("@")[0] || "User", role: "Staff", title: "Staff", ini: (email || "U").substring(0, 2).toUpperCase(), clr: "#888", email };
+            setUser(u);
+            localStorage.setItem("denham_user", JSON.stringify(u));
+          }
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
   }, []);
   const [page, setPage] = useState("dashboard");
   const [selCase, setSelCase] = useState(null);
