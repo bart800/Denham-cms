@@ -1,4 +1,5 @@
 import { supabaseAdmin, supabase } from "@/lib/supabase";
+import { hasPermission } from "@/lib/rbac";
 import { NextResponse } from "next/server";
 const db = supabaseAdmin || supabase;
 
@@ -113,6 +114,8 @@ export async function GET(request) {
     const memberId = searchParams.get("member_id") || null;
     const weeksBack = parseInt(searchParams.get("weeks") || "8");
     const specificWeek = searchParams.get("week");
+    const memberRole = searchParams.get("role") || null;
+    const canViewRevenue = hasPermission(memberRole, "viewRevenue");
 
     // Load targets
     const { data: targets } = await db.from("kpi_targets").select("*").is("assigned_to", null);
@@ -153,13 +156,20 @@ export async function GET(request) {
       };
     });
 
+    // Filter out revenue metrics for non-authorized roles
+    const REVENUE_METRICS = ["undisputed_payments", "cases_settled", "settlement_offers"];
+    const filteredMetrics = canViewRevenue
+      ? metrics
+      : metrics.filter(m => !REVENUE_METRICS.includes(m.metric));
+
     return NextResponse.json({
       week: currentWeek,
       prev_week: prevWeek,
       weeks_in_year: weeksInYear,
       view,
-      metrics,
-      targets: targets || [],
+      metrics: filteredMetrics,
+      targets: canViewRevenue ? (targets || []) : (targets || []).filter(t => !REVENUE_METRICS.includes(t.metric)),
+      _revenue_hidden: !canViewRevenue,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
+import { hasPermission } from "@/lib/rbac";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
@@ -9,6 +10,8 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const filterAttorneyId = searchParams.get("attorney_id") || null;
+    const memberRole = searchParams.get("role") || null;
+    const canViewFinancials = hasPermission(memberRole, "viewFinancials");
     const now = new Date();
     const today = now.toISOString().slice(0, 10);
     const in30 = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
@@ -192,7 +195,7 @@ export async function GET(request) {
       linked_docs = linkedDocRes.count || 0;
     } catch { /* counts optional */ }
 
-    return NextResponse.json({
+    const response = {
       total_cases,
       attorneys,
       closed_count,
@@ -205,14 +208,24 @@ export async function GET(request) {
       sol_expired: { count: sol_expired_count },
       cases_opened_this_month,
       cases_opened_this_year,
-      total_recovery_sum,
-      total_fees_sum,
       cases_by_attorney,
       recent_activity,
       data_quality: { missing_sol, missing_insurer },
       workflow: { tasks_due_today, tasks_overdue, phase_bottlenecks },
       comms: { email_count, call_count, linked_calls, doc_count, linked_docs },
-    });
+    };
+
+    // Only include financial data for roles with permission
+    if (canViewFinancials) {
+      response.total_recovery_sum = total_recovery_sum;
+      response.total_fees_sum = total_fees_sum;
+    } else {
+      response.total_recovery_sum = null;
+      response.total_fees_sum = null;
+      response._financials_hidden = true;
+    }
+
+    return NextResponse.json(response);
   } catch (err) {
     console.error("Dashboard API error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

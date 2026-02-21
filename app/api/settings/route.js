@@ -1,4 +1,6 @@
 import { supabaseAdmin, supabase } from "../../../lib/supabase";
+import { isAdminRole } from "@/lib/rbac";
+import { logAudit, getRequestIP } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 const db = supabaseAdmin || supabase;
@@ -7,6 +9,13 @@ export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
     const memberId = searchParams.get("id");
+    const callerRole = searchParams.get("role");
+    const callerId = searchParams.get("caller_id");
+
+    // RBAC: Only Admin/Attorney can delete team members
+    if (!isAdminRole(callerRole)) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
     if (!memberId) return NextResponse.json({ error: "Member ID required" }, { status: 400 });
 
     // Get member info first (for auth cleanup)
@@ -31,14 +40,32 @@ export async function DELETE(request) {
     const { error } = await db.from("team_members").delete().eq("id", memberId);
     if (error) throw error;
 
+    // Audit log
+    await logAudit({
+      userId: callerId,
+      action: "delete",
+      entityType: "team_member",
+      entityId: memberId,
+      oldValues: { email: member.email },
+      ipAddress: getRequestIP(request),
+      description: `Removed team member ${member.email}`,
+    });
+
     return NextResponse.json({ success: true, removed: member.email });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const callerRole = searchParams.get("role");
+
+    // RBAC: Only Admin/Attorney can access settings
+    if (!isAdminRole(callerRole)) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
     const [teamRes, casesRes, docsRes, statusRes] = await Promise.all([
       db.from("team_members").select("*"),
       db.from("cases").select("id, status"),

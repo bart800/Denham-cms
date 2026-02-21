@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import * as api from "../lib/api";
+import { getPermissions, getVisibleNavItems, hasPermission, isAdminRole } from "../lib/rbac";
 import dynamic from "next/dynamic";
 
 // Lazy-load new standalone components
@@ -37,6 +38,7 @@ const EmailAutoFile = dynamic(() => import("./EmailAutoFile"), { ssr: false, loa
 const CaseMessagesNew = dynamic(() => import("./case-messages"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading messages...</div> });
 const VoiceNotes = dynamic(() => import("./VoiceNotes"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading voice notes...</div> });
 const CommunicationTimeline = dynamic(() => import("./communication-timeline"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading communications...</div> });
+const CaseSMS = dynamic(() => import("./case-sms"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading SMS...</div> });
 const SettlementCalculator = dynamic(() => import("./settlement-calculator"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading settlement calculator...</div> });
 const CourtDeadlines = dynamic(() => import("./court-deadlines"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading deadlines...</div> });
 const CaseRemindersTab = dynamic(() => import("./case-reminders"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading reminders...</div> });
@@ -45,7 +47,9 @@ const DemandGenerator = dynamic(() => import("./demand-generator"), { ssr: false
 const LienTracker = dynamic(() => import("./lien-tracker"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading liens...</div> });
 const ExpenseTracker = dynamic(() => import("./expense-tracker"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading expenses...</div> });
 const InsurerScorecard = dynamic(() => import("./insurer-scorecard"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading scorecard...</div> });
+const ReferralTracking = dynamic(() => import("./referral-tracking"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading referrals...</div> });
 const WelcomeModal = dynamic(() => import("./welcome-modal"), { ssr: false });
+const CaseNotificationsTab = dynamic(() => import("./case-notifications-tab"), { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#8888a0" }}>Loading notifications...</div> });
 // ComprehensiveActivityFeed is defined inline below (not imported)
 
 // ─── Brand Colors ───────────────────────────────────────────
@@ -1169,8 +1173,8 @@ function Login({ onLogin, team }) {
 // ═══════════════════════════════════════════════════════════
 // SIDEBAR
 // ═══════════════════════════════════════════════════════════
-function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, counts }) {
-  const nav = [
+function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, counts, visibleNavIds }) {
+  const allNav = [
     { id: "dashboard", label: "Dashboard", icon: "⬡", count: null, dot: counts?.solAlerts > 0 },
     { id: "cases", label: "Cases", icon: "◈", count: counts?.cases },
     { id: "kpis", label: "KPIs", icon: "📊" },
@@ -1182,12 +1186,18 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
     { id: "Presuit", label: "New Case", icon: "➕" },
     { id: "templates", label: "Templates", icon: "📝" },
     { id: "contacts", label: "Contacts", icon: "👤" },
+    { id: "referrals", label: "Referrals", icon: "🤝" },
     { id: "activity", label: "Activity", icon: "📋" },
     { id: "settings", label: "Settings", icon: "⚙️" },
     { id: "counsel", label: "Counsel Intel", icon: "⚖️" },
     { id: "emailFiling", label: "Email Filing", icon: "📧" },
     { id: "compliance", label: "Compliance", icon: "🛡️", dot: counts?.criticalCases > 0 },
   ];
+
+  // RBAC: filter nav items based on role permissions
+  const nav = visibleNavIds && visibleNavIds.length > 0
+    ? allNav.filter(n => visibleNavIds.includes(n.id))
+    : allNav;
 
   return (
     <div style={{ width: 220, height: "100vh", background: B.card, borderRight: `1px solid ${B.bdr}`, display: "flex", flexDirection: "column", position: "sticky", top: 0 }}>
@@ -1736,6 +1746,11 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
   const [selected, setSelected] = useState(new Set());
   const [batchAction, setBatchAction] = useState(null);
   const [batchVal, setBatchVal] = useState("");
+  const [batchConfirm, setBatchConfirm] = useState(false);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [batchResults, setBatchResults] = useState(null);
+  const [batchEmailSubject, setBatchEmailSubject] = useState("");
+  const [batchEmailBody, setBatchEmailBody] = useState("");
   const [focusIdx, setFocusIdx] = useState(-1);
   const tableRef = useRef(null);
 
@@ -1829,18 +1844,49 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
     else setSelected(new Set(paged.map(c => c.id)));
   };
   const executeBatch = async () => {
-    if (!batchVal || selected.size === 0) return;
     const ids = [...selected];
-    for (const id of ids) {
-      if (batchAction === "status") await onBatchUpdate(id, { status: batchVal });
-      else if (batchAction === "attorney") {
-        const member = (team || []).find(m => m.id === batchVal);
-        if (member) await onBatchUpdate(id, { attorney: member });
+    if (ids.length === 0) return;
+    setBatchRunning(true);
+    setBatchResults(null);
+    setBatchConfirm(false);
+    try {
+      if (batchAction === "email") {
+        const res = await fetch("/api/cases/batch/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ case_ids: ids, subject: batchEmailSubject, body: batchEmailBody, user_name: user?.name }),
+        });
+        const json = await res.json();
+        setBatchResults(json);
+      } else if (batchAction === "status" || batchAction === "attorney") {
+        const res = await fetch("/api/cases/batch", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            case_ids: ids,
+            operation: batchAction === "attorney" ? "attorney_id" : "status",
+            value: batchVal,
+            user_name: user?.name,
+          }),
+        });
+        const json = await res.json();
+        setBatchResults(json);
+        // Also update locally for immediate feedback
+        if (json.success?.length) {
+          for (const id of json.success) {
+            if (batchAction === "status") await onBatchUpdate(id, { status: batchVal });
+            else if (batchAction === "attorney") {
+              const member = (team || []).find(m => m.id === batchVal);
+              if (member) await onBatchUpdate(id, { attorney: member });
+            }
+          }
+        }
       }
+    } catch (err) {
+      setBatchResults({ error: err.message });
+    } finally {
+      setBatchRunning(false);
     }
-    setSelected(new Set());
-    setBatchAction(null);
-    setBatchVal("");
   };
 
   // Keyboard navigation
@@ -3878,7 +3924,7 @@ function DiscoveryTab({ c, caseId }) {
   );
 }
 
-function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
+function CaseDetail({ c, onBack, onUpdate, user, team, allCases, userPermissions = {} }) {
   const [tab, setTab] = useState("overview");
   const [noteModal, setNoteModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -3966,6 +4012,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
     { id: "demand", l: "📄 Demand" },
     { id: "liens", l: "🔗 Liens" },
     { id: "expenses", l: "💵 Expenses" },
+    { id: "notifications", l: "📬 Notifications" },
   ];
   const sc = stClr(c.status);
   const sd = c.sol ? dU(c.sol) : null;
@@ -4162,7 +4209,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "docs" && <CaseDocumentsTab caseId={c.id} />}
       {tab === "docgen" && <DocGenPanel caseId={c.id} caseRef={c.ref} />}
       {tab === "discovery" && <DiscoveryTab c={c} caseId={c.id} />}
-      {tab === "emails" && <CaseEmailsNew caseId={c.id} />}
+      {tab === "emails" && <CaseEmailsNew caseId={c.id} caseRef={c.ref} clientName={c.client} clientEmail={c.clientEmail} adjusterEmail={c.adjEmail} user={user} />}
       {tab === "calls" && <CaseCallsNew caseId={c.id} />}
       {tab === "contacts" && <CaseContactsNew caseId={c.id} />}
       {tab === "calendar" && <CaseCalendarTab caseId={c.id} />}
@@ -4178,6 +4225,7 @@ function CaseDetail({ c, onBack, onUpdate, user, team, allCases }) {
       {tab === "demand" && <DemandGenerator caseId={c.id} />}
       {tab === "liens" && <LienTracker caseId={c.id} />}
       {tab === "expenses" && <ExpenseTracker caseId={c.id} />}
+      {tab === "notifications" && <CaseNotificationsTab caseId={c.id} caseData={c} />}
     </div>
   );
 }
@@ -4673,6 +4721,10 @@ export default function DenhamStaffPortal() {
   const [solAlertOpen, setSolAlertOpen] = useState(false);
   const [taskCount, setTaskCount] = useState(0);
 
+  // RBAC: compute permissions from user role
+  const userPermissions = useMemo(() => user ? getPermissions(user.role) : {}, [user?.role]);
+  const visibleNavIds = useMemo(() => user ? getVisibleNavItems(user.role) : [], [user?.role]);
+
   // Mobile detection
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -4903,7 +4955,8 @@ export default function DenhamStaffPortal() {
           onNav={p => { navTo(p, null, "All"); if (isMobile) setSidebarOpen(false); }}
           onOut={() => { setUser(null); try { localStorage.removeItem("denham_user"); } catch {} setSidebarOpen(false); if (supabase) api.signOut().catch(() => {}); }}
           onCmdK={() => { setCmdBarOpen(true); if (isMobile) setSidebarOpen(false); }}
-          mobileOpen={isMobile ? sidebarOpen : true} onToggleMobile={() => setSidebarOpen(false)} counts={sidebarCounts} />
+          mobileOpen={isMobile ? sidebarOpen : true} onToggleMobile={() => setSidebarOpen(false)} counts={sidebarCounts}
+          visibleNavIds={visibleNavIds} />
       </div>
       <CommandBar open={cmdBarOpen} onClose={() => setCmdBarOpen(false)} onOpenCase={openCaseById} cases={cases} />
       <div style={{ marginLeft: isMobile ? 0 : 220, flex: 1, padding: isMobile ? "60px 10px 28px" : "28px 32px", maxWidth: 1200 }}>
@@ -4942,9 +4995,9 @@ export default function DenhamStaffPortal() {
             <div style={{ fontSize: 14, color: B.txtM }}>Loading...</div>
           </div>
         )}
-        {!loading && page === "dashboard" && <DashboardV2 onNavigate={dashNav} />}
+        {!loading && page === "dashboard" && <DashboardV2 onNavigate={dashNav} userRole={user?.role} />}
         {!loading && page === "cases" && <Cases user={user} cases={cases} onOpen={openC} initialStatus={statusFilter} initialFilters={dashFilters} onClearFilter={() => { setStatusFilter("All"); setDashFilters(null); }} team={team} onBatchUpdate={updateCase} onCaseCreated={handleCaseCreated} />}
-        {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} allCases={cases} />}
+        {!loading && page === "caseDetail" && selCase && <CaseDetail c={selCase} onUpdate={updateCase} onBack={backC} user={user} team={team} allCases={cases} userPermissions={userPermissions} />}
         {!loading && page === "calendar" && <CalendarPage />}
         {!loading && page === "tasks" && (
           <div><h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Tasks</h2>
@@ -4952,13 +5005,28 @@ export default function DenhamStaffPortal() {
         )}
         {!loading && page === "templates" && <DocTemplates caseId={selCase?.id} caseName={selCase?.client} />}
         {!loading && page === "activity" && <AuditLog onNavigateCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
-        {!loading && page === "settings" && <SettingsPage />}
+        {!loading && page === "settings" && userPermissions.viewSettings && <SettingsPage />}
+        {!loading && page === "settings" && !userPermissions.viewSettings && (
+          <div style={{ padding: 60, textAlign: "center" }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: B.txtM }}>Access Restricted</h2>
+            <p style={{ fontSize: 13, color: B.txtD, marginTop: 8 }}>Settings are only available to Attorneys and Administrators.</p>
+          </div>
+        )}
         {!loading && page === "compliance" && <ComplianceDash cases={cases} onOpen={openC} />}
         {!loading && page === "reports" && <ReportsPage />}
         {!loading && page === "contacts" && <ContactsPage />}
         {!loading && page === "emailFiling" && <EmailAutoFile />}
         {!loading && page === "counsel" && <OpposingCounsel />}
-        {!loading && page === "kpis" && <KpiDashboard />}
+        {!loading && page === "referrals" && <ReferralTracking />}
+        {!loading && page === "kpis" && userPermissions.viewKPIs && <KpiDashboard userRole={user?.role} />}
+        {!loading && page === "kpis" && !userPermissions.viewKPIs && (
+          <div style={{ padding: 60, textAlign: "center" }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: B.txtM }}>Access Restricted</h2>
+            <p style={{ fontSize: 13, color: B.txtD, marginTop: 8 }}>KPI dashboards are not available for your role.</p>
+          </div>
+        )}
         {!loading && page === "compare" && <CaseCompare onSelectCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "attorneys" && <AttorneyDashboard onNavigateCase={(caseId) => { const c = cases.find(x => x.id === caseId); if (c) openC(c); }} />}
         {!loading && page === "Presuit" && <CaseIntakeForm onClose={() => navTo("cases")} onCreated={(newCase) => { handleCaseCreated(newCase); navTo("caseDetail", newCase); }} teamMembers={team} />}

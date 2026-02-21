@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
+import { logAudit, getRequestIP } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
@@ -79,6 +80,17 @@ export async function POST(request) {
         .from("claim_details")
         .insert({ case_id: data.id, ...claimFields });
     }
+
+    // Audit log
+    await logAudit({
+      userId: body.created_by || body.attorney_id,
+      action: "create",
+      entityType: "case",
+      entityId: data.id,
+      newValues: { ref, client_name, status: "Open" },
+      ipAddress: getRequestIP(request),
+      description: `Created case ${ref} for ${client_name}`,
+    });
 
     return NextResponse.json(data, { status: 201 });
   } catch (err) {
