@@ -1,32 +1,16 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import { notifyPhaseChange } from "@/lib/portal-notify";
 import { NextResponse } from "next/server";
 
-// PATCH: Update case fields (with auto-notification on phase/status change)
+// PATCH: Update case fields
 export async function PATCH(request, { params }) {
   const { id } = await params;
   if (!supabaseAdmin) return NextResponse.json({ error: "DB not configured" }, { status: 500 });
 
   try {
     const updates = await request.json();
-
-    // Check if phase/status is changing (for notification)
-    let oldPhase = null;
-    if (updates.status || updates.phase) {
-      const { data: old } = await supabaseAdmin.from("cases").select("status, phase").eq("id", id).single();
-      oldPhase = old?.phase || old?.status;
-    }
-
     updates.updated_at = new Date().toISOString();
     const { data, error } = await supabaseAdmin.from("cases").update(updates).eq("id", id).select().single();
     if (error) throw error;
-
-    // Auto-notify on phase change
-    const newPhase = updates.phase || updates.status;
-    if (newPhase && newPhase !== oldPhase) {
-      notifyPhaseChange(id, newPhase).catch(e => console.error("Phase notification failed:", e));
-    }
-
     return NextResponse.json(data);
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
