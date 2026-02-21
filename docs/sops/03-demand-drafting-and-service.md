@@ -2,7 +2,8 @@
 
 **Last Updated:** February 2026  
 **CMS Phase:** Presuit Demand  
-**Primary Role:** Paralegal
+**Primary Role:** Paralegal  
+**⏱️ Expected Time: First draft 3–5 hours | POL 30 min | Proofreading 30–60 min**
 
 ---
 
@@ -10,17 +11,20 @@
 
 1. [Overview](#1-overview)
 2. [Workflow Checklist — Prerequisites](#2-workflow-checklist--prerequisites)
-3. [Proof of Loss (POL) Preparation](#3-proof-of-loss-pol-preparation)
-4. [Demand Letter Structure](#4-demand-letter-structure)
-5. [Demand Tips & Writing Standards](#5-demand-tips--writing-standards)
-6. [Settlement Breakdown Calculation](#6-settlement-breakdown-calculation)
-7. [State-Specific Unfair Claims Statutes](#7-state-specific-unfair-claims-statutes)
-8. [Proofreading Checklist](#8-proofreading-checklist)
-9. [Serving the Demand](#9-serving-the-demand)
-10. [Calendaring Deadlines](#10-calendaring-deadlines)
-11. [Follow-Up Procedure](#11-follow-up-procedure)
-12. [Payment Instructions](#12-payment-instructions)
-13. [Public Adjuster Referral Sources](#13-public-adjuster-referral-sources)
+3. [Demand Template Selection](#3-demand-template-selection)
+4. [Proof of Loss (POL) Preparation](#4-proof-of-loss-pol-preparation)
+5. [Demand Letter Structure](#5-demand-letter-structure)
+6. [Real Demand Example (Anonymized)](#6-real-demand-example-anonymized)
+7. [Settlement Breakdown Calculation](#7-settlement-breakdown-calculation)
+8. [State-Specific Unfair Claims Statutes](#8-state-specific-unfair-claims-statutes)
+9. [Demand Tips & Writing Standards](#9-demand-tips--writing-standards)
+10. [Proofreading Checklist](#10-proofreading-checklist)
+11. [Serving the Demand](#11-serving-the-demand)
+12. [Calendaring Deadlines](#12-calendaring-deadlines)
+13. [Follow-Up Procedure](#13-follow-up-procedure)
+14. [Payment Instructions](#14-payment-instructions)
+15. [Public Adjuster Referral Sources](#15-public-adjuster-referral-sources)
+16. [Common Mistakes & Pro Tips](#16-common-mistakes--pro-tips)
 
 ---
 
@@ -120,196 +124,260 @@ You cannot draft a demand without specific documents. Use the AND/OR logic below
 
 ---
 
-## 3. Proof of Loss (POL) Preparation
+## 3. Demand Template Selection
+
+```
+What state is the case in?
+│
+├── KENTUCKY
+│   ├── What type of loss?
+│   │   ├── Roof / Wind & Hail → "Kentucky Demand Template - Roof Damage"
+│   │   ├── Fire → "Kentucky Demand Template - Fire"
+│   │   └── Water Loss → "Kentucky Demand Template - Water Loss"
+│   └── (All KY templates include KRS 304.12-230 and KRS 304.12-235)
+│
+├── MONTANA
+│   └── Use KY template as base, but:
+│       ├── Replace KRS 304.12-230 with MCA 33-18-201
+│       ├── Replace KRS 304.12-235 POL paragraph with generic POL paragraph
+│       └── Set deadline to 60 days (not 14)
+│
+├── INDIANA
+│   └── Use KY template as base, but:
+│       ├── Replace KRS 304.12-230 with IN Code § 27-4-1-4.5
+│       └── Set deadline to 14 days
+│
+├── TENNESSEE
+│   └── Use KY template as base, but:
+│       ├── Replace with T.C.A. § 56-8-104
+│       └── Set deadline to 14 days
+│
+├── ARIZONA
+│   └── Use KY template as base, but:
+│       ├── Replace with A.R.S. § 20-461
+│       └── Set deadline to 14 days
+│
+└── OTHER STATE
+    └── Use KY template as base, replace statute section
+        Look up state's UCSPA on Casetext or Justia
+        Default deadline: 14 days (unless state requires more)
+```
+
+---
+
+## 4. Proof of Loss (POL) Preparation
+
+**⏱️ Expected Time: 30 minutes**
 
 The Sworn Proof of Loss is drafted and sent to the client for signature **while the demand is being drafted**. Signatures must be completed before the demand is sent for review.
 
-### 3.1 Requirements
+### 4.1 Requirements
 - Policy with Declarations Page (impossible to complete without it)
 - All estimates (to calculate the whole loss and damage value)
 
-### 3.2 Drafting the POL
+### 4.2 Drafting the POL
 
 Use the firm's Sworn POL template (Adobe form). Fill in:
 
-| Field | Where to Find |
-|-------|--------------|
-| **Policy Number** | Declarations page |
-| **Company Claim Number** | Correspondence or client |
-| **Policy Amt. at Time of Loss** | "Limits of Liability" on declarations page. If multiple coverages damaged (e.g., dwelling + barn), add Coverage A + Coverage B together. |
-| **Date Issued / Date Expires** | Policy Period on declarations page |
-| **Agent** | Listed on declarations page as "Agent" or "Representative" (NOT the adjuster) |
-| **Agency Address** | Listed with agent name; leave blank if not available |
-| **Insurance Company Full Name** | Policy or correspondence → verify on Dept. of Insurance website |
-| **Insurance Company Address** | Use address on policy; if unavailable, use Statutory Home Office from Dept. of Insurance |
-| **Insured Name(s)** | Check policy — include both names if both are on the policy |
-| **Address of Insured** | As listed on the policy |
-| **Against loss by** | Cause of loss (Wind/Hail, Fire, Water, etc.) |
-| **Hour of Loss** | Leave blank |
-| **Date of Loss** | Verify against insurance correspondence |
-| **Occupancy** | "Residential" for dwelling damage |
-| **Mortgage Company** | Listed on policy — include in Title and Changes section |
-| **Loss & Amt. Claimed** | Whole loss value BEFORE deductions (deductible, prior payments) |
+| Field | Where to Find | Example |
+|-------|--------------|---------|
+| **Policy Number** | Declarations page | `000930969788` |
+| **Company Claim Number** | Correspondence or client | `0709368203` |
+| **Policy Amt. at Time of Loss** | "Limits of Liability" on dec page | `$250,000` |
+| **Date Issued / Date Expires** | Policy Period on dec page | `01/15/2024 - 01/15/2025` |
+| **Agent** | Listed on dec page as "Agent" (NOT the adjuster) | `John Smith, Allstate Agent` |
+| **Agency Address** | Listed with agent name; leave blank if not available | — |
+| **Insurance Company Full Name** | Policy → verify on Dept. of Insurance | `Allstate Indemnity Company` |
+| **Insurance Company Address** | Policy; if unavailable, Statutory Home Office | `PO Box 672041, Dallas, TX 75265` |
+| **Insured Name(s)** | Check policy — include both if both are listed | `George D. Bonilla and Tammy R. Bonilla` |
+| **Address of Insured** | As listed on the policy | `102 Frankie Dr., Richmond, KY 40475` |
+| **Against loss by** | Cause of loss | `Wind/Hail` |
+| **Date of Loss** | Verify against correspondence | `March 3, 2023` |
+| **Occupancy** | Usually "Residential" | `Residential` |
+| **Mortgage Company** | Listed on policy — include in Title and Changes | `US Bank` |
+| **Loss & Amt. Claimed** | Whole loss BEFORE deductions | `$25,480.29` |
 
-### 3.3 POL Tips
+### 4.3 POL Tips
 
-⚠️ **Do NOT subtract the deductible or prior payments** from the total amount claimed.
+⚠️ **Do NOT subtract the deductible or prior payments** from the total amount claimed. The POL states the WHOLE loss value.
 
-⚠️ **Verify the correct insurance company.** Some companies (like Sedgwick) handle claims on behalf of other insurers. Always look at the certified policy for the real company name. Liberty Mutual handles claims for Wolverine Mutual — don't assume from correspondence.
+⚠️ **Verify the correct insurance company.** Some companies handle claims on behalf of others:
+- **Sedgwick** handles claims for other insurers — check the certified policy
+- **Liberty Mutual** handles claims for Wolverine Mutual
+- Don't assume from correspondence — always verify on the policy
 
-⚠️ If claiming losses under **multiple coverages**, add the coverage limits together for the total policy amount.
+⚠️ If claiming losses under **multiple coverages** (e.g., dwelling + barn), add Coverage A + Coverage B limits together for the total policy amount.
 
-⚠️ If there was a **policy change increasing coverage** during a relevant period, use the original one-year period but the **increased** coverage amount (if loss was after the increase).
+⚠️ If there was a **policy change increasing coverage** during a relevant period, use the original one-year period but the **increased** coverage amount.
 
 Send to Bart for review before sending to the client for signature.
 
 ---
 
-## 4. Demand Letter Structure
+## 5. Demand Letter Structure
 
 ### Phase 1: Intake & File Preparation
-1. Run the prerequisites checklist
+1. Run the prerequisites checklist (Section 2)
 2. Create a **Demands** folder inside the Correspondence folder
-3. Copy the demand template and name it "Draft Demand"
+3. Copy the appropriate demand template and name it "Draft Demand"
 
 ### Phase 2: Demand Composition
 
-The demand letter follows this structure:
-
-#### 4.1 Date
+#### 5.1 Date
 - Use Word's auto-updating date feature:
   - Highlight date → Insert → Date and Time → Format: "October 4, 2024" → Check "Update Automatically" → OK
 
-#### 4.2 Adjuster Information / Email
+#### 5.2 Adjuster Information / Email
 - The adjuster's email is used to serve the demand
 - Find it in: correspondence, LOR, client intake form
 - If adjuster email unavailable, use the carrier's general email (e.g., `statefarmfireclaims@statefarm.com`)
 - If both an adjuster email and general email exist, include both
 
-#### 4.3 Reference Line
-- Claim Number (from correspondence)
-- Policy Number (from correspondence or policy)
-- Date of Loss (from correspondence or estimates)
-- Insured Name(s) — ⚠️ **Check the policy** to see who is named
-- Insured Location — use the **loss location**, not necessarily the client's home address
+#### 5.3 Reference Line
 
-#### 4.4 Salutation
+```
+Re: Claim Number: 0709368203
+    Policy Number: 000930969788
+    Date of Loss: March 3, 2023
+    Insured(s): George D. Bonilla and Tammy R. Bonilla
+    Insured Location: 102 Frankie Dr., Richmond, KY 40475
+```
+
+⚠️ **Insured Names** — Check the policy to see who is named. Don't just use who signed the ATR.
+⚠️ **Insured Location** — Use the **loss location**, not necessarily the client's mailing address.
+
+#### 5.4 Salutation
 - Always use **Mr.** or **Ms.** (do not assume marital status)
 
-#### 4.5 Introduction Paragraph
-> As you know my firm represents [Insured Name(s)] in the above-referenced dispute. This letter shall serve as insured's [or insureds'] final demand for payment.
+#### 5.5 Introduction Paragraph
 
-#### 4.6 Explaining the Situation
-Paragraph structure:
+> As you know my firm represents George Bonilla and Tammy Bonilla in the above-referenced dispute. This letter shall serve as the insureds' final demand for payment.
 
-1. **The loss:** When, what event, where
-   > "The insureds experienced a covered loss on [date], from a [event] that caused significant damage to their property located at [address]."
+#### 5.6 Explaining the Situation
 
-2. **The damage:** What was specifically damaged
-   > "The [event] caused extensive damage to [specific items] including but not limited to [list major items]."
-   - Use "including but not limited to" to avoid listing everything
+**Paragraph 1 — The Loss:**
+> The insureds suffered a covered loss on or about March 3, 2023, due to a severe hail and wind storm that impacted their property at 102 Frankie Dr., Richmond, KY 40475. The dwelling sustained significant damage, including but not limited to the roof and HVAC system. The insureds promptly filed a claim with Allstate, which inspected the property and initially estimated the cost of repairs at $3,335.48.
 
-3. **How the defendant responded:**
-   > "The insureds timely filed a claim with [Carrier] who [describe response: denied, underpaid, delayed]."
-
-#### 4.7 Retained Estimates Paragraph
-If client retained a PA or contractor:
-> "The insureds were forced to retain [Name], a licensed public adjuster, to attempt to receive fair payment of their claim."
+**Paragraph 2 — Retained Estimates:**
+> The insureds retained Alliance Roofing and Contracting to repair the roof and HVAC at an incurred cost of $25,480.29. The full scope and cost of repairs is laid out in the contractor's estimate and has been incurred by the insured. I have attached a copy of the estimate for your reference.
 
 ⚠️ Only use "forced to retain" for **public adjusters**, not contractors.
 
-> "Upon inspection, [Name] documented [damage areas], estimating $[amount] to restore the [property] to its pre-loss conditions."
+**Paragraph 3+ — Main Argument:**
 
-> "I have attached a copy of [Company]'s estimate and photo report for your review."
+This is the longest section and is **case-specific**. Here's a real example from the Bonilla demand:
 
-#### 4.8 Main Argument
-- This is the longest section and is case-specific
-- Develop **specific arguments** based on policy provisions, not generic pleas
-- Think about **why** the claim was denied or underpaid
-- Use denial letter language against the carrier
-- Include relevant expert findings, engineer reports, building code requirements
-- Embed high-impact photos using the snipping tool
-- Frame water losses as "sudden water loss from a pipe bursting" (slow leaks are generally not covered)
+> Even though Allstate provided payment for a full roof replacement, the amount covered was considerably lower than the total cost quoted by the contractor to complete the entire roof replacement. Allstate's estimate primarily focuses on removing and replacing damaged roof components, such as shingles, flashing, roof vents, and drip edges, but omits critical items necessary for a proper roof replacement, such as synthetic felt, chimney flashing, and starter shingles.
+>
+> Allstate also failed to include in their estimate the HVAC replacement, initially denying its replacement and later only agreeing to pay for a repair, despite the contractor determining that a full replacement was necessary.
 
-**Conclusion of argument:**
-> Restate what the insurance company failed to do or disregarded, and why the full repairs from the estimate are necessary.
+**For roof damage cases in KY, cite 806 KAR 12:095 Section 9(1)(b):**
 
-#### 4.9 Unfair Claims Settlement Practice Statute
-(See [Section 7](#7-state-specific-unfair-claims-statutes) below)
+> As required by 806 KAR 12:095 Section 9(1)(b), "If a loss requires replacement of items and the replaced items do not reasonably match in quality, color, and size, the insurer shall replace all items in the area so as to conform to a reasonably uniform appearance. This applies to interior and exterior losses. The insured shall not bear any cost over the applicable deductible."
 
-#### 4.10 Proof of Loss Paragraph
+#### 5.7 Unfair Claims Settlement Practice Statute
+→ See [Section 8](#8-state-specific-unfair-claims-statutes) below
+
+#### 5.8 Proof of Loss Paragraph
 
 **Kentucky:**
 > The insureds are providing herein a sworn proof of loss statement on condition. KRS 304.12-235 requires payment within thirty (30) days from submission of a sworn proof of loss statement. [Insurance Company]'s failure to do so makes it liable for additional extra-contractual damages for reimbursement of attorneys' fees and interest at the rate of twelve percent (12%) per annum.
+
+**Montana:**
+> Furthermore, the insureds are hereby submitting a sworn proof of loss statement enclosed herein. [Insurance Company]'s failure to pay within a reasonable time will expose it to additional liability for damages under Montana law.
 
 **All other states:**
 > Furthermore, the insureds are hereby submitting a sworn proof of loss statement enclosed herein.
 
 ⚠️ This paragraph varies by state. If unsure, add a comment in the Word doc for Bart's review.
 
-#### 4.11 Settlement Breakdown
-(See [Section 6](#6-settlement-breakdown-calculation) below)
+#### 5.9 Settlement Breakdown
+→ See [Section 7](#7-settlement-breakdown-calculation) below
 
-#### 4.12 Payment Deadline & Check Instructions
-(See [Section 12](#12-payment-instructions) below)
+#### 5.10 Payment Deadline & Check Instructions
+→ See [Section 14](#14-payment-instructions) below
 
-#### 4.13 Additional Paragraph — Refusal / Additional Time
+#### 5.11 Additional Paragraph — Refusal / Additional Time
 
 > Lastly, if [Insurance Company] refuses to make payment within the time period provided, please provide a reasonable explanation of the basis in the Policy in relation to facts and applicable law for its denial to do so. If [Insurance Company] needs additional time to investigate this claim, please provide a reasonable explanation of basis for such need. If you have any questions or would like to discuss, please feel free to reach out.
 
-#### 4.14 Signature
+#### 5.12 Signature
 
 > Very Truly Yours,
 >
 > /s/J. Bart Denham
 > J. Bart Denham
 
-#### 4.15 Enclosures
-List every supporting document. Common enclosures:
-- Estimate(s) from PA or contractor
-- Expert reports (engineering, shingle identification, etc.)
-- Photos / video links
-- Sworn Proof of Loss
-- Denham Property and Injury Law Firm W9
+#### 5.13 Enclosures
+List every supporting document:
+```
+Enclosures:
+    Alliance Roofing and Contracting Estimate
+    Cecil's Plumbing, Heating and Air Conditioning Expert Opinion Letter
+    Sworn Proof of Loss
+    Denham Property and Injury Law Firm W9
+```
 
 ---
 
-## 5. Demand Tips & Writing Standards
+## 6. Real Demand Example (Anonymized)
 
-### Writing Style
-- ✅ **ACTIVE voice** and **PROFESSIONAL tone**
-- ✅ Insurance companies are **"it"** — never "they" or "insurer"
-- ✅ All text in **Times New Roman 12pt**
-- ✅ Double-spaced body
+Below is a condensed version of the **Bonilla v. Allstate** demand (wind/hail, KY) showing the actual structure:
 
-### Photo Usage
-- Use the **Snippet tool** to embed photos directly in the demand
-- Photos strengthen the argument — the carrier will want to see them anyway
+```
+J. Bart Denham, Esq.
+Denham Property and Injury Law Firm
+250 W. Main St. Suite 120, Lexington, KY 40507
+859-900-2278 | Bart@Denham.Law
 
-**Example of GOOD photo reference:**
-> "The insured was forced to retain Public Adjuster, Brandi Carroll to seek fair indemnification. Mrs. Carroll inspected the property and documented the hail damage in her previously provided report. The photographs clearly show hail damage to roof shingles, notably punctures in the ridge caps. I've enclosed a copy of the report for your reference."
+October 23, 2024
 
-**BAD:**
-> "The roof has clearly sustained hail damage, as shown in the estimate with photos, provided by Public Adjuster, Brandi Carroll."
+Sent Via Email:
+Sarah Wolfer
+Allstate Indemnity Company
+PO Box 672041, Dallas, TX 75265
 
-### General Tips
-- If we have an engineer's report, mention it
-- Don't just say what the insurance company paid — develop specific arguments based on policy provisions
-- If you find missing information, ask the team or get permission to discuss with the client/PA
-- Try to complete as much as possible before sending to Bart for review
-- Include comments in Word for questions; if too many questions are blocking progress, raise them in the daily meeting
+Re: Claim Number: 0709368203
+    Policy Number: 000930969788
+    Date of Loss: March 3, 2023
+    Insured: George D. Bonilla and Tammy R. Bonilla
+    Insured Location: 102 Frankie Dr., Richmond, KY 40475
 
-### Common Mistakes to Avoid
-- ⚠️ Missing or mislabeled exhibits
-- ⚠️ Inconsistent dollar figures between narrative and settlement table
-- ⚠️ Wrong policy form / endorsement cited
-- ⚠️ Misdated loss or policy period
-- ⚠️ Forgetting deductible or prior payments in net demand
-- ⚠️ Assuming extra documents we don't have
+Dear Ms. Wolfer,
+
+[Introduction paragraph — "This letter shall serve as insureds' final
+demand for payment."]
+
+[Facts — Loss occurred March 3, 2023, hail/wind, damage to roof and
+HVAC. Allstate initially estimated $3,335.48, later paid $7,644.06.]
+
+[Contractor estimate — Alliance Roofing: $25,480.29 for full repairs.]
+
+[Argument — Allstate omitted synthetic felt, chimney flashing, starter
+shingles. Denied HVAC replacement despite contractor's expert opinion.]
+
+[KRS 304.12-230 — Bad faith statutes cited: (1), (4), (6), (7), (8), (13)]
+
+[KRS 304.12-235 — POL paragraph with 30-day/12% interest language]
+
+At this time the insureds demand payment of $17,836.23:
+
+    Alliance Roofing and Contracting Estimate    $ 25,480.29
+    Prior Payments                              ($ 7,644.06)
+                                                 -----------
+    Total Demand                                 $ 17,836.23
+
+[Payment instructions — check to Denham Law FBO Bonilla, 14 days]
+
+Enclosures:
+    Alliance Roofing and Contracting Estimate
+    Cecil's Plumbing Expert Opinion Letter
+    Denham Property and Injury Law Firm W9
+```
 
 ---
 
-## 6. Settlement Breakdown Calculation
+## 7. Settlement Breakdown Calculation
 
 The breakdown consists of (if applicable):
 
@@ -327,43 +395,51 @@ The breakdown consists of (if applicable):
 Total = Estimates - Deductible - Prior Payments + ALE + Contents + [Attorneys' Fees if applicable]
 ```
 
-### Examples
+### Real Examples from Our Cases
 
-**Example 1 — Simple:**
+**Example 1 — Simple (Bonilla v. Allstate, Wind/Hail):**
 ```
-Winning the Claim Public Adjusters Estimate     $80,187.07
-Deductible                                      ($ 1,048.01)
-                                                -----------
-Total Due for Coverage A & B                    $79,139.06
+Alliance Roofing and Contracting Estimate       $25,480.29
+Prior Payments                                  ($ 7,644.06)
+                                                 -----------
+Total Demand                                     $17,836.23
 ```
 
-**Example 2 — Multiple items:**
+**Example 2 — With ALE and Contents (Fire claim):**
 ```
-Central Kentucky Restoration Estimates          $84,946.33
-ALE                                             $ 9,869.22
-Contents                                        $32,048.31
-Prior Payments                                 ($35,350.12)
-Deductible                                     ($ 1,000.00)
-                                                -----------
-Total Demand Due                                $90,513.74
+Central Kentucky Restoration Estimates           $84,946.33
+ALE                                              $ 9,869.22
+Contents                                         $32,048.31
+Prior Payments                                  ($35,350.12)
+Deductible                                      ($ 1,000.00)
+                                                 -----------
+Total Demand Due                                 $90,513.74
 ```
 
 **Example 3 — With attorneys' fees:**
 ```
-Brandi Carroll Public Adjuster Estimate         $28,614.80
-Attorneys' Fees, Costs, Interest, Bad Faith     $25,000.00
-Deductible                                     ($ 1,000.00)
-                                                -----------
-Total Demand                                    $52,614.80
+Brandi Carroll Public Adjuster Estimate          $28,614.80
+Attorneys' Fees, Costs, Interest, Bad Faith      $25,000.00
+Deductible                                      ($ 1,000.00)
+                                                 -----------
+Total Demand                                     $52,614.80
 ```
 
-⚠️ **Calculate the breakdown 3 TIMES.** Triple-check the math.
+**Example 4 — PA estimate only, no deductible waived:**
+```
+Winning the Claim Public Adjusters Estimate      $80,187.07
+Deductible                                      ($ 1,048.01)
+                                                 -----------
+Total Due for Coverage A & B                     $79,139.06
+```
+
+⚠️ **Calculate the breakdown 3 TIMES.** Triple-check the math. One wrong number undermines the entire demand.
 
 ---
 
-## 7. State-Specific Unfair Claims Statutes
+## 8. State-Specific Unfair Claims Statutes
 
-Include the appropriate statute in every demand. Omit individual acts that don't apply to the case.
+Include the appropriate statute in every demand. **Only cite the specific acts that apply to the case** — omit acts that don't apply.
 
 ### Kentucky — KRS 304.12-230
 
@@ -380,6 +456,10 @@ Include the appropriate statute in every demand. Omit individual acts that don't
 > (7) Compelling insureds to institute litigation to recover amounts due under an insurance policy by offering substantially less than the amounts ultimately recovered in actions brought by such insureds;
 >
 > (14) Failing to promptly provide a reasonable explanation of the basis in the insurance policy in relation to the facts or applicable law for denial of a claim or for the offer of a compromise settlement;
+
+**KY-specific extras:**
+- **KRS 304.12-235** — 30-day payment after POL; 12% interest + attorneys' fees if they fail
+- **806 KAR 12:095 § 9(1)(b)** — Matching requirement for roof/exterior repairs
 
 ### Indiana — IN Code § 27-4-1-4.5
 
@@ -399,18 +479,124 @@ Include the appropriate statute in every demand. Omit individual acts that don't
 >
 > (14) Failing to promptly provide a reasonable explanation of the basis in the insurance policy in relation to the facts or applicable law for denial of a claim or for the offer of a compromise settlement.
 
-### Other States
+### Montana — MCA 33-18-201
 
-The statute language is similar across states but wording differs. Look up the specific state's Unfair Claims Settlement Practices Act:
-- **Casetext** or **Justia** for the specific statute
-- Although each statute has ~17 acts, we typically cite only the ones listed above
-- **Omit** acts that don't apply (e.g., #2 if the carrier responded promptly)
+> [Insurance Company] has further potential liability for insurance bad faith and violation of MCA 33-18-201, Montana's Unfair Claim Settlement Practices Act, including but not limited to:
+>
+> (1) Misrepresenting pertinent facts or insurance policy provisions relating to coverages at issue;
+>
+> (2) Failing to acknowledge and act reasonably promptly upon communications with respect to claims arising under insurance policies;
+>
+> (3) Failing to adopt and implement reasonable standards for the prompt investigation of claims arising under insurance policies;
+>
+> (4) Refusing to pay claims without conducting a reasonable investigation based on all available information;
+>
+> (5) Failing to affirm or deny coverage of claims within a reasonable time after proof of loss statements have been completed;
+>
+> (6) Neglecting to attempt in good faith to effectuate prompt, fair, and equitable settlements of claims in which liability has become reasonably clear;
+>
+> (7) Compelling insureds to institute litigation to recover amounts due under an insurance policy by offering substantially less than the amounts ultimately recovered in actions brought by the insureds;
+>
+> (13) Failing to promptly settle claims, if liability has become reasonably clear, under one portion of the insurance policy coverage in order to influence settlements under other portions of the insurance policy coverage;
+>
+> (14) Failing to promptly provide a reasonable explanation of the basis in the insurance policy in relation to the facts or applicable law for denial of a claim or for the offer of a compromise settlement;
+
+**MT-specific notes:**
+- Montana allows an **independent cause of action** for violation of 33-18-201 (unlike many states where the UCSPA only supports regulatory complaints)
+- **MCA 33-18-242** provides for actual damages, attorney fees, and potentially punitive damages
+- Demand deadline in Montana is **60 days** (not 14)
+
+### Tennessee — T.C.A. § 56-8-104
+
+> [Insurance Company] has further potential liability for insurance bad faith and violation of T.C.A. § 56-8-104, Tennessee's Unfair Claims Settlement Practices Act, including but not limited to:
+>
+> (5) Failing to acknowledge and act reasonably promptly upon communications with respect to claims arising under insurance policies;
+>
+> (6) Failing to adopt and implement reasonable standards for the prompt investigation of claims arising under insurance policies;
+>
+> (7) Refusing to pay claims without conducting a reasonable investigation based upon all available information;
+>
+> (8) Not attempting in good faith to effectuate prompt, fair and equitable settlements of claims in which liability has become reasonably clear;
+>
+> (10) Compelling insureds to institute litigation to recover amounts due under an insurance policy by offering substantially less than the amounts ultimately recovered in actions brought by such insureds;
+>
+> (17) Failing to promptly provide a reasonable explanation of the basis in the insurance policy in relation to the facts or applicable law for denial of a claim or for the offer of a compromise settlement;
+
+**TN-specific notes:** Tennessee numbering differs from KY/IN — note the different subsection numbers above.
+
+### Arizona — A.R.S. § 20-461
+
+> [Insurance Company] has further potential liability for insurance bad faith and violation of A.R.S. § 20-461, Arizona's Unfair Claims Settlement Practices Act, including but not limited to:
+>
+> (A)(2) Failing to acknowledge and act reasonably promptly upon communications with respect to claims arising under insurance policies;
+>
+> (A)(3) Failing to adopt and implement reasonable standards for the prompt investigation of claims arising under insurance policies;
+>
+> (A)(4) Refusing to pay claims without conducting a reasonable investigation based upon all available information;
+>
+> (A)(6) Not attempting in good faith to effectuate prompt, fair and equitable settlements of claims in which liability has become reasonably clear;
+>
+> (A)(7) Compelling insureds to institute litigation to recover amounts due under an insurance policy by offering substantially less than the amounts ultimately recovered in actions brought by the insureds;
+>
+> (A)(14) Failing to promptly provide a reasonable explanation of the basis in the insurance policy in relation to the facts or applicable law for denial of a claim or for the offer of a compromise settlement;
+
+### State-Specific Statute Quick Reference
+
+| State | Statute | Key Differences |
+|-------|---------|----------------|
+| KY | KRS 304.12-230 | + KRS 304.12-235 (30-day POL, 12% interest) |
+| IN | IN Code § 27-4-1-4.5 | Similar numbering to KY |
+| MT | MCA 33-18-201 | Independent cause of action; 60-day deadline |
+| TN | T.C.A. § 56-8-104 | Different subsection numbers |
+| AZ | A.R.S. § 20-461 | Uses (A)(#) format |
+| OH | ORC § 3901.21 | — |
+| TX | Tex. Ins. Code § 541.060 | Prompt Payment Act also applies |
+| FL | Fla. Stat. § 624.155 | Civil remedy notice required before suit |
+| OR | ORS § 746.230 | — |
+| SC | S.C. Code § 38-59-20 | — |
+| OK | 36 Okl. St. § 1250.5 | — |
+| NV | NRS § 686A.310 | — |
+| IL | 215 ILCS 5/154.6 | — |
+| ID | Idaho Code § 41-1329 | — |
+| WY | Wyo. Stat. § 26-13-124 | — |
+| SD | SDCL § 58-33-67 | — |
+
+**For states not detailed above:** Look up the specific statute on Casetext or Justia. The language is very similar across states — cite only the subsections that apply.
 
 ---
 
-## 8. Proofreading Checklist
+## 9. Demand Tips & Writing Standards
 
-Use this checklist **every time** after drafting and **before** sending to Bart for review. "Word Perfect" is the motto.
+### Writing Style
+- ✅ **ACTIVE voice** and **PROFESSIONAL tone**
+- ✅ Insurance companies are **"it"** — never "they" or "insurer"
+- ✅ All text in **Times New Roman 12pt**
+- ✅ Double-spaced body
+
+### Photo Usage
+- Use the **Snippet tool** to embed photos directly in the demand
+- Photos strengthen the argument — the carrier will want to see them anyway
+
+**Example of GOOD photo reference:**
+> "The insured was forced to retain Public Adjuster Brandi Carroll to seek fair indemnification. Mrs. Carroll inspected the property and documented the hail damage in her previously provided report. The photographs clearly show hail damage to roof shingles, notably punctures in the ridge caps. I've enclosed a copy of the report for your reference."
+
+**BAD:**
+> "The roof has clearly sustained hail damage, as shown in the estimate with photos, provided by Public Adjuster Brandi Carroll."
+
+### General Tips
+- If we have an engineer's report, mention it and attach it
+- Don't just say what the insurance company paid — develop **specific arguments** based on policy provisions
+- If you find missing information, ask the team or get permission to discuss with the client/PA
+- Try to complete as much as possible before sending to Bart for review
+- Include comments in Word for questions; if too many questions are blocking progress, raise them in the daily meeting
+
+---
+
+## 10. Proofreading Checklist
+
+**⏱️ Expected Time: 30–60 minutes**
+
+Use this checklist **every time** after drafting and **before** sending to Bart for review. **"Word Perfect" is the motto.**
 
 - ✅ Date the demand is being sent out
 - ✅ Opposing Counsel / Adjuster email
@@ -440,7 +626,7 @@ Use this checklist **every time** after drafting and **before** sending to Bart 
   - **Calculate 3 TIMES**
   - Add a note if unsure, explain your reasoning
 - ✅ Payment Deadline Paragraph:
-  - Demand amount
+  - Demand amount matches breakdown total
   - FBO list with correct names
   - Deadline date (update if drafting over multiple days)
 - ✅ Enclosures: EVERY document that needs to be attached is listed
@@ -449,7 +635,9 @@ Use this checklist **every time** after drafting and **before** sending to Bart 
 
 ---
 
-## 9. Serving the Demand
+## 11. Serving the Demand
+
+**⏱️ Expected Time: 15 minutes**
 
 After Bart approves the demand:
 
@@ -480,7 +668,9 @@ After Bart approves the demand:
 
 ---
 
-## 10. Calendaring Deadlines
+## 12. Calendaring Deadlines
+
+→ See [SOP 09 — Calendaring & Deadlines](09-calendaring-and-deadlines.md) for the full calendaring procedure.
 
 ### Demand Response Deadlines by State
 
@@ -491,6 +681,7 @@ After Bart approves the demand:
 | **Arizona** | 14 days | Including weekends |
 | **Tennessee** | 14 days | Including weekends |
 | **Montana** | 60 days | From receipt of letter, including weekends |
+| **All others** | 14 days | Default unless state requires more |
 
 ### How to Calendar
 
@@ -498,27 +689,28 @@ After Bart approves the demand:
 2. Create a new calendar event:
    - **Title:** `Def Demand Payment Due - [Client Last Name]`
    - **Invite:** Bart Denham only
-   - **Date:** Count 14 days from send date (weekends count)
-   - **All-day event:** Yes (appears at top of calendar)
+   - **Date:** Count from send date (see table above)
+   - **All-day event:** Yes
    - **Matter:** Verify correct client
    - **Calendar:** Support Staff
    - **Description:** "Sent Demand via email [date]"
 3. Save event → **DO NOT NOTIFY** (no email notification to Bart)
 
-**Example:** Demand sent September 18, 2024 → Deadline is October 2, 2024
+**Example:** Demand sent September 18, 2024 → KY deadline is October 2, 2024 (14 days)
 
 ⚠️ **Update the payment deadline in the demand letter if drafting spans multiple days.**
 
 ---
 
-## 11. Follow-Up Procedure
+## 13. Follow-Up Procedure
 
 - If no response by the deadline, follow up once in writing
-- If still no response, proceed to litigation (→ see [SOP 04](04-complaints-and-filing.md))
+- If still no response, proceed to litigation (→ see [SOP 04 — Complaints & Filing](04-complaints-and-filing.md))
+- For mediation or appraisal alternatives, → see [SOP 05a — Mediation](05a-mediation.md) or [SOP 05b — Appraisal](05b-appraisal.md)
 
 ---
 
-## 12. Payment Instructions
+## 14. Payment Instructions
 
 Standard payment paragraph:
 
@@ -528,11 +720,11 @@ Standard payment paragraph:
 
 - ✅ All insured names on the policy
 - ✅ Public adjuster company name (if applicable — only if client signed with a PA)
-- Mortgage company (if applicable)
+- ✅ Mortgage company (if applicable)
 
 ---
 
-## 13. Public Adjuster Referral Sources
+## 15. Public Adjuster Referral Sources
 
 Some referred public adjusters and contractors include:
 
@@ -548,6 +740,31 @@ Some referred public adjusters and contractors include:
 - Behind the Door Contracting
 
 ---
+
+## 16. Common Mistakes & Pro Tips
+
+### ⚠️ Common Mistakes
+
+1. **Wrong insurance company name** — "State Farm" ≠ "State Farm Fire and Casualty Company." Always verify on the policy AND the Dept. of Insurance website.
+2. **Dollar amounts don't match** — The narrative says $25,480 but the breakdown says $25,408. Triple-check.
+3. **Wrong statute for the state** — Using KRS in an Indiana demand. Copy from the correct section above.
+4. **Forgetting to subtract prior payments** — If Allstate already paid $7,644.06, your demand should net that out.
+5. **Forgetting the deductible** — Or subtracting it when it should be included (varies by demand strategy — ask Bart).
+6. **Misdated loss or policy period** — Verify against MULTIPLE sources (correspondence, policy, client).
+7. **Missing or mislabeled enclosures** — If the demand references "the attached estimate" but the enclosures list doesn't include it, you'll look careless.
+8. **Using "they" for the insurance company** — Insurance companies are "it." Always.
+9. **Not updating the date when drafting spans multiple days** — If you started Monday and finish Wednesday, the date and deadline must reflect Wednesday.
+10. **Sending the demand with Word comments still visible** — Remove ALL comments before converting to PDF.
+
+### 💡 Pro Tips
+
+1. **Read 2-3 completed demands from the Demands folder** before writing your first one. The best teacher is seeing what Bart approved.
+2. **For roof damage, always cite 806 KAR 12:095 § 9(1)(b)** — the matching requirement. Carriers hate this regulation because it usually means a full roof replacement.
+3. **Embed photos** — A picture of hail damage with punctured ridge caps is worth 1,000 words of argument.
+4. **Frame water losses carefully** — "Sudden water loss from a pipe bursting" is covered. "Slow leak over time" is generally NOT. Word choice matters.
+5. **Use the denial letter against them** — If the carrier's own letter says "we inspected and found no damage," but photos show clear damage, quote their letter and show the contradiction.
+6. **Keep a running list of "commonly asked" Bart feedback** — If Bart keeps correcting the same things, note them and check for those first.
+7. **The POL and demand should be drafted in parallel** — Don't wait for the signed POL to start the demand. Draft both, get POL signed, then merge.
 
 ### Glossary
 

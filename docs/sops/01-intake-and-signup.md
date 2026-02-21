@@ -2,7 +2,8 @@
 
 **Last Updated:** February 2026  
 **CMS Phase:** Presuit  
-**Primary Role:** Intake Specialist
+**Primary Role:** Intake Specialist  
+**⏱️ Expected Time: Initial call 10–15 min | File setup 15–20 min**
 
 ---
 
@@ -11,16 +12,18 @@
 1. [Overview](#1-overview)
 2. [Initial Call Process](#2-initial-call-process)
 3. [Information Gathering](#3-information-gathering)
-4. [Fee Structure](#4-fee-structure)
-5. [Contract (ATR) Preparation & Sending](#5-contract-atr-preparation--sending)
-6. [Follow-Up Cadence](#6-follow-up-cadence)
-7. [Document Request Emails](#7-document-request-emails)
-8. [File Setup in CMS](#8-file-setup-in-cms)
-9. [Attorney & Team Assignment](#9-attorney--team-assignment)
-10. [Front Desk Phone Procedures](#10-front-desk-phone-procedures)
-11. [Scheduling Procedures](#11-scheduling-procedures)
-12. [Intake Sample Scripts](#12-intake-sample-scripts)
-13. [Public Adjuster Referral Guide](#13-public-adjuster-referral-guide)
+4. [Case Screening Decision Tree](#4-case-screening-decision-tree)
+5. [Fee Structure](#5-fee-structure)
+6. [Contract (ATR) Preparation & Sending](#6-contract-atr-preparation--sending)
+7. [Follow-Up Cadence](#7-follow-up-cadence)
+8. [Document Request Emails](#8-document-request-emails)
+9. [File Setup in CMS](#9-file-setup-in-cms)
+10. [Attorney & Team Assignment](#10-attorney--team-assignment)
+11. [Front Desk Phone Procedures](#11-front-desk-phone-procedures)
+12. [Scheduling Procedures](#12-scheduling-procedures)
+13. [Intake Sample Scripts](#13-intake-sample-scripts)
+14. [Public Adjuster Referral Guide](#14-public-adjuster-referral-guide)
+15. [Common Mistakes & Pro Tips](#15-common-mistakes--pro-tips)
 
 ---
 
@@ -78,20 +81,51 @@ We received client information from a referral source and are calling to initiat
 
 ---
 
-## 4. Fee Structure
+## 4. Case Screening Decision Tree
+
+Use this to quickly determine if we should take a case:
+
+```
+Is it a Property Insurance case?
+├── YES → Is the DOL within the SOL? (Check policy "Suit Against Us" if >1 year)
+│   ├── YES → Is the estimated unpaid damage ≥ $20,000?
+│   │   ├── YES → ✅ TAKE THE CASE
+│   │   └── NO → Is this a PA referral's current client?
+│   │       ├── YES → ✅ TAKE THE CASE (good relationship maintenance)
+│   │       └── NO → ⛔ LIKELY REJECT — discuss with Bart
+│   └── NO / UNKNOWN → Request full policy ASAP. Hold until confirmed.
+│       └── SOL expired → ⛔ REJECT — refer to bar association
+│
+Is it an MVA / Personal Injury case?
+├── YES → Are there injuries?
+│   ├── YES → Is the SOL still good? (→ see SOP 09 state SOL table)
+│   │   ├── YES → Is venue acceptable?
+│   │   │   ├── YES → ✅ TAKE THE CASE
+│   │   │   └── NO → ⛔ REJECT — refer to local attorney
+│   │   └── NO → ⛔ REJECT
+│   └── NO injuries → ⛔ REJECT — "We only handle MVA cases with injuries"
+│
+Is it something else (dog bite, slip & fall, etc.)?
+└── Discuss with Bart before proceeding
+```
+
+---
+
+## 5. Fee Structure
 
 | Scenario | Pre-Litigation | Litigation |
 |----------|---------------|------------|
 | Standard (non-referred) | 33% | 40% |
-| PA-referred case | 25% | 33% |
+| PA-referred case (PA's current client) | 25% | 33% |
+| PA-referred case (NOT PA's current client) | 33% | 40% |
 
 Discuss fees with the PNC and select the appropriate fee structure in the CMS so the contract populates correctly.
 
 ---
 
-## 5. Contract (ATR) Preparation & Sending
+## 6. Contract (ATR) Preparation & Sending
 
-### 5.1 Pre-Send Checklist
+### 6.1 Pre-Send Checklist
 
 **Property Casualty cases require these fields for auto-population:**
 - ✅ Defendant Full Name (For Contract)
@@ -103,7 +137,7 @@ Discuss fees with the PNC and select the appropriate fee structure in the CMS so
 
 **Attorney on contract:** Bart must be chosen under "Assigned to Attorney" so he appears on the contract.
 
-### 5.2 Sending Steps
+### 6.2 Sending Steps
 
 1. In the CMS, navigate to Documents and select the appropriate ATR template:
    - **Authority to Represent — Single Party** (one insured)
@@ -116,9 +150,19 @@ Discuss fees with the PNC and select the appropriate fee structure in the CMS so
 7. Name the document: **"Authority to Represent — [Last Name]"**
 8. Change lead status to **"Pending Signup"**
 
+### 💡 Pro Tips — ATR
+- If the client is eager, send the ATR *while still on the phone*. Walk them through signing it live — this dramatically increases conversion rate.
+- For two-insured cases, make sure BOTH names populate. The CMS sometimes only pulls the primary contact.
+
+### ⚠️ Common Mistakes — ATR
+- Forgetting to delete the auto-inserted date at the bottom
+- Using the wrong template (single vs. two-client)
+- Not selecting the correct fee structure for PA referrals (25/33 vs 33/40)
+- Sending before verifying the Defendant Name field is populated
+
 ---
 
-## 6. Follow-Up Cadence
+## 7. Follow-Up Cadence
 
 - ✅ Follow up on signature **every 2–4 days** until signed
 - All correspondence with the lead should be logged in the CMS Messages tab
@@ -126,7 +170,7 @@ Discuss fees with the PNC and select the appropriate fee structure in the CMS so
 
 ---
 
-## 7. Document Request Emails
+## 8. Document Request Emails
 
 Send a document request email **after sending the ATR**. Send through the CMS so documentation is logged to the file.
 
@@ -150,19 +194,19 @@ Send a document request email **after sending the ATR**. Send through the CMS so
 
 ---
 
-## 8. File Setup in CMS
+## 9. File Setup in CMS
 
-### 8.1 Convert the Lead
+### 9.1 Convert the Lead
 1. Change lead status to **"Signed Up"**
 2. Post the lead to the CMS case management system
 3. Change the project name to: **Last Name, First Name v. Defendant(s)**
 
-### 8.2 Organize the File
-- Use the CMS pre-made folder structure
+### 9.2 Organize the File
+- Use the CMS pre-made folder structure (→ see [SOP 02 § Folder Structure](02-document-collection-and-lor.md#7-folder-structure))
 - Drag and drop documents into appropriate folders
 - As new docs arrive, file them into the correct folder
 
-### 8.3 OneDrive Backup
+### 9.3 OneDrive Backup
 Create a folder in OneDrive: **"[Last Name], [First Name]"** with subfolders:
 - Intake
 - Correspondence
@@ -170,32 +214,30 @@ Create a folder in OneDrive: **"[Last Name], [First Name]"** with subfolders:
 - Photos
 - Policy
 
-### 8.4 Document Naming Convention
-Follow this format:
+### 9.4 Document Naming Convention
+Follow this format (→ see [SOP 02 § Naming Convention](02-document-collection-and-lor.md#6-document-naming-convention) for full details):
 ```
 8.26.25 SF Letter re Settlement
 9.1.25 LOR Smith
 Certified Policy from [SF, Progressive, Allstate, etc.]
-7.2.25 Allstate Letter re Damages and Investigation
-4.2.25 IRS Estimate
-3.3.25 Progressive Denial Letter
-2.2.25 Kate Dick's Engineering Report
 ```
 
 ---
 
-## 9. Attorney & Team Assignment
+## 10. Attorney & Team Assignment
 
 | Jurisdiction | Attorney |
 |-------------|----------|
-| Kentucky | Hans |
-| All other states | Bart |
+| Kentucky | Hans Pfaffenberger |
+| All other states | J. Bart Denham |
 
 Notify the assigned attorney and pod that a new client has been signed. Alert them of any missing documentation (especially estimates).
 
+→ After assignment, the paralegal takes over: [SOP 02 — Document Collection & LOR](02-document-collection-and-lor.md)
+
 ---
 
-## 10. Front Desk Phone Procedures
+## 11. Front Desk Phone Procedures
 
 ### Answering the Main Line
 
@@ -209,7 +251,7 @@ Notify the assigned attorney and pod that a new client has been signed. Alert th
 | Asking for Hans | Blind transfer to Hans |
 | Client intake call | Transfer to intake specialist if available. If not, take bare minimum info (see below). |
 | Current client — update request | Try to find the answer while on the call. If unsure, tell them you'll get back to them by EOD. |
-| Insurance company defendant | ⚠️ **Don't tell them anything you're unsure about.** Take a message. Be ESPECIALLY cautious. |
+| Insurance company defendant | ⚠️ **Don't tell them anything you're unsure about.** Take a message. Be ESPECIALLY cautious. (→ see [SOP 07](07-client-communication.md#5-what-not-to-tell-insurance-company-defendants)) |
 
 ### Bare Minimum for Intake (if intake specialist is unavailable)
 - ✅ Name
@@ -226,26 +268,31 @@ Notify the assigned attorney and pod that a new client has been signed. Alert th
 - Check Bart's calendar for the day
 - Answer phone calls
 - Mail necessary items
-- Scan and file documents (→ see [SOP 02](02-document-collection-and-lor.md))
+- Scan and file documents (→ see [SOP 02 § Scanning](02-document-collection-and-lor.md#9-scanning--filing-procedures))
 - Schedule appointments
 - Order office supplies as needed
-- Client updates and follow-ups
+- Client updates and follow-ups (→ see [SOP 07](07-client-communication.md))
 - General support to staff
 
 ---
 
-## 11. Scheduling Procedures
+## 12. Scheduling Procedures
+
+**⏱️ Expected Time: 5 minutes per appointment**
 
 1. **Explicitly confirm** whether this is a video, phone, or in-person meeting
 2. Check the attorney's calendar first — have a couple of times and dates in mind
-3. **Take note of the caller's time zone**
+3. **Take note of the caller's time zone** (we have clients in 16 states!)
 4. Call the person and put the event on the attorney's calendar while on the phone
 5. Include the person's phone number and any notes in the calendar event
 6. Call the person at the scheduled time and transfer to attorney unless confirmed otherwise
 
+### 💡 Pro Tip
+Montana is Mountain Time, Arizona doesn't observe daylight saving time. Double-check time zones for out-of-state clients before scheduling.
+
 ---
 
-## 12. Intake Sample Scripts
+## 13. Intake Sample Scripts
 
 ### PA Referral — Property Claim
 
@@ -322,7 +369,7 @@ Notify the assigned attorney and pod that a new client has been signed. Alert th
 
 ---
 
-## 13. Public Adjuster Referral Guide
+## 14. Public Adjuster Referral Guide
 
 ### When to Send Us a Lead
 - **Minimum claim value:** ~$20,000
@@ -358,6 +405,27 @@ Notify the assigned attorney and pod that a new client has been signed. Alert th
 | Fax | (859) 203-8030 | — |
 
 **Headquarters:** 250 West Main St., Suite 120, Lexington, KY 40507
+
+---
+
+## 15. Common Mistakes & Pro Tips
+
+### ⚠️ Common Mistakes
+
+1. **Forgetting to ask the DOL** — This is THE most important screening question. A 3-year-old claim may be time-barred.
+2. **Not checking if both spouses are on the policy** — If the policy lists two insureds, BOTH must sign the ATR.
+3. **Telling the caller we'll "definitely" take their case** before screening is complete — never promise until Bart confirms.
+4. **Not logging the call in the CMS** — If it's not in the system, it didn't happen.
+5. **Sending the ATR before the Defendant Name field is filled** — The contract will be blank where it matters.
+6. **Using the wrong fee structure** — PA referral (current client) = 25/33. Non-referred = 33/40. Getting this wrong requires a new contract.
+
+### 💡 Pro Tips
+
+1. **Send the ATR while on the phone** — Walk them through signing. Conversion rate is much higher when they sign live.
+2. **Google the property address** — Street View shows roof condition, property size. Helps you understand the claim.
+3. **Check the CMS before creating a new lead** — Answering service messages often auto-create leads. Duplicates cause headaches.
+4. **For PA referrals, CC the PA on the document request email** — They often already have the documents and can send them faster than the client.
+5. **Set a task for 48 hours after sending the ATR** — If not signed, follow up immediately. After a week, warm leads go cold.
 
 ---
 

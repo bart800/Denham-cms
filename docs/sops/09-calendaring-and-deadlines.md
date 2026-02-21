@@ -2,7 +2,8 @@
 
 **Last Updated:** February 2026  
 **CMS Phase:** Cross-cutting (all phases)  
-**Primary Role:** Paralegal
+**Primary Role:** Paralegal  
+**⏱️ Expected Time: Calendar entry 5 min | Weekly audit 45–90 min | SOL calculation 10–15 min per case**
 
 ---
 
@@ -10,10 +11,14 @@
 
 1. [Overview](#1-overview)
 2. [Master Deadline Reference Table](#2-master-deadline-reference-table)
-3. [Date Calculation Rules](#3-date-calculation-rules)
-4. [Calendaring Procedure](#4-calendaring-procedure)
-5. [SOL Tracking & Alerts](#5-sol-tracking--alerts)
-6. [Weekly Calendar Audit](#6-weekly-calendar-audit)
+3. [Statute of Limitations by State](#3-statute-of-limitations-by-state)
+4. [Date Calculation Rules](#4-date-calculation-rules)
+5. [Calendaring Procedure](#5-calendaring-procedure)
+6. [SOL Tracking & Alerts](#6-sol-tracking--alerts)
+7. [Weekly Calendar Audit](#7-weekly-calendar-audit)
+8. [Missed Deadline Emergency Procedure](#8-missed-deadline-emergency-procedure)
+9. [CMS Calendar Integration](#9-cms-calendar-integration)
+10. [Common Mistakes & Pro Tips](#10-common-mistakes--pro-tips)
 
 ---
 
@@ -59,10 +64,62 @@ Calendaring is the lifeblood of the firm. Missing a deadline can result in case 
 | Medical Records Follow-Up | 14 days from request |
 | Settlement Check Follow-Up | 20 days after payment info sent |
 | Settlement Disbursement | 10 business days after deposit |
+| PIP Ledger Request | Monthly |
+| Referral Source Updates | Weekly (Fridays) |
 
 ---
 
-## 3. Date Calculation Rules
+## 3. Statute of Limitations by State
+
+### Complete SOL Reference Table — All 16 States
+
+⚠️ **These are general guidelines. Always verify current statutes — laws change. When in doubt, use the SHORTEST applicable deadline.**
+
+| State | Personal Injury | Property Damage | Breach of Contract (Written) | Breach of Contract (Oral) | Bad Faith / UCSPA | Notes |
+|-------|----------------|-----------------|------------------------------|--------------------------|-------------------|-------|
+| **Kentucky (KY)** | 1 year (PI) / 2 years (auto PIP) | 2 years | 10 years (written after 7/15/14) / 15 years (before) | 5 years | 2 years (CPA) / 5 years (UCSPA) | Property cases: check policy "Suit Against Us" clause — often 1 year from denial |
+| **Indiana (IN)** | 2 years | 2 years | 6 years (written) | 6 years | 2 years | |
+| **Ohio (OH)** | 2 years | 2 years | 6 years (written) | 6 years | 4 years | |
+| **Tennessee (TN)** | 1 year | 3 years | 6 years | 6 years | 1 year | PI is very short — calendar immediately |
+| **Montana (MT)** | 3 years | 2 years | 5 years (written) | 5 years | 2 years | |
+| **Arizona (AZ)** | 2 years | 2 years | 6 years (written) | 3 years | 2 years | |
+| **West Virginia (WV)** | 2 years | 2 years | 10 years (written) | 5 years | 1 year | |
+| **Virginia (VA)** | 2 years | 5 years | 5 years (written) | 3 years | 2 years | |
+| **North Carolina (NC)** | 3 years | 3 years | 3 years | 3 years | 3 years | |
+| **South Carolina (SC)** | 3 years | 3 years | 3 years | 3 years | 3 years | |
+| **Georgia (GA)** | 2 years | 4 years | 6 years (written) | 4 years | 2 years | |
+| **Alabama (AL)** | 2 years | 6 years | 6 years | 6 years | 2 years | |
+| **Mississippi (MS)** | 3 years | 3 years | 3 years | 3 years | 3 years | |
+| **Florida (FL)** | 2 years | 4 years | 5 years (written) | 4 years | 5 years | PI reduced from 4 to 2 years in 2024 |
+| **Illinois (IL)** | 2 years | 5 years | 10 years (written) | 5 years | 5 years | |
+| **Texas (TX)** | 2 years | 2 years | 4 years | 4 years | 2 years | |
+
+### Kentucky SOL Deep Dive (Primary State)
+
+Since most of our cases are in Kentucky, here's the detailed breakdown:
+
+| Claim Type | SOL | Statute |
+|-----------|-----|---------|
+| Personal Injury (general) | 1 year | KRS 413.140(1)(a) |
+| Auto accident PI (with PIP) | 2 years from accident or last PIP payment (max 4 years) | KRS 304.39-230 |
+| Medical malpractice | 1 year from discovery (max 5 years) | KRS 413.140(1)(e) |
+| Property damage (personal property) | 2 years | KRS 413.125 |
+| Written contract (after 7/15/14) | 10 years | KRS 413.160 |
+| Written contract (before 7/15/14) | 15 years | KRS 413.090(2) |
+| Oral contract | 5 years | KRS 413.120(1) |
+| UCC sale of goods | 4 years | KRS 355.2-725 |
+| Consumer Protection Act (bad faith) | 2 years | KRS 367.220(5) |
+| UCSPA (unfair claims) | 5 years | KRS 413.120(2) |
+| Construction defect (bodily injury) | 1 year (max 7-8 years from completion) | KRS 413.135 |
+| Builder negligence (PI) | 5 years | KRS 413.120(14) |
+
+### Property Insurance Cases — Special Rule
+
+⚠️ **For property insurance cases, the SOL is often found in the policy itself** under the "Suit Against Us" or "Legal Action Against Us" provision. This is typically **1 year from the date of denial** but varies by policy. Always check the policy language.
+
+---
+
+## 4. Date Calculation Rules
 
 ### The Rule for Litigation Documents
 
@@ -82,11 +139,18 @@ Calendaring is the lifeblood of the firm. Missing a deadline can result in case 
 - Weekends **DO** count
 - Start counting from the day sent
 
+### SOL Calculation
+- Start from the **date of the event** (accident, denial, breach)
+- End on the **anniversary** of that date (minus appropriate years)
+- If anniversary falls on weekend/holiday → extends to next business day
+
 ---
 
-## 4. Calendaring Procedure
+## 5. Calendaring Procedure
 
 ### How to Calendar a Deadline
+
+**⏱️ Expected Time: 5 minutes per entry**
 
 1. Go to the client's file in the CMS
 2. Open the Calendar section
@@ -114,21 +178,32 @@ Calendaring is the lifeblood of the firm. Missing a deadline can result in case 
 | SOL Deadline | `SOL DEADLINE - [Last Name]` |
 | Trial Date | `TRIAL - [Last Name]` |
 | Mediation | `Mediation - [Last Name]` |
+| Medical Records Follow-Up | `Med Rec F/U - [Last Name] - [Provider]` |
+| PIP Ledger Due | `PIP Ledger Due - [Last Name]` |
+| Settlement Check Follow-Up | `Settlement Check F/U - [Last Name]` |
+| IOLTA 10-Day Hold Ends | `IOLTA Hold Ends - [Last Name]` |
 
 ---
 
-## 5. SOL Tracking & Alerts
+## 6. SOL Tracking & Alerts
 
-- ⚠️ **Calculate the lowest applicable SOL at intake**
+- ⚠️ **Calculate the lowest applicable SOL at intake** — do this FIRST
 - Calendar the SOL deadline on **both** the assigned attorney's calendar and Bart's calendar
 - For property cases: SOL is often found in the policy under "Suit Against Us"
 - For PI cases: Varies by state — calculate the most restrictive deadline
+- **Set a warning reminder 90 days before SOL** — gives time to file if needed
+- **Set a second warning 30 days before SOL** — final alert
+
+→ See [SOP 01 — Intake & Signup](01-intake-and-signup.md) for SOL calculation at intake.  
+→ See [SOP 08 — PI Case Lifecycle](08-pi-case-lifecycle.md) for PI-specific SOL considerations.
 
 ---
 
-## 6. Weekly Calendar Audit
+## 7. Weekly Calendar Audit
 
-**Every Sunday,** review everyone's schedule for the upcoming week **through Monday of the following week** (to catch Monday items that need prep).
+**Every Sunday** — review everyone's schedule for the upcoming week **through Monday of the following week** (to catch Monday items that need prep).
+
+**⏱️ Expected Time: 45–90 minutes**
 
 ### Audit Steps
 
@@ -145,6 +220,14 @@ For **each** scheduled event:
    - Make a personal calendar event to call the court
    - If any issues arise regarding travel or connection info, **inform the relevant attorney immediately**
 
+### Monthly Audit — SOL Check
+
+Once per month, review **all active cases** and verify:
+- SOL is calendared
+- SOL date is correct
+- Warning reminders (90-day and 30-day) are set
+- No SOL is approaching without a plan (demand sent, suit filed, etc.)
+
 ### Audit Mindset
 
 > **Take time to do this. There is no need to rush. Accuracy is King.**
@@ -152,6 +235,87 @@ For **each** scheduled event:
 Scheduling errors put stress on attorneys and risk sanctions and disciplinary action. Adding redundancy in the scheduling procedure is the best way to ensure mistakes don't happen.
 
 ⚠️ **The schedule is the lifeblood of the firm and must be reviewed with a careful eye.**
+
+---
+
+## 8. Missed Deadline Emergency Procedure
+
+If you discover a deadline has been missed or is about to be missed:
+
+### Immediate Steps (Within 1 Hour)
+
+1. ⚠️ **STOP — Do not try to fix it yourself**
+2. **Notify the assigned attorney AND Bart immediately** — call, don't email
+3. Provide: case name, deadline type, original deadline date, current status
+4. **Document everything** — when you discovered it, what you checked
+
+### Attorney Will Determine
+
+| Situation | Possible Action |
+|-----------|----------------|
+| Demand deadline missed | Send demand immediately; may not have consequences |
+| Discovery deadline missed | File motion for extension; contact OC to stipulate |
+| SOL about to expire | Emergency filing required — drop everything |
+| SOL already expired | Malpractice exposure — attorney handles immediately |
+| Court-ordered deadline missed | Motion to extend; potential sanctions |
+
+### Post-Incident Review
+
+After the crisis is resolved:
+1. Determine **why** the deadline was missed
+2. Update procedures to prevent recurrence
+3. Document the incident and resolution
+4. Add additional redundancy checks if needed
+
+---
+
+## 9. CMS Calendar Integration
+
+### How CMS Calendar Syncs
+
+- CMS calendar events sync to **Outlook/Microsoft 365** calendars
+- Events should be created in CMS (not directly in Outlook) so they're linked to the matter
+- All-day events appear at the top of the calendar — use this for deadlines
+
+### Best Practices
+
+- **Create events in CMS** so they're tied to the client file
+- **Don't create duplicate events** in both CMS and Outlook
+- **Use consistent naming conventions** (see Section 5)
+- **Verify sync** — after creating an event in CMS, check that it appears in Outlook
+- **Link documents** — attach relevant documents to calendar events in CMS
+
+---
+
+## 10. Common Mistakes & Pro Tips
+
+### ⚠️ Common Mistakes
+
+| Mistake | Why It's Bad | Prevention |
+|---------|-------------|------------|
+| **Wrong start date for counting** | Deadline is off by 1+ days | Always start counting on the NEXT business day |
+| **Forgetting weekends count in litigation deadlines** | Deadline calculation is wrong | Weekends count in the count, but if deadline falls on weekend → next business day |
+| **Using wrong SOL for the state** | Could miss the real deadline | Always verify the state-specific SOL; use the table above |
+| **Not checking the insurance policy for property SOL** | Policy SOL may be shorter than state SOL | Always read "Suit Against Us" clause |
+| **Calendaring on wrong attorney's calendar** | Attorney doesn't see the deadline | Verify the assigned attorney before creating the event |
+| **Sending notification when creating event** | Bart gets unnecessary email notifications | Always uncheck "Notify" |
+| **Not setting SOL warning reminders** | No advance notice before SOL expires | Set 90-day and 30-day warnings |
+| **Relying on memory instead of the calendar** | Humans forget; calendars don't | Calendar EVERYTHING |
+| **Not doing weekly audit** | Errors accumulate unchecked | Sunday audit is non-negotiable |
+| **Wrong SOL start date (using filing date instead of event date)** | SOL calculated from wrong starting point | SOL runs from the event (accident, denial, breach), not from when we were hired |
+
+### 💡 Pro Tips
+
+- **Calendar the deadline AND a follow-up before it** — e.g., "Discovery due in 5 days - Smith" a week before the actual deadline
+- **Use the date calculator** every time — don't count days in your head
+- **Double-check your math** — have someone else verify critical deadlines (SOL, trial dates)
+- **When in doubt, use the shorter deadline** — it's better to be early than late
+- **For property cases:** The policy SOL is usually 1 year from denial — read every policy
+- **Print the weekly calendar** and tape it to your monitor — visual reminders work
+- **Color-code** by deadline type if your calendar supports it (red = SOL, orange = discovery, etc.)
+- **Never assume the previous paralegal calendared correctly** — verify everything on case transfer
+- **Holiday awareness** — keep a list of court holidays; deadlines that fall on holidays extend to next business day
+- **Time zones matter** — if the court is in a different time zone, file by THEIR business hours
 
 ---
 
