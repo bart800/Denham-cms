@@ -113,6 +113,39 @@ export default function DashboardV2({ onNavigate }) {
   );
 }
 
+function NeedsAttentionWidget({ onNavigate }) {
+  const [stale, setStale] = useState(null);
+  useEffect(() => {
+    fetch("/api/cases/stale")
+      .then(r => r.json())
+      .then(d => setStale(d))
+      .catch(() => {});
+  }, []);
+
+  if (!stale?.stale_cases?.length) return null;
+
+  const cases = stale.stale_cases.slice(0, 10);
+  return (
+    <Card title={`⚠️ Needs Attention (${stale.count})`}>
+      <div style={{ fontSize: 12, color: TEXT_DIM, marginBottom: 12 }}>
+        Cases with no activity for {stale.thresholds?.presuit || 14}+ days (presuit) / {stale.thresholds?.litigation || 30}+ days (litigation)
+      </div>
+      <div style={{ maxHeight: 240, overflowY: "auto" }}>
+        {cases.map(c => (
+          <a key={c.id} href={`/cases/${c.id}`} style={{
+            display: "flex", justifyContent: "space-between", padding: "6px 0",
+            borderBottom: "1px solid rgba(255,255,255,0.05)", color: TEXT, textDecoration: "none", fontSize: 13,
+          }}>
+            <span style={{ flex: 1 }}>{c.client_name} <span style={{ color: TEXT_DIM, fontSize: 11 }}>({c.status})</span></span>
+            <span style={{ color: c.days_since_activity > 30 ? RED : GOLD, fontWeight: 600, whiteSpace: "nowrap" }}>{c.days_since_activity}d idle</span>
+          </a>
+        ))}
+      </div>
+      {stale.count > 10 && <div style={{ fontSize: 12, color: TEXT_DIM, marginTop: 8 }}>+ {stale.count - 10} more</div>}
+    </Card>
+  );
+}
+
 function Grid({ data, onNavigate, isAttorneyView }) {
   const nav = (filter) => onNavigate && onNavigate("cases", filter);
   const {
@@ -191,6 +224,9 @@ function Grid({ data, onNavigate, isAttorneyView }) {
           </div>
         )}
       </Card>
+
+      {/* Needs Attention - Stale Cases */}
+      <NeedsAttentionWidget onNavigate={onNavigate} />
 
       {/* Financial Summary */}
       <Card title="Financial Summary (2026 YTD)">
