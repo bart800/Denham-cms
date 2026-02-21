@@ -1203,10 +1203,11 @@ function Side({ user, active, onNav, onOut, onCmdK, mobileOpen, onToggleMobile, 
       <div style={{ padding: "12px 8px", flex: 1, overflowY: "auto" }}>
         {nav.map(n => (
           <button key={n.id} onClick={() => onNav(n.id)} style={{
-            display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px",
+            display: "flex", alignItems: "center", gap: 10, width: "100%", padding: mobileOpen !== undefined && typeof window !== "undefined" && window.innerWidth < 768 ? "14px 12px" : "10px 12px",
             borderRadius: 8, border: "none", background: active === n.id ? `${B.gold}15` : "transparent",
             color: active === n.id ? B.gold : B.txtM, cursor: "pointer", fontSize: 13,
             fontWeight: active === n.id ? 600 : 400, fontFamily: "'DM Sans',sans-serif", marginBottom: 2, textAlign: "left",
+            minHeight: 44,
           }}>
             <span style={{ fontSize: 16, opacity: 0.7 }}>{n.icon}</span>{n.label}
             {n.count != null && <span style={{ marginLeft: "auto", fontSize: 10, color: B.txtD, ...S.mono }}>{n.count}</span>}
@@ -1859,7 +1860,7 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+      <div className="denham-header-row" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Cases</h2>
         <div style={{ display: "flex", gap: 4, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 8, padding: 2 }}>
           {[["all", "All Cases"], ["mine", "My Cases"]].map(([k, l]) => (
@@ -1879,7 +1880,7 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
 
       {/* Filter Bar */}
       <div style={{ ...S.card, padding: "12px 16px", marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <div className="denham-filter-bar" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ position: "relative", flex: "1 1 240px", maxWidth: 320 }}>
             <input
               placeholder="Search cases, clients, insurers..."
@@ -1965,7 +1966,7 @@ function Cases({ user, cases, onOpen, initialStatus, initialFilters, onClearFilt
         </div>
       )}
 
-      <div ref={tableRef} style={{ ...S.card, padding: 0, overflow: "hidden" }}>
+      <div ref={tableRef} className="denham-table-wrap" style={{ ...S.card, padding: 0, overflow: "hidden" }}>
         <table style={S.tbl}>
           <thead><tr>
             <th style={{ ...S.th, width: 36, textAlign: "center" }}>
@@ -4905,9 +4906,24 @@ export default function DenhamStaffPortal() {
           mobileOpen={isMobile ? sidebarOpen : true} onToggleMobile={() => setSidebarOpen(false)} counts={sidebarCounts} />
       </div>
       <CommandBar open={cmdBarOpen} onClose={() => setCmdBarOpen(false)} onOpenCase={openCaseById} cases={cases} />
-      <div style={{ marginLeft: isMobile ? 0 : 220, flex: 1, padding: isMobile ? "60px 16px 28px" : "28px 32px", maxWidth: 1200 }}>
-        {/* Shimmer animation for skeletons */}
-        <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } } @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+      <div style={{ marginLeft: isMobile ? 0 : 220, flex: 1, padding: isMobile ? "60px 10px 28px" : "28px 32px", maxWidth: 1200 }}>
+        {/* Shimmer animation for skeletons + mobile responsive styles */}
+        <style>{`
+          @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+          @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+          @media (max-width: 768px) {
+            .denham-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .denham-table-wrap table { min-width: 900px; }
+            .denham-filter-bar { flex-direction: column !important; }
+            .denham-filter-bar > * { width: 100% !important; max-width: 100% !important; flex: 1 1 100% !important; }
+            .denham-grid-2 { grid-template-columns: 1fr !important; }
+            .denham-grid-3 { grid-template-columns: 1fr !important; }
+            .denham-grid-4 { grid-template-columns: 1fr 1fr !important; }
+            .denham-header-row { flex-wrap: wrap !important; gap: 8px !important; }
+            .denham-header-row > * { flex: 1 1 auto !important; }
+            button, select, input { min-height: 44px; }
+          }
+        `}</style>
         <ToastContainer />
         <WelcomeModal memberName={user?.name} />
         {/* Global Header Bar */}

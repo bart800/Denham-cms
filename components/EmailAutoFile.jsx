@@ -64,6 +64,9 @@ export default function EmailAutoFile() {
   const [caseResults, setCaseResults] = useState({});
   const [expanded, setExpanded] = useState(null);
 
+  const [autoFiling, setAutoFiling] = useState(false);
+  const [autoFileResult, setAutoFileResult] = useState(null);
+
   const loadEmails = useCallback(async () => {
     setLoading(true);
     try {
@@ -86,6 +89,31 @@ export default function EmailAutoFile() {
   }, []);
 
   useEffect(() => { loadEmails(); loadStats(); }, [loadEmails, loadStats]);
+
+  // Auto-file emails with high confidence (>=80)
+  const autoFileHighConfidence = async () => {
+    const assignments = [];
+    for (const email of emails) {
+      const sugs = suggestions[email.id] || [];
+      const best = sugs[0];
+      if (best && best.confidence >= 80) {
+        assignments.push({ emailId: email.id, caseId: best.id, confidence: best.confidence });
+      }
+    }
+    if (assignments.length === 0) { setAutoFileResult("No emails with ≥80% confidence"); return; }
+    setAutoFiling(true);
+    try {
+      const res = await fetch("/api/emails/auto-file", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignments }),
+      });
+      const data = await res.json();
+      setAutoFileResult(`Filed ${data.filed} of ${data.total} emails`);
+      loadEmails(); loadStats();
+    } catch { setAutoFileResult("Error auto-filing"); }
+    setAutoFiling(false);
+  };
 
   const assignEmail = async (emailId, caseId) => {
     setAssigning(emailId);
@@ -120,7 +148,19 @@ export default function EmailAutoFile() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>📧 Email Filing</h2>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>📧 Email Filing</h2>
+        {emails.length > 0 && (() => {
+          const highConf = emails.filter(e => (suggestions[e.id] || [])[0]?.confidence >= 80).length;
+          return highConf > 0 ? (
+            <button onClick={autoFileHighConfidence} disabled={autoFiling}
+              style={{ ...S.btn, background: B.green, color: "#fff", fontSize: 13 }}>
+              {autoFiling ? "Filing..." : `⚡ Auto-file ${highConf} high-confidence email${highConf !== 1 ? "s" : ""}`}
+            </button>
+          ) : null;
+        })()}
+        {autoFileResult && <span style={{ fontSize: 12, color: B.gold }}>{autoFileResult}</span>}
+      </div>
 
       {/* Stats */}
       {stats && (
@@ -185,7 +225,7 @@ export default function EmailAutoFile() {
             </thead>
             <tbody>
               {emails.map(email => {
-                const sugs = suggestions[email.from_address] || [];
+                const sugs = suggestions[email.id] || [];
                 const isExpanded = expanded === email.id;
                 return (
                   <tr key={email.id} style={{ background: isExpanded ? `${B.gold}08` : "transparent" }}>
@@ -197,13 +237,15 @@ export default function EmailAutoFile() {
                       {email.direction === "inbound" ? "📥" : "📤"} {email.subject || "(no subject)"}
                     </td>
                     <td style={S.td}>
-                      {sugs.length > 0 ? sugs.map(c => (
+                      {sugs.length > 0 ? sugs.slice(0, 3).map(c => (
                         <button key={c.id} onClick={() => assignEmail(email.id, c.id)}
                           disabled={assigning === email.id}
-                          style={{ ...S.btnO, fontSize: 11, padding: "3px 8px", marginRight: 4, marginBottom: 2, color: B.gold, borderColor: `${B.gold}40` }}>
+                          title={c.reasons ? c.reasons.join(", ") : ""}
+                          style={{ ...S.btnO, fontSize: 11, padding: "3px 8px", marginRight: 4, marginBottom: 2, color: c.confidence >= 80 ? B.green : c.confidence >= 50 ? B.gold : B.txtM, borderColor: c.confidence >= 80 ? `${B.green}60` : `${B.gold}40` }}>
                           {c.client_name || c.case_number}
+                          <span style={{ ...S.mono, fontSize: 9, marginLeft: 4, opacity: 0.7 }}>{c.confidence}%</span>
                         </button>
-                      )) : <span style={{ fontSize: 11, color: B.txtD }}>No suggestions</span>}
+                      )) : <span style={{ fontSize: 11, color: B.txtD }}>No matches</span>}
                     </td>
                     <td style={S.td}>
                       <button onClick={() => setExpanded(isExpanded ? null : email.id)}

@@ -442,6 +442,253 @@ function VolumeTab({ data }) {
   );
 }
 
+/* ===== CSV Export Helper ===== */
+function exportCSV(headers, rows, filename) {
+  const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ===== New Tab Components ===== */
+
+function MonthlyPerformanceTab({ data }) {
+  const rows = data.rows || [];
+  const maxRecovery = Math.max(1, ...rows.map(r => r.totalRecovery));
+  const thStyle = { padding: '10px 12px', textAlign: 'left', borderBottom: `2px solid ${GOLD}`, color: GOLD, fontSize: 13 };
+  const tdStyle = { padding: '8px 12px', borderBottom: `1px solid ${BORDER}`, fontSize: 13, color: TEXT };
+  return (
+    <>
+      <Card title="Monthly Firm Performance">
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+          <StatBox label="Cases Opened" value={data.totals?.opened || 0} color={NAVY} />
+          <StatBox label="Cases Settled" value={data.totals?.settled || 0} color={GREEN} />
+          <StatBox label="Total Recovery" value={fmt$(data.totals?.totalRecovery)} color={GOLD} />
+        </div>
+        <button onClick={() => exportCSV(
+          ['Month', 'Opened', 'Settled', 'Total Recovery', 'Avg Days to Settle'],
+          rows.map(r => [r.month, r.opened, r.settled, r.totalRecovery, r.avgDaysToSettle ?? '']),
+          'monthly-performance.csv'
+        )} style={{ padding: '6px 14px', background: NAVY, color: GOLD, border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
+          ⬇ Export CSV
+        </button>
+      </Card>
+      <Card title="Recovery by Month">
+        {rows.length === 0 ? <p style={{ color: TEXT_MUTED }}>No data.</p> : (
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 200, marginBottom: 16 }}>
+            {rows.map(r => (
+              <div key={r.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span style={{ fontSize: 10, color: TEXT, marginBottom: 4 }}>{fmt$(r.totalRecovery)}</span>
+                <div style={{ width: '100%', maxWidth: 48, height: `${(r.totalRecovery / maxRecovery) * 160}px`, background: `linear-gradient(to top, ${GREEN}, ${GOLD})`, borderRadius: '4px 4px 0 0', minHeight: 4 }} />
+                <span style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 4 }}>{r.month.slice(5)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+      <Card title="Monthly Detail">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              <th style={thStyle}>Month</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Opened</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Settled</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Recovery</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Avg Days</th>
+            </tr></thead>
+            <tbody>{rows.map(r => (
+              <tr key={r.month}>
+                <td style={tdStyle}>{r.month}</td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>{r.opened}</td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>{r.settled}</td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt$(r.totalRecovery)}</td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>{r.avgDaysToSettle ?? '—'}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </Card>
+    </>
+  );
+}
+
+function InsurerResponseTab({ data }) {
+  const rows = data.rows || [];
+  const thStyle = { padding: '10px 12px', textAlign: 'left', borderBottom: `2px solid ${GOLD}`, color: GOLD, fontSize: 13 };
+  const tdStyle = { padding: '8px 12px', borderBottom: `1px solid ${BORDER}`, fontSize: 13, color: TEXT };
+  const maxDays = Math.max(1, ...rows.filter(r => r.avgResponseDays != null).map(r => r.avgResponseDays));
+  return (
+    <>
+      <Card title="Insurer Response Time">
+        <button onClick={() => exportCSV(
+          ['Insurer', 'Cases', 'Avg Response Days', 'Settled', 'Avg Recovery'],
+          rows.map(r => [r.name, r.cases, r.avgResponseDays ?? '', r.settled, r.avgRecovery]),
+          'insurer-response.csv'
+        )} style={{ padding: '6px 14px', background: NAVY, color: GOLD, border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
+          ⬇ Export CSV
+        </button>
+        {rows.filter(r => r.avgResponseDays != null).length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+            {rows.filter(r => r.avgResponseDays != null).slice(0, 15).map(r => (
+              <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ width: 180, fontSize: 13, color: TEXT, textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+                <div style={{ flex: 1, background: '#1a1a3a', borderRadius: 4, height: 28, position: 'relative' }}>
+                  <div style={{ width: `${(r.avgResponseDays / maxDays) * 100}%`, height: '100%', background: r.avgResponseDays > 60 ? '#ff4444' : r.avgResponseDays > 30 ? '#e07040' : GREEN, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8 }}>
+                    <span style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>{r.avgResponseDays}d</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              <th style={thStyle}>Insurer</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Cases</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Avg Response Days</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Settled</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Avg Recovery</th>
+            </tr></thead>
+            <tbody>{rows.map(r => (
+              <tr key={r.name}>
+                <td style={tdStyle}>{r.name}</td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>{r.cases}</td>
+                <td style={{ ...tdStyle, textAlign: 'right', color: r.avgResponseDays > 60 ? '#ff4444' : r.avgResponseDays > 30 ? '#e07040' : TEXT }}>{r.avgResponseDays ?? '—'}</td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>{r.settled}</td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt$(r.avgRecovery)}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </Card>
+    </>
+  );
+}
+
+function AttorneyProductivityTab({ data }) {
+  const rows = data.rows || [];
+  const thStyle = { padding: '10px 12px', textAlign: 'left', borderBottom: `2px solid ${GOLD}`, color: GOLD, fontSize: 13 };
+  const tdStyle = { padding: '8px 12px', borderBottom: `1px solid ${BORDER}`, fontSize: 13, color: TEXT };
+  return (
+    <Card title="Attorney Productivity">
+      <button onClick={() => exportCSV(
+        ['Attorney', 'Cases', 'Active', 'Settled', 'Recovery', 'Fees', 'Avg Recovery', 'Avg Days', 'Tasks Done', 'Tasks Total', 'Settle Rate'],
+        rows.map(r => [r.name, r.cases, r.active, r.settled, r.totalRecovery, r.totalFees, r.avgRecovery, r.avgDaysToSettle ?? '', r.tasksCompleted, r.tasksTotal, (r.settleRate * 100).toFixed(1) + '%']),
+        'attorney-productivity.csv'
+      )} style={{ padding: '6px 14px', background: NAVY, color: GOLD, border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
+        ⬇ Export CSV
+      </button>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>
+            <th style={thStyle}>Attorney</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Cases</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Active</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Settled</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Recovery</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Avg Recovery</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Avg Days</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Tasks ✓</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Settle %</th>
+          </tr></thead>
+          <tbody>{rows.map(r => (
+            <tr key={r.name}>
+              <td style={tdStyle}>{r.name}</td>
+              <td style={{ ...tdStyle, textAlign: 'right' }}>{r.cases}</td>
+              <td style={{ ...tdStyle, textAlign: 'right' }}>{r.active}</td>
+              <td style={{ ...tdStyle, textAlign: 'right' }}>{r.settled}</td>
+              <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt$(r.totalRecovery)}</td>
+              <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt$(r.avgRecovery)}</td>
+              <td style={{ ...tdStyle, textAlign: 'right' }}>{r.avgDaysToSettle ?? '—'}</td>
+              <td style={{ ...tdStyle, textAlign: 'right' }}>{r.tasksCompleted}/{r.tasksTotal}</td>
+              <td style={{ ...tdStyle, textAlign: 'right' }}>{fmtPct(r.settleRate)}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
+function CaseAgingDetailTab({ data }) {
+  const bucketLabels = ['0-30', '31-90', '91-180', '181-365', '365+'];
+  const bucketColors = { '0-30': GREEN, '31-90': GOLD, '91-180': '#e0a050', '181-365': '#e07040', '365+': '#ff4444' };
+  const maxBucket = Math.max(1, ...Object.values(data.bucketCounts || {}));
+  const thStyle = { padding: '10px 12px', textAlign: 'left', borderBottom: `2px solid ${GOLD}`, color: GOLD, fontSize: 13 };
+  const tdStyle = { padding: '8px 12px', borderBottom: `1px solid ${BORDER}`, fontSize: 13, color: TEXT };
+  return (
+    <>
+      <Card title={`Case Aging by Bucket (${data.totalActive} active)`}>
+        <button onClick={() => {
+          const ct = data.crossTab || [];
+          exportCSV(
+            ['Phase', ...bucketLabels, 'Total'],
+            ct.map(r => [r.phase, ...bucketLabels.map(b => r[b] || 0), r.total]),
+            'case-aging-detail.csv'
+          );
+        }} style={{ padding: '6px 14px', background: NAVY, color: GOLD, border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
+          ⬇ Export CSV
+        </button>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 220, marginBottom: 20 }}>
+          {bucketLabels.map(b => {
+            const count = (data.bucketCounts || {})[b] || 0;
+            return (
+              <div key={b} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span style={{ fontSize: 14, color: TEXT, marginBottom: 6, fontWeight: 600 }}>{count}</span>
+                <div style={{ width: '100%', maxWidth: 80, height: `${(count / maxBucket) * 160}px`, background: bucketColors[b], borderRadius: '6px 6px 0 0', minHeight: count > 0 ? 12 : 4, opacity: 0.85 }} />
+                <span style={{ fontSize: 12, color: TEXT_MUTED, marginTop: 8 }}>{b} days</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+      <Card title="Phase × Age Bucket (Cross-Tab)">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              <th style={thStyle}>Phase</th>
+              {bucketLabels.map(b => <th key={b} style={{ ...thStyle, textAlign: 'right' }}>{b}</th>)}
+              <th style={{ ...thStyle, textAlign: 'right' }}>Total</th>
+            </tr></thead>
+            <tbody>{(data.crossTab || []).map(r => (
+              <tr key={r.phase}>
+                <td style={tdStyle}>{r.phase}</td>
+                {bucketLabels.map(b => <td key={b} style={{ ...tdStyle, textAlign: 'right', color: b === '365+' && r[b] > 0 ? '#ff4444' : TEXT }}>{r[b] || 0}</td>)}
+                <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600 }}>{r.total}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </Card>
+      <Card title="Case Details (Top 50 oldest)">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              {['Client', 'Ref', 'Phase', 'Insurer', 'Attorney', 'Bucket', 'Days'].map(h => (
+                <th key={h} style={{ ...thStyle, textAlign: h === 'Days' ? 'right' : 'left' }}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>{(data.cases || []).map((c, i) => (
+              <tr key={i}>
+                <td style={tdStyle}>{c.client_name}</td>
+                <td style={{ ...tdStyle, color: TEXT_MUTED }}>{c.ref}</td>
+                <td style={tdStyle}>{c.status}</td>
+                <td style={tdStyle}>{c.insurer || '—'}</td>
+                <td style={tdStyle}>{c.attorney || '—'}</td>
+                <td style={{ ...tdStyle, color: bucketColors[c.bucket] || TEXT }}>{c.bucket}</td>
+                <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, color: c.daysOpen > 365 ? '#ff4444' : c.daysOpen > 180 ? '#e07040' : TEXT }}>{c.daysOpen}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </Card>
+    </>
+  );
+}
+
 const TAB_COMPONENTS = {
   summary: SummaryTab,
   pipeline: PipelineTab,
@@ -451,25 +698,37 @@ const TAB_COMPONENTS = {
   sol: SOLTab,
   aging: AgingTab,
   volume: VolumeTab,
+  monthly_performance: MonthlyPerformanceTab,
+  insurer_response: InsurerResponseTab,
+  attorney_productivity: AttorneyProductivityTab,
+  case_aging_detail: CaseAgingDetailTab,
 };
+
+const DATE_RANGE_TABS = ['monthly_performance', 'insurer_response', 'attorney_productivity', 'case_aging_detail'];
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('summary');
   const [cache, setCache] = useState({});
   const [loading, setLoading] = useState({});
   const [errors, setErrors] = useState({});
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  const fetchTab = useCallback(async (tabId) => {
-    if (cache[tabId]) return;
+  const fetchTab = useCallback(async (tabId, from, to) => {
+    const cacheKey = `${tabId}|${from || ''}|${to || ''}`;
+    if (cache[cacheKey]) { setCache(prev => ({ ...prev, [tabId]: prev[cacheKey] })); return; }
     if (loading[tabId]) return;
     setLoading(prev => ({ ...prev, [tabId]: true }));
     setErrors(prev => ({ ...prev, [tabId]: null }));
     try {
-      const resp = await fetch(`/api/reports?type=${tabId}`);
+      const params = new URLSearchParams({ type: tabId });
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      const resp = await fetch(`/api/reports?${params}`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       if (data.error) throw new Error(data.error);
-      setCache(prev => ({ ...prev, [tabId]: data }));
+      setCache(prev => ({ ...prev, [tabId]: data, [cacheKey]: data }));
     } catch (e) {
       setErrors(prev => ({ ...prev, [tabId]: e.message }));
     }
@@ -478,12 +737,17 @@ export default function ReportsPage() {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    fetchTab(tabId);
+    fetchTab(tabId, DATE_RANGE_TABS.includes(tabId) ? dateFrom : '', DATE_RANGE_TABS.includes(tabId) ? dateTo : '');
+  };
+
+  const handleDateApply = () => {
+    setCache(prev => { const n = { ...prev }; delete n[activeTab]; return n; });
+    fetchTab(activeTab, dateFrom, dateTo);
   };
 
   // Fetch initial tab
   if (!cache[activeTab] && !loading[activeTab] && !errors[activeTab]) {
-    fetchTab(activeTab);
+    fetchTab(activeTab, DATE_RANGE_TABS.includes(activeTab) ? dateFrom : '', DATE_RANGE_TABS.includes(activeTab) ? dateTo : '');
   }
 
   const TabComponent = TAB_COMPONENTS[activeTab];
@@ -509,6 +773,27 @@ export default function ReportsPage() {
             </button>
           ))}
         </div>
+
+        {DATE_RANGE_TABS.includes(activeTab) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, color: TEXT_MUTED }}>Date Range:</span>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              style={{ background: '#1a1a3a', border: `1px solid ${BORDER}`, borderRadius: 4, padding: '6px 10px', color: TEXT, fontSize: 13 }} />
+            <span style={{ color: TEXT_MUTED }}>to</span>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              style={{ background: '#1a1a3a', border: `1px solid ${BORDER}`, borderRadius: 4, padding: '6px 10px', color: TEXT, fontSize: 13 }} />
+            <button onClick={handleDateApply}
+              style={{ padding: '6px 14px', background: GOLD, color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+              Apply
+            </button>
+            {(dateFrom || dateTo) && (
+              <button onClick={() => { setDateFrom(''); setDateTo(''); setTimeout(handleDateApply, 0); }}
+                style={{ padding: '6px 14px', background: 'transparent', color: TEXT_MUTED, border: `1px solid ${BORDER}`, borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
+                Clear
+              </button>
+            )}
+          </div>
+        )}
 
         {tabLoading && <Loading />}
         {tabError && <p style={{ color: '#ff4444', textAlign: 'center', padding: 40 }}>Error: {tabError}</p>}

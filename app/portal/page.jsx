@@ -235,7 +235,7 @@ export default function ClientPortal() {
         {!isMobile && <div style={{ marginLeft: "auto", fontSize: 12, color: B.txtM }}>859-900-BART · denham.law</div>}
       </div>
 
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: isMobile ? "20px 12px" : "40px 24px" }}>
         {autoLoading ? (
           <div style={{ textAlign: "center", padding: 60 }}>
             <div style={{ fontSize: 16, color: B.txtM }}>Loading...</div>
@@ -311,17 +311,17 @@ export default function ClientPortal() {
         ) : (
           /* Case View */
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <div style={{ display: "flex", gap: 0, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 8, overflow: "hidden" }}>
-                {[["case", "📋 Case"], ["documents", "📄 Documents"], ["schedule", "📅 Schedule"], ["messages", "💬 Messages"]].map(([key, label]) => (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, gap: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+              <div style={{ display: "flex", gap: 0, background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 8, overflow: "auto", WebkitOverflowScrolling: "touch", flex: "1 1 auto", minWidth: 0 }}>
+                {[["case", isMobile ? "📋" : "📋 Case"], ["documents", isMobile ? "📄" : "📄 Documents"], ["schedule", isMobile ? "📅" : "📅 Schedule"], ["messages", isMobile ? "💬" : "💬 Messages"]].map(([key, label]) => (
                   <button key={key} onClick={() => setActiveTab(key)}
-                    style={{ background: activeTab === key ? B.navy : "transparent", color: activeTab === key ? "#fff" : B.txtM, border: "none", padding: "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s" }}>
+                    style={{ background: activeTab === key ? B.navy : "transparent", color: activeTab === key ? "#fff" : B.txtM, border: "none", padding: isMobile ? "10px 14px" : "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s", whiteSpace: "nowrap", flexShrink: 0 }}>
                     {label}
                   </button>
                 ))}
               </div>
               <button onClick={logout}
-                style={{ background: "transparent", border: `1px solid ${B.bdr}`, borderRadius: 6, padding: "6px 14px", fontSize: 12, color: B.txtM, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                style={{ background: "transparent", border: `1px solid ${B.bdr}`, borderRadius: 6, padding: "6px 14px", fontSize: 12, color: B.txtM, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>
                 Log Out
               </button>
             </div>
@@ -329,9 +329,9 @@ export default function ClientPortal() {
             {activeTab === "case" && (<>
             {/* Case Header */}
             <div style={{ background: B.card, border: `1px solid ${B.bdr}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
                 <div>
-                  <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{caseData.client}</h2>
+                  <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, marginBottom: 4 }}>{caseData.client}</h2>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                     <span style={{ ...S.mono, fontSize: 13, color: B.gold }}>{caseData.ref}</span>
                     <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: stClr(caseData.status).bg, color: stClr(caseData.status).t }}>{caseData.status}</span>
@@ -351,7 +351,7 @@ export default function ClientPortal() {
             </div>
 
             {/* Key Details */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: isMobile ? 8 : 12, marginBottom: 20 }}>
               {[
                 { l: "Type", v: caseData.type },
                 { l: "Jurisdiction", v: caseData.jurisdiction },
