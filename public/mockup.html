@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Denham CMS — Redesign Mockup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg: #09090b;
+    --bg-card: #18181b;
+    --bg-hover: #27272a;
+    --border: #27272a;
+    --border-light: #3f3f46;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --green: #22c55e;
+    --green-bg: rgba(34, 197, 94, 0.1);
+    --yellow: #eab308;
+    --yellow-bg: rgba(234, 179, 8, 0.1);
+    --red: #ef4444;
+    --red-bg: rgba(239, 68, 68, 0.1);
+    --purple: #a855f7;
+    --purple-bg: rgba(168, 85, 247, 0.1);
+    --blue-bg: rgba(59, 130, 246, 0.1);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+  }
+
+  .sidebar-brand .logo {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .sidebar-brand h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  .sidebar-brand span {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  .nav-section {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 12px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .nav-item:hover { background: var(--bg-hover); color: var(--text); }
+  .nav-item.active { background: var(--bg-hover); color: var(--text); }
+
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer .info { font-size: 12px; line-height: 1.3; }
+  .sidebar-footer .info .name { font-weight: 600; }
+  .sidebar-footer .info .role { color: var(--text-dim); font-size: 11px; }
+
+  /* ── Main Content ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Top Bar ── */
+  .topbar {
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    flex: 1;
+    max-width: 480px;
+  }
+
+  .search-bar input {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    font-family: inherit;
+  }
+
+  .search-bar input::placeholder { color: var(--text-dim); }
+
+  .search-bar .kbd {
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--bg-hover);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-light);
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+
+  .icon-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+  .icon-btn.has-notif { position: relative; }
+  .icon-btn.has-notif::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
+    background: var(--red);
+    border-radius: 50%;
+    border: 1.5px solid var(--bg);
+  }
+
+  /* ── Page Content ── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .page-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .page-header .subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    font-family: inherit;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--primary-hover); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover { background: var(--bg-hover); }
+
+  /* ── Stats Row ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+
+  .stat-card .label {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .stat-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 4px;
+    letter-spacing: -1px;
+  }
+
+  .stat-card .change {
+    font-size: 12px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stat-card .change.up { color: var(--green); }
+  .stat-card .change.down { color: var(--red); }
+
+  /* ── Table ── */
+  .table-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .table-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  .table-tab {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .table-tab.active {
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 12px 20px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .case-ref {
+    font-weight: 600;
+    color: var(--primary);
+    cursor: pointer;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-presuit { background: var(--blue-bg); color: var(--primary); }
+  .badge-litigation { background: var(--purple-bg); color: var(--purple); }
+  .badge-settled { background: var(--green-bg); color: var(--green); }
+  .badge-demand { background: var(--yellow-bg); color: var(--yellow); }
+
+  .priority-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .priority-high { background: var(--red); }
+  .priority-med { background: var(--yellow); }
+  .priority-low { background: var(--green); }
+
+  /* ── Case Detail Mockup ── */
+  .case-detail-page {
+    display: none;
+  }
+
+  .case-detail-page.show { display: block; }
+  .dashboard-page.hide { display: none; }
+
+  .case-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .case-header .case-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .case-header .case-meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .case-header .case-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 20px;
+  }
+
+  .detail-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+
+  .detail-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .detail-tab.active {
+    color: var(--text);
+    border-bottom-color: var(--primary);
+  }
+
+  .detail-tab:hover { color: var(--text); }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .info-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  .info-item .info-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .info-item .info-value {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* ── Activity Feed (right side) ── */
+  .activity-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    height: fit-content;
+  }
+
+  .activity-panel h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .activity-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .activity-item:last-child { border-bottom: none; }
+
+  .activity-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .activity-icon.email { background: var(--blue-bg); }
+  .activity-icon.task { background: var(--green-bg); }
+  .activity-icon.doc { background: var(--purple-bg); }
+  .activity-icon.call { background: var(--yellow-bg); }
+
+  .activity-text {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .activity-text strong { color: var(--text); font-weight: 600; }
+
+  .activity-time {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* ── Workflow Progress (inside case detail) ── */
+  .workflow-progress {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .phase-steps {
+    display: flex;
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .phase-step {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+  }
+
+  .phase-step.done { background: var(--green); }
+  .phase-step.current { background: var(--primary); box-shadow: 0 0 8px rgba(59,130,246,0.4); }
+
+  .phase-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .phase-labels span.active { color: var(--primary); font-weight: 600; }
+
+  /* ── Page Switcher ── */
+  .page-switch {
+    display: flex;
+    gap: 4px;
+    margin-left: 24px;
+  }
+
+  .page-switch button {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .page-switch button.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .page-switch button:hover:not(.active) {
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+
+  /* Charts */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+
+  .chart-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    padding-top: 8px;
+  }
+
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    transition: height 0.3s;
+  }
+
+  .bar-label {
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  /* Donut / ring */
+  .ring-chart {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .ring-svg { width: 100px; height: 100px; }
+
+  .ring-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ring-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .ring-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .ring-legend-item strong {
+    color: var(--text);
+    margin-left: auto;
+    font-weight: 600;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">🐩</div>
+    <div>
+      <h1>Denham CMS</h1>
+      <span>Case Management</span>
+    </div>
+  </div>
+
+  <div class="nav-section">Main</div>
+  <a class="nav-item active" onclick="showPage('dashboard')">
+    <span class="icon">📊</span> Dashboard
+  </a>
+  <a class="nav-item" onclick="showPage('case-detail')">
+    <span class="icon">📁</span> Cases
+    <span class="nav-badge">350</span>
+  </a>
+  <a class="nav-item">
+    <span class="icon">📋</span> Workflow
+  </a>
+  <a class="nav-item">
+    <span class="icon">📅</span> Calendar
+  </a>
+  <a class="nav-item">
+    <span class="icon">👥</span> Contacts
+  </a>
+
+  <div class="nav-section">Communications</div>
+  <a class="nav-item">
+    <span class="icon">✉️</span> Emails
+    <span class="nav-badge">3</span>
+  </a>
+  <a class="nav-item">
+    <span class="icon">📞</span> Calls
+  </a>
+  <a class="nav-item">
+    <span class="icon">💬</span> Messages
+  </a>
+
+  <div class="nav-section">Analytics</div>
+  <a class="nav-item">
+    <span class="icon">📈</span> Reports
+  </a>
+  <a class="nav-item">
+    <span class="icon">🎯</span> KPIs
+  </a>
+  <a class="nav-item">
+    <span class="icon">🤝</span> Referrals
+  </a>
+
+  <div class="nav-section">System</div>
+  <a class="nav-item">
+    <span class="icon">⚙️</span> Settings
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="avatar">BD</div>
+    <div class="info">
+      <div class="name">Bart Denham</div>
+      <div class="role">Attorney</div>
+    </div>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="search-bar">
+      <span>🔍</span>
+      <input placeholder="Search cases, contacts, documents..." />
+      <span class="kbd">⌘K</span>
+    </div>
+    <div class="page-switch">
+      <button class="active" onclick="showPage('dashboard')">Dashboard</button>
+      <button onclick="showPage('case-detail')">Case Detail</button>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn has-notif">🔔</button>
+      <button class="icon-btn">❓</button>
+    </div>
+  </div>
+
+  <!-- Dashboard Page -->
+  <div class="content dashboard-page">
+    <div class="page-header">
+      <div>
+        <h2>Dashboard</h2>
+        <div class="subtitle">Firm overview · February 2026</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline">📥 Export</button>
+        <button class="btn btn-primary">+ New Case</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="label">Active Cases</div>
+        <div class="value">287</div>
+        <div class="change up">↑ 12 this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">YTD Recovery</div>
+        <div class="value">$2.4M</div>
+        <div class="change up">↑ 18% vs last year</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Tasks Overdue</div>
+        <div class="value" style="color:var(--red)">14</div>
+        <div class="change down">↑ 3 since yesterday</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Avg Days to Settle</div>
+        <div class="value">127</div>
+        <div class="change up">↓ 8 days improvement</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Cases by Phase</h3>
+        <div class="bar-chart">
+          <div class="bar-col">
+            <div class="bar" style="height:75%;background:var(--primary)"></div>
+            <div class="bar-label">Presuit</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar" style="height:35%;background:var(--purple)"></div>
+            <div class="bar-label">Filed</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar" style="height:25%;background:var(--purple)"></div>
+            <div class="bar-label">Discovery</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar" style="height:15%;background:var(--purple)"></div>
+            <div class="bar-label">Mediation</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar" style="height:10%;background:var(--purple)"></div>
+            <div class="bar-label">Trial</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar" style="height:8%;background:var(--yellow)"></div>
+            <div class="bar-label">Appraisal</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar" style="height:45%;background:var(--green)"></div>
+            <div class="bar-label">Settled</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Case Types</h3>
+        <div class="ring-chart">
+          <svg class="ring-svg" viewBox="0 0 42 42">
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--border)" stroke-width="6"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#3b82f6" stroke-width="6" stroke-dasharray="27 73" stroke-dashoffset="25" stroke-linecap="round"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#a855f7" stroke-width="6" stroke-dasharray="22 78" stroke-dashoffset="98" stroke-linecap="round"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#22c55e" stroke-width="6" stroke-dasharray="20 80" stroke-dashoffset="76" stroke-linecap="round"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#eab308" stroke-width="6" stroke-dasharray="11 89" stroke-dashoffset="56" stroke-linecap="round"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#ef4444" stroke-width="6" stroke-dasharray="9 91" stroke-dashoffset="45" stroke-linecap="round"/>
+          </svg>
+          <div class="ring-legend">
+            <div class="ring-legend-item"><div class="ring-dot" style="background:#3b82f6"></div>Water <strong>93</strong></div>
+            <div class="ring-legend-item"><div class="ring-dot" style="background:#a855f7"></div>Hail <strong>76</strong></div>
+            <div class="ring-legend-item"><div class="ring-dot" style="background:#22c55e"></div>Wind <strong>72</strong></div>
+            <div class="ring-legend-item"><div class="ring-dot" style="background:#eab308"></div>PI <strong>38</strong></div>
+            <div class="ring-legend-item"><div class="ring-dot" style="background:#ef4444"></div>Fire <strong>32</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Recent Cases</h3>
+        <div class="table-tabs">
+          <div class="table-tab active">All</div>
+          <div class="table-tab">Presuit</div>
+          <div class="table-tab">Litigation</div>
+          <div class="table-tab">Settled</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Case</th>
+            <th>Client</th>
+            <th>Phase</th>
+            <th>Type</th>
+            <th>Insurer</th>
+            <th>Attorney</th>
+            <th>SOL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="priority-dot priority-high"></span></td>
+            <td><span class="case-ref">DC-0350</span></td>
+            <td>Smoot, Levi</td>
+            <td><span class="badge badge-presuit">Presuit</span></td>
+            <td>Water</td>
+            <td>Citizens</td>
+            <td><div class="avatar" style="width:24px;height:24px;font-size:9px">BD</div></td>
+            <td style="color:var(--red)">Mar 15</td>
+          </tr>
+          <tr>
+            <td><span class="priority-dot priority-med"></span></td>
+            <td><span class="case-ref">DC-0347</span></td>
+            <td>Rodriguez, Maria</td>
+            <td><span class="badge badge-litigation">Litigation</span></td>
+            <td>Hail</td>
+            <td>State Farm</td>
+            <td><div class="avatar" style="width:24px;height:24px;font-size:9px">BD</div></td>
+            <td>Sep 22</td>
+          </tr>
+          <tr>
+            <td><span class="priority-dot priority-low"></span></td>
+            <td><span class="case-ref">DC-0342</span></td>
+            <td>Williams, James</td>
+            <td><span class="badge badge-demand">Presuit</span></td>
+            <td>Wind</td>
+            <td>Universal</td>
+            <td><div class="avatar" style="width:24px;height:24px;font-size:9px">BD</div></td>
+            <td>Dec 01</td>
+          </tr>
+          <tr>
+            <td><span class="priority-dot priority-low"></span></td>
+            <td><span class="case-ref">DC-0338</span></td>
+            <td>Chen, David</td>
+            <td><span class="badge badge-settled">Settled</span></td>
+            <td>Fire</td>
+            <td>USAA</td>
+            <td><div class="avatar" style="width:24px;height:24px;font-size:9px">BD</div></td>
+            <td style="color:var(--text-dim)">—</td>
+          </tr>
+          <tr>
+            <td><span class="priority-dot priority-high"></span></td>
+            <td><span class="case-ref">DC-0335</span></td>
+            <td>Thompson, Sarah</td>
+            <td><span class="badge badge-presuit">Presuit</span></td>
+            <td>Water</td>
+            <td>Heritage</td>
+            <td><div class="avatar" style="width:24px;height:24px;font-size:9px">KG</div></td>
+            <td style="color:var(--red)">Feb 28</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Case Detail Page -->
+  <div class="content case-detail-page">
+    <div class="case-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-outline" style="padding:6px 10px" onclick="showPage('dashboard')">←</button>
+          <div class="case-title">DC-0350 · Smoot, Levi</div>
+          <span class="badge badge-presuit">Presuit</span>
+        </div>
+        <div class="case-meta">
+          <span>🏢 Citizens Property Insurance</span>
+          <span>💧 Water Damage</span>
+          <span>👤 Bart Denham</span>
+          <span style="color:var(--red)">⚠️ SOL: Mar 15, 2026</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline">✉️ Email</button>
+        <button class="btn btn-outline">📞 Call</button>
+        <button class="btn btn-primary">📝 Demand</button>
+      </div>
+    </div>
+
+    <!-- Workflow Progress -->
+    <div class="workflow-progress">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="font-size:14px;font-weight:600">Case Progress</h3>
+        <span style="font-size:12px;color:var(--text-dim)">Phase 1 of 9 · 15% complete</span>
+      </div>
+      <div class="phase-steps">
+        <div class="phase-step current"></div>
+        <div class="phase-step"></div>
+        <div class="phase-step"></div>
+        <div class="phase-step"></div>
+        <div class="phase-step"></div>
+        <div class="phase-step"></div>
+        <div class="phase-step"></div>
+        <div class="phase-step"></div>
+        <div class="phase-step"></div>
+      </div>
+      <div class="phase-labels">
+        <span class="active">Presuit</span>
+        <span>Filed</span>
+        <span>Discovery</span>
+        <span>Mediation</span>
+        <span>Trial</span>
+        <span>Appraisal</span>
+        <span>Settled</span>
+        <span>Closed</span>
+        <span>Referred</span>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div>
+        <!-- Tabs -->
+        <div class="detail-tabs">
+          <div class="detail-tab active">Overview</div>
+          <div class="detail-tab">Documents</div>
+          <div class="detail-tab">Emails</div>
+          <div class="detail-tab">Tasks</div>
+          <div class="detail-tab">Notes</div>
+          <div class="detail-tab">Financials</div>
+          <div class="detail-tab">Contacts</div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Client</div>
+            <div class="info-value">Levi Smoot</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Phone</div>
+            <div class="info-value" style="color:var(--primary)">📱 (555) 234-5678</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Insurer</div>
+            <div class="info-value">Citizens Property Insurance</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Policy #</div>
+            <div class="info-value">CIT-2024-88432</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Claim Amount</div>
+            <div class="info-value">$45,090.35</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Date of Loss</div>
+            <div class="info-value">Oct 12, 2024</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Statute of Limitations</div>
+            <div class="info-value" style="color:var(--red)">Mar 15, 2026 (22 days)</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Fee Percentage</div>
+            <div class="info-value">33.3%</div>
+          </div>
+        </div>
+
+        <!-- Workflow Tasks Preview -->
+        <div style="margin-top:20px">
+          <div class="table-card">
+            <div class="table-header">
+              <h3>Current Tasks</h3>
+              <span style="font-size:12px;color:var(--green)">4/7 complete</span>
+            </div>
+            <table>
+              <tbody>
+                <tr>
+                  <td style="width:30px;color:var(--green)">✅</td>
+                  <td>Send LOR to insurer</td>
+                  <td style="color:var(--text-dim)">Kami G.</td>
+                  <td style="color:var(--text-dim);font-size:12px">Feb 15</td>
+                </tr>
+                <tr>
+                  <td style="width:30px;color:var(--green)">✅</td>
+                  <td>Collect policy documents</td>
+                  <td style="color:var(--text-dim)">Kami G.</td>
+                  <td style="color:var(--text-dim);font-size:12px">Feb 16</td>
+                </tr>
+                <tr>
+                  <td style="width:30px;color:var(--green)">✅</td>
+                  <td>Request claim file</td>
+                  <td style="color:var(--text-dim)">Kami G.</td>
+                  <td style="color:var(--text-dim);font-size:12px">Feb 17</td>
+                </tr>
+                <tr>
+                  <td style="width:30px;color:var(--green)">✅</td>
+                  <td>Obtain independent estimate</td>
+                  <td style="color:var(--text-dim)">Bart D.</td>
+                  <td style="color:var(--text-dim);font-size:12px">Feb 19</td>
+                </tr>
+                <tr>
+                  <td style="width:30px;color:var(--yellow)">⏳</td>
+                  <td style="font-weight:600">Draft demand letter</td>
+                  <td style="color:var(--text-dim)">Bart D.</td>
+                  <td style="color:var(--red);font-size:12px">Due today</td>
+                </tr>
+                <tr>
+                  <td style="width:30px;color:var(--text-dim)">🔒</td>
+                  <td style="color:var(--text-dim)">Serve demand on insurer</td>
+                  <td style="color:var(--text-dim)">—</td>
+                  <td style="color:var(--text-dim);font-size:12px">Blocked</td>
+                </tr>
+                <tr>
+                  <td style="width:30px;color:var(--text-dim)">○</td>
+                  <td style="color:var(--text-dim)">Follow up on demand response</td>
+                  <td style="color:var(--text-dim)">—</td>
+                  <td style="color:var(--text-dim);font-size:12px">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="activity-panel">
+        <h3>Activity</h3>
+        <div class="activity-item">
+          <div class="activity-icon email">✉️</div>
+          <div>
+            <div class="activity-text"><strong>Kami</strong> sent follow-up email to Citizens adjuster</div>
+            <div class="activity-time">2 hours ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon doc">📄</div>
+          <div>
+            <div class="activity-text"><strong>System</strong> auto-categorized 3 uploaded documents</div>
+            <div class="activity-time">5 hours ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon task">✅</div>
+          <div>
+            <div class="activity-text"><strong>Bart</strong> completed "Obtain independent estimate"</div>
+            <div class="activity-time">Yesterday</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon call">📞</div>
+          <div>
+            <div class="activity-text"><strong>Kami</strong> logged call with client (12 min)</div>
+            <div class="activity-time">Yesterday</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon email">✉️</div>
+          <div>
+            <div class="activity-text"><strong>Citizens</strong> sent acknowledgment of claim</div>
+            <div class="activity-time">Feb 18</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon doc">📄</div>
+          <div>
+            <div class="activity-text"><strong>Bart</strong> uploaded independent estimate ($45,090)</div>
+            <div class="activity-time">Feb 17</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon task">✅</div>
+          <div>
+            <div class="activity-text"><strong>Kami</strong> completed "Request claim file"</div>
+            <div class="activity-time">Feb 17</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPage(page) {
+  const dashboard = document.querySelector('.dashboard-page');
+  const caseDetail = document.querySelector('.case-detail-page');
+  const btns = document.querySelectorAll('.page-switch button');
+  
+  if (page === 'dashboard') {
+    dashboard.classList.remove('hide');
+    caseDetail.classList.remove('show');
+    btns[0].classList.add('active');
+    btns[1].classList.remove('active');
+  } else {
+    dashboard.classList.add('hide');
+    caseDetail.classList.add('show');
+    btns[0].classList.remove('active');
+    btns[1].classList.add('active');
+  }
+}
+</script>
+</body>
+</html>
